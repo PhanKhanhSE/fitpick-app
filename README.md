@@ -38,3 +38,11 @@ npx expo start
 
 - Mở [Expo Go](https://expo.dev/client) trên điện thoại để quét mã QR và chạy thử app.
 - Hoặc nhấn `a` (Android) hoặc `i` (iOS) nếu có sẵn emulator.
+
+Các gói đã được cài
+
+```bash
+npx expo install @react-navigation/native
+npx expo install react-native-screens react-native-safe-area-context react-native-gesture-handler react-native-reanimated
+npx expo install @react-navigation/native-stack
+```
