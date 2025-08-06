@@ -1,79 +1,60 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { StyleSheet, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import AppButton from '../components/AppButton';
+import { Logo } from '../components/Logo';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../types/navigation';
+
+type LoginScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Login'>;
 
 const LoginScreen = () => {
-    return (
-        <View style={styles.container}>
-            {/* Logo */}
-            <Text style={styles.logo}>FIT{"\n"}PICK</Text>
+  const navigation = useNavigation<LoginScreenNavigationProp>();
 
-            {/* Nút đăng nhập */}
-            <TouchableOpacity style={styles.loginButton}>
-                <Text style={styles.loginText}>ĐĂNG NHẬP</Text>
-            </TouchableOpacity>
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <Logo />
 
-            {/* Nút đăng ký */}
-            <TouchableOpacity style={styles.signupButton}>
-                <Text style={styles.signupText}>ĐĂNG KÝ</Text>
-            </TouchableOpacity>
+        {/* Nút đăng nhập */}
+        <AppButton
+          title="ĐĂNG NHẬP"
+          onPress={() => console.log('Đăng nhập')}
+          filled
+        />
 
-            {/* Link bỏ qua */}
-            <TouchableOpacity>
-                <Text style={styles.skipText}>Bỏ qua bước này?</Text>
-            </TouchableOpacity>
-        </View>
-    );
+        {/* Nút đăng ký */}
+        <AppButton
+          title="ĐĂNG KÝ"
+          onPress={() => navigation.navigate('Register')}
+          filled={false}
+        />
+      </ScrollView>
+    </SafeAreaView>
+  );
 };
 
 export default LoginScreen;
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#fff',
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingHorizontal: 32,
-    },
-    logo: {
-        fontSize: 48,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        color: '#F63E7C',
-        marginBottom: 60,
-        lineHeight: 52,
-    },
-    loginButton: {
-        backgroundColor: '#F63E7C',
-        paddingVertical: 16,
-        paddingHorizontal: 60,
-        borderRadius: 40,
-        width: '100%',
-        alignItems: 'center',
-        marginBottom: 16,
-    },
-    loginText: {
-        color: '#fff',
-        fontWeight: 'bold',
-        fontSize: 16,
-    },
-    signupButton: {
-        borderColor: '#F63E7C',
-        borderWidth: 2,
-        paddingVertical: 16,
-        paddingHorizontal: 60,
-        borderRadius: 40,
-        width: '100%',
-        alignItems: 'center',
-        marginBottom: 40,
-    },
-    signupText: {
-        color: '#F63E7C',
-        fontWeight: 'bold',
-        fontSize: 16,
-    },
-    skipText: {
-        color: '#999',
-        fontSize: 14,
-    },
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  container: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+    paddingBottom: 24,
+  },
+  logo: {
+    fontSize: 68,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    color: '#F63E7C',
+    marginBottom: 150,
+    lineHeight: 68,
+  },
 });
