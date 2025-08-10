@@ -1,34 +1,26 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, TextInput, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import AppHeader from '../components/AppHeader';
 import { Logo } from '../components/Logo';
 import AppButton from '../components/AppButton';
 import { useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { RootStackParamList } from '../types/navigation';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { COLORS, SPACING, RADII, FONTS } from '../utils/theme';
+
+type Nav = NativeStackNavigationProp<RootStackParamList, 'Register'>;
 
 const RegisterScreen = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-
-    const insets = useSafeAreaInsets();
-    const keyboardOffset = 56 + insets.top;
-
-    const navigation = useNavigation();
-
-    const handleRegister = () => {
-        console.log('Đăng ký với:', email, password, confirmPassword);
-    };
+    const navigation = useNavigation<Nav>();
 
     return (
-        <>
-            <View style={styles.headerContainer}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color="black" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Đăng ký</Text>
-            </View>
+        <SafeAreaView style={styles.safe} edges={['bottom']}>
+            <AppHeader title="Đăng ký" onBack={() => navigation.goBack()} />
 
             <KeyboardAwareScrollView
                 contentContainerStyle={styles.scrollContainer}
@@ -42,78 +34,65 @@ const RegisterScreen = () => {
                 <TextInput
                     style={styles.input}
                     placeholder="Email"
-                    placeholderTextColor="#999"
+                    placeholderTextColor={COLORS.muted}
                     value={email}
                     onChangeText={setEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    textContentType="emailAddress"
+                    returnKeyType="next"
                 />
+
                 <TextInput
                     style={styles.input}
                     placeholder="Mật khẩu"
-                    placeholderTextColor="#999"
+                    placeholderTextColor={COLORS.muted}
                     secureTextEntry
                     value={password}
                     onChangeText={setPassword}
+                    textContentType="password"
+                    returnKeyType="next"
                 />
+
                 <TextInput
                     style={styles.input}
                     placeholder="Xác nhận mật khẩu"
-                    placeholderTextColor="#999"
+                    placeholderTextColor={COLORS.muted}
                     secureTextEntry
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
+                    textContentType="password"
+                    returnKeyType="done"
                 />
 
-                <AppButton title="ĐĂNG KÝ" onPress={handleRegister} filled />
+                <AppButton title="ĐĂNG KÝ" onPress={() => navigation.navigate('RegisterUserInfo')} filled />
             </KeyboardAwareScrollView>
-        </>
+        </SafeAreaView>
     );
 };
 
 export default RegisterScreen;
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#fff',
-    },
-    headerContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: 56,
-        borderBottomWidth: 1,
-        backgroundColor: '#fff',
-        borderColor: '#eee',
-        position: 'relative',
-        paddingHorizontal: 16,
-    },
-    backButton: {
-        position: 'absolute',
-        left: 16,
-        padding: 8,
-    },
-    headerTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#000',
-    },
+    safe: { flex: 1, backgroundColor: COLORS.background },
     scrollContainer: {
-        backgroundColor: '#fff',
+        backgroundColor: COLORS.background,
         flexGrow: 1,
         alignItems: 'center',
-        paddingHorizontal: 32,
-        paddingTop: 32,
-        paddingBottom: 24,
+        paddingHorizontal: SPACING.xl,
+        paddingTop: SPACING.xl,
+        paddingBottom: SPACING.lg,
     },
     input: {
         width: '100%',
         borderWidth: 1,
-        borderColor: '#F63E7C',
-        borderRadius: 40,
+        borderColor: COLORS.primary,
+        borderRadius: RADII.xl,
         paddingVertical: 12,
         paddingHorizontal: 20,
-        fontSize: 16,
-        marginBottom: 16,
-        color: '#000',
+        fontSize: FONTS.base,
+        marginBottom: SPACING.md,
+        color: COLORS.text,
     },
 });

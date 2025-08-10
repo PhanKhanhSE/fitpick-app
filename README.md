@@ -45,4 +45,6 @@ Các gói đã được cài
 npx expo install @react-navigation/native
 npx expo install react-native-screens react-native-safe-area-context react-native-gesture-handler react-native-reanimated
 npx expo install @react-navigation/native-stack
+
+expo install @expo/vector-icons
 ```
