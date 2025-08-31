@@ -23,7 +23,7 @@ const LoginScreen = () => {
     const onLogin = () => {
         // TODO: call API login
         console.log({ email, password, remember });
-        // navigation.replace('Home' as never);
+        navigation.replace('MainTabs');
     };
 
     return (
