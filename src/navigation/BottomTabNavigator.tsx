@@ -16,6 +16,7 @@ const Tab = createBottomTabNavigator();
 const BottomTabNavigator: React.FC = () => {
   return (
     <Tab.Navigator
+      initialRouteName='Home'
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
           let iconName: keyof typeof Ionicons.glyphMap;
