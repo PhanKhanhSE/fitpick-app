@@ -11,6 +11,7 @@ import RegisterGoalsScreen from '../screens/RegisterGoalsScreen';
 import RegisterLifestyleScreen from '../screens/RegisterLifestyleScreen';
 import RegisterMealPlanScreen from '../screens/RegisterMealPlanScreen';
 import LoginScreen from '../screens/LoginScreen';
+import BottomTabNavigator from './BottomTabNavigator';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -51,7 +52,13 @@ export const MainNavigator = () => {
                 <Stack.Screen
                     name="Login"
                     component={LoginScreen}
-                    options={{ headerShown: false }} />
+                    options={{ headerShown: false }} 
+                />
+                <Stack.Screen
+                    name="MainTabs"
+                    component={BottomTabNavigator}
+                    options={{ headerShown: false }} 
+                />
             </Stack.Navigator>
         </NavigationContainer>
     );

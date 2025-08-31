@@ -6,5 +6,5 @@ export type RootStackParamList = {
     RegisterGoals: undefined;
     RegisterLifestyle: undefined;
     RegisterMealPlan: undefined;
-
+    MainTabs: undefined;
 };

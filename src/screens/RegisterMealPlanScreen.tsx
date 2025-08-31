@@ -4,7 +4,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AppHeader from '../components/AppHeader';
 import AppButton from '../components/AppButton';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../types/navigation';
 import { COLORS, SPACING, RADII } from '../utils/theme';
+
+type Nav = NativeStackNavigationProp<RootStackParamList, 'RegisterMealPlan'>;
 
 type FreqKey = 'always' | 'often' | 'rarely' | 'sometimes' | 'never' | null;
 type YesNo = 'yes' | 'no' | null;
@@ -25,17 +29,15 @@ const YESNO_OPTIONS = [
 ];
 
 const RegisterMealPlanScreen = () => {
-    const navigation = useNavigation();
+    const navigation = useNavigation<Nav>();
     const [freq, setFreq] = useState<FreqKey>(null);
     const [wantAuto, setWantAuto] = useState<YesNo>(null);
 
     const canContinue = useMemo(() => !!freq && !!wantAuto, [freq, wantAuto]);
 
     const onContinue = () => {
-        if (!canContinue) return;
         // TODO: lưu state vào store/context nếu cần
-        console.log({ freq, wantAuto });
-        // ví dụ: navigation.navigate('NextScreen' as never);
+        navigation.replace('MainTabs');
     };
 
     return (
