@@ -8,7 +8,7 @@ import { COLORS } from '../utils/theme';
 import HomeScreen from '../screens/home/HomeScreen';
 import ExploreScreen from '../screens/ExploreScreen';
 import MenuScreen from '../screens/MenuScreen';
-import FavoritesScreen from '../screens/FavoritesScreen';
+import FavoritesScreen from '../screens/favorite/FavoritesScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator();

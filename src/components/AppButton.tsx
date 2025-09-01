@@ -1,19 +1,33 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
 
 interface AppButtonProps {
     title: string;
     onPress: () => void;
     filled?: boolean; // true = nút hồng đặc, false = viền hồng
+    style?: ViewStyle; // Custom style cho button
+    textStyle?: TextStyle; // Custom style cho text
 }
 
-const AppButton: React.FC<AppButtonProps> = ({ title, onPress, filled = true }) => {
+const AppButton: React.FC<AppButtonProps> = ({ 
+    title, 
+    onPress, 
+    filled = true, 
+    style, 
+    textStyle 
+}) => {
     return (
         <TouchableOpacity
             onPress={onPress}
-            style={filled ? styles.filledButton : styles.outlinedButton}
+            style={[
+                filled ? styles.filledButton : styles.outlinedButton,
+                style
+            ]}
         >
-            <Text style={filled ? styles.filledText : styles.outlinedText}>
+            <Text style={[
+                filled ? styles.filledText : styles.outlinedText,
+                textStyle
+            ]}>
                 {title}
             </Text>
         </TouchableOpacity>
@@ -28,9 +42,7 @@ const styles = StyleSheet.create({
         paddingVertical: 16,
         paddingHorizontal: 60,
         borderRadius: 40,
-        width: '100%',
         alignItems: 'center',
-        marginBottom: 16,
     },
     outlinedButton: {
         borderColor: '#F63E7C',
@@ -38,9 +50,7 @@ const styles = StyleSheet.create({
         paddingVertical: 16,
         paddingHorizontal: 60,
         borderRadius: 40,
-        width: '100%',
         alignItems: 'center',
-        marginBottom: 40,
     },
     filledText: {
         color: '#fff',

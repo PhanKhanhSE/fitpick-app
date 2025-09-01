@@ -1,10 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
-  TextInput,
   TouchableOpacity,
   Image,
   Dimensions,
@@ -13,18 +12,26 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADII, FONTS } from '../../utils/theme';
+import SearchBar from '../../components/SearchBar';
+import AppButton from '../../components/AppButton';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../types/navigation';
 
 const { width } = Dimensions.get('window');
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface MealCardProps {
   title: string;
   calories: string;
   price: string;
   image: any;
+  onPress: () => void;
 }
 
-const MealCard: React.FC<MealCardProps> = ({ title, calories, price, image }) => (
-  <View style={styles.mealCard}>
+const MealCard: React.FC<MealCardProps> = ({ title, calories, price, image, onPress }) => (
+  <TouchableOpacity style={styles.mealCard} onPress={onPress}>
     <Image source={image} style={styles.mealImage} />
     <TouchableOpacity style={styles.heartIcon}>
       <Ionicons name="heart-outline" size={20} color="white" />
@@ -33,10 +40,98 @@ const MealCard: React.FC<MealCardProps> = ({ title, calories, price, image }) =>
       <Text style={styles.mealTitle}>{title}</Text>
       <Text style={styles.mealDetails}>{calories} | {price}</Text>
     </View>
-  </View>
+  </TouchableOpacity>
 );
 
 const HomeScreen: React.FC = () => {
+  const [searchText, setSearchText] = useState('');
+  const [selectedMealType, setSelectedMealType] = useState('breakfast');
+  const navigation = useNavigation<NavigationProp>();
+
+  // Sample meal data
+  const mealData = [
+    {
+      id: '1',
+      title: 'Sữa chua trái cây tươi',
+      calories: '300 kcal',
+      price: '30.000đ',
+      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
+      cookingTime: '10 phút',
+    },
+    {
+      id: '2',
+      title: 'Cuốn ức gà rau củ',
+      calories: '500 kcal',
+      price: '55.000đ',
+      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
+      cookingTime: '20 phút',
+    },
+    {
+      id: '3',
+      title: 'Bánh mì alpaca',
+      calories: '400 kcal',
+      price: '40.000đ',
+      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
+      cookingTime: '15 phút',
+    },
+    {
+      id: '4',
+      title: 'Salad bơ tương ớt',
+      calories: '350 kcal',
+      price: '45.000đ',
+      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
+      cookingTime: '12 phút',
+    },
+  ];
+
+  const suggestedMeals = [
+    {
+      id: '5',
+      title: 'Cá hồi sốt tiêu kèm bơ xanh',
+      calories: '300 kcal',
+      price: '30.000đ',
+      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
+      cookingTime: '25 phút',
+    },
+    {
+      id: '6',
+      title: 'Bánh bí yến mạch',
+      calories: '500 kcal',
+      price: '55.000đ',
+      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
+      cookingTime: '30 phút',
+    },
+    {
+      id: '7',
+      title: 'Gà nướng mật ong',
+      calories: '450 kcal',
+      price: '60.000đ',
+      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
+      cookingTime: '35 phút',
+    },
+    {
+      id: '8',
+      title: 'Soup bí đỏ hạt chia',
+      calories: '280 kcal',
+      price: '35.000đ',
+      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
+      cookingTime: '18 phút',
+    },
+  ];
+
+  const handleFilterPress = () => {
+    // Handle filter button press
+    console.log('Filter pressed');
+  };
+
+  const handleMealTypePress = (mealType: string) => {
+    setSelectedMealType(mealType);
+  };
+
+  const handleMealPress = (meal: any) => {
+    navigation.navigate('MealDetail', { meal });
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView 
@@ -57,31 +152,42 @@ const HomeScreen: React.FC = () => {
         </View>
 
         {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <View style={styles.searchBar}>
-            <Ionicons name="search-outline" size={20} color={COLORS.muted} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Tìm kiếm"
-              placeholderTextColor={COLORS.muted}
-            />
-          </View>
-          <TouchableOpacity style={styles.filterButton}>
-            <Ionicons name="options" size={20} color="white" />
-          </TouchableOpacity>
-        </View>
+        <SearchBar
+          value={searchText}
+          onChangeText={setSearchText}
+          placeholder="Tìm kiếm"
+          onFilterPress={handleFilterPress}
+        />
 
         {/* Meal Type Buttons */}
         <View style={styles.mealTypeContainer}>
-          <TouchableOpacity style={[styles.mealTypeButton, styles.activeMealType]}>
-            <Text style={styles.mealTypeTextActive}>Bữa sáng</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.mealTypeButton}>
-            <Text style={styles.mealTypeText}>Bữa trưa</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.mealTypeButton}>
-            <Text style={styles.mealTypeText}>Bữa tối</Text>
-          </TouchableOpacity>
+          <View style={styles.mealTypeButtonWrapper}>
+            <AppButton
+              title="Bữa sáng"
+              onPress={() => handleMealTypePress('breakfast')}
+              filled={selectedMealType === 'breakfast'}
+              style={styles.mealTypeButtonStyle}
+              textStyle={styles.mealTypeTextStyle}
+            />
+          </View>
+          <View style={styles.mealTypeButtonWrapper}>
+            <AppButton
+              title="Bữa trưa"
+              onPress={() => handleMealTypePress('lunch')}
+              filled={selectedMealType === 'lunch'}
+              style={styles.mealTypeButtonStyle}
+              textStyle={styles.mealTypeTextStyle}
+            />
+          </View>
+          <View style={styles.mealTypeButtonWrapper}>
+            <AppButton
+              title="Bữa tối"
+              onPress={() => handleMealTypePress('dinner')}
+              filled={selectedMealType === 'dinner'}
+              style={styles.mealTypeButtonStyle}
+              textStyle={styles.mealTypeTextStyle}
+            />
+          </View>
         </View>
 
         {/* Drinking Plan Section */}
@@ -98,30 +204,16 @@ const HomeScreen: React.FC = () => {
           style={styles.mealScrollView}
           contentContainerStyle={styles.mealScrollContent}
         >
-          <MealCard
-            title="Sữa chua trái cây tươi"
-            calories="300 kcal"
-            price="30.000đ"
-            image={{ uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' }} // Placeholder image
-          />
-          <MealCard
-            title="Cuốn ức gà rau củ"
-            calories="500 kcal"
-            price="55.000đ"
-            image={{ uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' }} // Placeholder image
-          />
-          <MealCard
-            title="Bánh mì alpaca"
-            calories="400 kcal"
-            price="40.000đ"
-            image={{ uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' }} // Placeholder image
-          />
-          <MealCard
-            title="Salad bơ tương ớt"
-            calories="350 kcal"
-            price="45.000đ"
-            image={{ uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' }} // Placeholder image
-          />
+          {mealData.map((meal) => (
+            <MealCard
+              key={meal.id}
+              title={meal.title}
+              calories={meal.calories}
+              price={meal.price}
+              image={meal.image}
+              onPress={() => handleMealPress(meal)}
+            />
+          ))}
         </ScrollView>
         
 
@@ -139,30 +231,16 @@ const HomeScreen: React.FC = () => {
           style={styles.mealScrollView}
           contentContainerStyle={styles.mealScrollContent}
         >
-          <MealCard
-            title="Cá hồi sốt tiêu kèm bơ xanh"
-            calories="300 kcal"
-            price="30.000đ"
-            image={{ uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' }} // Placeholder image
-          />
-          <MealCard
-            title="Bánh bí yến mạch"
-            calories="500 kcal"
-            price="55.000đ"
-            image={{ uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' }} // Placeholder image
-          />
-          <MealCard
-            title="Gà nướng mật ong"
-            calories="450 kcal"
-            price="60.000đ"
-            image={{ uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' }} // Placeholder image
-          />
-          <MealCard
-            title="Soup bí đỏ hạt chia"
-            calories="280 kcal"
-            price="35.000đ"
-            image={{ uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' }} // Placeholder image
-          />
+          {suggestedMeals.map((meal) => (
+            <MealCard
+              key={meal.id}
+              title={meal.title}
+              calories={meal.calories}
+              price={meal.price}
+              image={meal.image}
+              onPress={() => handleMealPress(meal)}
+            />
+          ))}
         </ScrollView>
       </ScrollView>
     </View>
@@ -201,75 +279,29 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: COLORS.primary,
   },
-  searchContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: SPACING.md,
-    marginBottom: SPACING.lg,
-    alignItems: 'center',
-  },
-  searchBar: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'white',
-    borderRadius: 25,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 6,
-    marginRight: SPACING.sm,
-    borderWidth: 1,
-    borderColor: COLORS.primary,
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: SPACING.sm,
-    fontSize: FONTS.base,
-    color: COLORS.text,
-  },
-  filterButton: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 25,
-    width: 48,
-    height: 48,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
   mealTypeContainer: {
     flexDirection: 'row',
     paddingHorizontal: SPACING.md,
-    marginBottom: SPACING.lg,
-    justifyContent: 'space-between',
+    marginBottom: SPACING.md,
+    justifyContent: 'center',
+    gap: SPACING.sm,
   },
-  mealTypeButton: {
-    flex: 1,
-    backgroundColor: COLORS.primary,
-    borderRadius: RADII.md,
-    paddingVertical: SPACING.md,
-    marginHorizontal: SPACING.xs,
+  mealTypeButtonWrapper: {
+    minWidth: (width - SPACING.md * 2 - SPACING.sm * 2) / 3, // Giảm kích thước nút
+  },
+  mealTypeButtonStyle: {
+    paddingVertical: 12, // Tương đương với search bar (paddingVertical: 6 + border)
+    paddingHorizontal: SPACING.sm,
+    borderRadius: 25, // Giống search bar
+    minWidth: (width - SPACING.md * 2 - SPACING.sm * 2) / 3, // Đặt chiều rộng tối thiểu
+    height: 48, // Giống filter button height
+    justifyContent: 'center',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    marginTop: -8,
   },
-  activeMealType: {
-    backgroundColor: COLORS.primary,
-  },
-  mealTypeText: {
-    color: 'white',
-    fontSize: FONTS.base,
+  mealTypeTextStyle: {
+    fontSize: 14,
     fontWeight: '600',
-    textAlign: 'center',
-  },
-  mealTypeTextActive: {
-    color: 'white',
-    fontSize: FONTS.base,
-    fontWeight: '600',
-    textAlign: 'center',
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -299,7 +331,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
   },
   mealCard: {
-    width: (width - SPACING.md * 3) / 2, // Show 2 items with spacing
+    width: (width - SPACING.md * 2.5) / 2, // Show 2 items with spacing
     marginRight: SPACING.sm,
     backgroundColor: 'white',
     borderRadius: RADII.md,
