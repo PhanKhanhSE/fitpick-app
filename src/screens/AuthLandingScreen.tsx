@@ -2,11 +2,11 @@ import React from 'react';
 import { StyleSheet, ScrollView, View, Text, ImageBackground, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppButton from '../components/AppButton';
-import { Logo } from '../components/Logo';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
-import { COLORS, SPACING, RADII } from '../utils/theme';
+import { COLORS, SPACING} from '../utils/theme';
+import backgroundImage from '../assets/FitPick.png';
 
 const { width, height } = Dimensions.get('window');
 
@@ -17,36 +17,36 @@ const AuthLandingScreen = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        {/* Header Section */}
-        <View style={styles.headerSection}>
-          <Logo />
-          <Text style={styles.welcomeText}>Chào mừng đến với FitPick</Text>
-          <Text style={styles.subtitleText}>Ứng dụng gợi ý món ăn phù hợp với lối sống của bạn</Text>
+      <View style={styles.container}>
+        {/* Logo và Image Section - ở giữa phía trên */}
+        <View style={styles.logoSection}>
+          <View style={styles.imageContainer}>
+            <ImageBackground 
+              source={backgroundImage} 
+              style={styles.backgroundImage}
+              resizeMode="contain"
+            />
+          </View>
+          <Text style={styles.tagline}>Cá nhân hóa thực đơn lành mạnh</Text>
         </View>
 
-        {/* Button Section */}
+        {/* Button Section - ở cuối màn hình, căn giữa */}
         <View style={styles.buttonSection}>
           <AppButton
-            title="ĐĂNG NHẬP"
-            onPress={() => navigation.navigate('Login' as never)}
+            title="Đăng ký"
+            onPress={() => navigation.navigate('Register')}
             filled
-            style={styles.loginButton}
+            style={styles.registerButton}
           />
 
           <AppButton
-            title="ĐĂNG KÝ"
-            onPress={() => navigation.navigate('Register')}
+            title="Đăng nhập"
+            onPress={() => navigation.navigate('Login' as never)}
             filled={false}
-            style={styles.registerButton}
+            style={styles.loginButton}
           />
         </View>
-
-        {/* Footer Section */}
-        <View style={styles.footerSection}>
-          <Text style={styles.footerText}>Bắt đầu hành trình khỏe mạnh của bạn ngay hôm nay!</Text>
-        </View>
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 };
@@ -56,60 +56,79 @@ export default AuthLandingScreen;
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: '#F5F5F5',
   },
   container: {
-    flexGrow: 1,
+    flex: 1,
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: SPACING.xl,
-    paddingVertical: SPACING.lg,
+    paddingTop: height * 0.1, // Khoảng cách từ top
+    paddingBottom: height * 0.08, // Khoảng cách từ bottom
   },
-  headerSection: {
+  logoSection: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: SPACING.xl,
+    width: '100%',
   },
-  welcomeText: {
-    fontSize: 24,
+  imageContainer: {
+    width: width * 0.5, // Logo chiếm 50% width màn hình
+    height: width * 0.5, // Tỉ lệ vuông
+    marginBottom: SPACING.lg,
+    marginRight: SPACING.xl, // Dịch trái để căn giữa
+    marginTop: SPACING.lg,
+  },
+  backgroundImage: {
+    width: '110%',
+    height: '110%',
+  },
+  appName: {
+    fontSize: 48, // Font size lớn như trong hình
     fontWeight: 'bold',
-    color: COLORS.primary,
+    color: COLORS.primary, // Màu hồng FitPick
     textAlign: 'center',
     marginTop: SPACING.lg,
     marginBottom: SPACING.sm,
+    letterSpacing: 1,
   },
-  subtitleText: {
+  tagline: {
     fontSize: 16,
-    color: COLORS.muted,
+    color: '#666',
     textAlign: 'center',
     lineHeight: 24,
     paddingHorizontal: SPACING.md,
+    marginTop: SPACING.md,
   },
   buttonSection: {
     width: '100%',
-    paddingHorizontal: SPACING.md,
-  },
-  loginButton: {
-    width: '100%',
-    marginBottom: SPACING.md,
-    borderRadius: 25,
-    paddingVertical: SPACING.md,
+    alignItems: 'center', // Căn giữa buttons
+    gap: SPACING.md,
+    marginBottom: SPACING.xxl,
   },
   registerButton: {
-    width: '100%',
+    width: width * 0.6, // 60% width màn hình
     borderRadius: 25,
-    paddingVertical: SPACING.md,
+    paddingVertical: 16,
+    backgroundColor: COLORS.primary,
+    alignSelf: 'center', // Đảm bảo button căn giữa
+    // Shadow effect
+    shadowColor: COLORS.primary,
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  loginButton: {
+    width: width * 0.6, // 60% width màn hình
+    borderRadius: 25,
+    paddingVertical: 16,
     borderWidth: 2,
     borderColor: COLORS.primary,
-  },
-  footerSection: {
-    paddingBottom: SPACING.lg,
-  },
-  footerText: {
-    fontSize: 14,
-    color: COLORS.muted,
-    textAlign: 'center',
-    fontStyle: 'italic',
+    backgroundColor: 'transparent',
+    alignSelf: 'center', // Đảm bảo button căn giữa
   },
 });

@@ -3,12 +3,12 @@ import { View, Text, TextInput, StyleSheet, TouchableOpacity, Image } from 'reac
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import AppButton from '../components/AppButton';
-import AppHeader from '../components/AppHeader';
+import AppButton from '../../components/AppButton';
+import AppHeader from '../../components/AppHeader';
 import { useNavigation } from '@react-navigation/native';
-import { COLORS, SPACING, RADII } from '../utils/theme';
+import { COLORS, SPACING, RADII } from '../../utils/theme';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../types/navigation';
+import { RootStackParamList } from '../../types/navigation';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'RegisterUserInfo'>;
 
