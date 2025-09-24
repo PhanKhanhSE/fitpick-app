@@ -1,24 +1,38 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import AppButton from '../../components/AppButton';
-import AppHeader from '../../components/AppHeader';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS, SPACING, RADII } from '../../utils/theme';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/navigation';
+
+const { width } = Dimensions.get('window');
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'RegisterUserInfo'>;
 
 const RegisterUserInfoScreen = () => {
     const navigation = useNavigation<Nav>();
     const [fullName, setFullName] = useState('');
+    const [gender, setGender] = useState('');
+    const [age, setAge] = useState('');
+    const [height, setHeight] = useState('');
+    const [weight, setWeight] = useState('');
 
     return (
-        <SafeAreaView style={styles.safe} edges={['bottom']}>
-            <AppHeader title="Thông tin cá nhân" onBack={() => navigation.goBack()} />
+        <SafeAreaView style={styles.safe}>
+            {/* Header */}
+            <View style={styles.header}>
+                <TouchableOpacity 
+                    style={styles.backButton} 
+                    onPress={() => navigation.goBack()}
+                >
+                    <Ionicons name="chevron-back" size={24} color={COLORS.textStrong} />
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>Thông tin cá nhân</Text>
+            </View>
 
             <KeyboardAwareScrollView
                 contentContainerStyle={styles.container}
@@ -26,130 +40,91 @@ const RegisterUserInfoScreen = () => {
                 keyboardShouldPersistTaps="handled"
                 extraScrollHeight={100}
             >
-                {/* Avatar + nút camera */}
-                <View style={styles.avatarWrap}>
-                    <Image
-                        source={{ uri: 'https://via.placeholder.com/140x140.png?text=+' }}
-                        style={styles.avatar}
-                        accessibilityLabel="Ảnh đại diện mặc định"
-                    />
-                    <TouchableOpacity
-                        style={styles.cameraBadge}
-                        activeOpacity={0.8}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    >
-                        <MaterialIcons name="photo-camera" size={18} color="#fff" />
-                    </TouchableOpacity>
+                {/* Avatar Section */}
+                <View style={styles.avatarSection}>
+                    <View style={styles.avatarContainer}>
+                        <View style={styles.avatar}>
+                            <Ionicons name="person" size={60} color="#6B7280" />
+                        </View>
+                        <TouchableOpacity style={styles.cameraButton}>
+                            <Ionicons name="camera" size={16} color="white" />
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
-                {/* Họ và Tên */}
-                <View style={styles.field}>
-                    <Text style={styles.label}>Họ và Tên</Text>
-                    <View style={styles.inputWrap}>
+                {/* Form Fields */}
+                <View style={styles.form}>
+                    {/* Tên */}
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.label}>Tên</Text>
                         <TextInput
                             value={fullName}
                             onChangeText={setFullName}
-                            placeholder="Tên đăng ký"
-                            placeholderTextColor={COLORS.muted}
+                            placeholder="Tên của bạn"
+                            placeholderTextColor="#9CA3AF"
                             style={styles.input}
                             returnKeyType="next"
-                            accessibilityLabel="Nhập họ và tên"
                         />
                     </View>
-                </View>
 
-                {/* Giới tính - Tuổi */}
-                <View style={styles.row}>
-                    <View style={[styles.field, styles.col]}>
-                        <Text style={styles.label}>Giới tính</Text>
-                        <View style={styles.inputWrap}>
-                            <TextInput
-                                placeholder=""
-                                placeholderTextColor={COLORS.muted}
-                                style={[styles.input, styles.inputWithIcon]}
-                                editable={false}
-                                accessibilityLabel="Chọn giới tính"
-                            />
-                            <View pointerEvents="none" style={styles.rightIcon}>
-                                <Ionicons name="chevron-down" size={18} color="#bbb" />
-                            </View>
+                    {/* Row 1: Giới tính - Tuổi */}
+                    <View style={styles.row}>
+                        <View style={styles.halfInput}>
+                            <Text style={styles.label}>Giới tính</Text>
+                            <TouchableOpacity style={styles.dropdownInput}>
+                                <Text style={styles.dropdownPlaceholder}></Text>
+                                <Ionicons name="chevron-down" size={20} color="#9CA3AF" />
+                            </TouchableOpacity>
                         </View>
-                    </View>
 
-                    <View style={[styles.field, styles.col]}>
-                        <Text style={styles.label}>Tuổi</Text>
-                        <View style={styles.inputWrap}>
+                        <View style={styles.halfInput}>
+                            <Text style={styles.label}>Tuổi</Text>
                             <TextInput
-                                placeholder=""
-                                placeholderTextColor={COLORS.muted}
-                                keyboardType="number-pad"
-                                inputMode="numeric"
-                                maxLength={3}
+                                value={age}
+                                onChangeText={setAge}
+                                placeholder="Nhập độ tuổi"
+                                placeholderTextColor="#9CA3AF"
                                 style={styles.input}
-                                accessibilityLabel="Nhập tuổi"
-                            />
-                            <View pointerEvents="none" style={styles.rightIcon}>
-                                <Ionicons name="chevron-down" size={18} color="#bbb" />
-                            </View>
-                        </View>
-                    </View>
-                </View>
-
-                {/* Chiều cao - Cân nặng */}
-                <View style={styles.row}>
-                    <View style={[styles.field, styles.col]}>
-                        <Text style={styles.label}>Chiều cao</Text>
-                        <View style={styles.inputWrap}>
-                            <TextInput
-                                placeholder="Cm"
-                                placeholderTextColor={COLORS.muted}
                                 keyboardType="number-pad"
-                                inputMode="numeric"
-                                maxLength={3}
-                                style={styles.input}
-                                accessibilityLabel="Nhập chiều cao (cm)"
                             />
                         </View>
                     </View>
 
-                    <View style={[styles.field, styles.col]}>
-                        <Text style={styles.label}>Cân nặng</Text>
-                        <View style={styles.inputWrap}>
+                    {/* Row 2: Chiều cao - Cân nặng */}
+                    <View style={styles.row}>
+                        <View style={styles.halfInput}>
+                            <Text style={styles.label}>Chiều cao</Text>
                             <TextInput
-                                placeholder="Kg"
-                                placeholderTextColor={COLORS.muted}
-                                keyboardType="number-pad"
-                                inputMode="numeric"
-                                maxLength={3}
+                                value={height}
+                                onChangeText={setHeight}
+                                placeholder="cm"
+                                placeholderTextColor="#9CA3AF"
                                 style={styles.input}
-                                accessibilityLabel="Nhập cân nặng (kg)"
+                                keyboardType="number-pad"
+                            />
+                        </View>
+
+                        <View style={styles.halfInput}>
+                            <Text style={styles.label}>Cân nặng</Text>
+                            <TextInput
+                                value={weight}
+                                onChangeText={setWeight}
+                                placeholder="kg"
+                                placeholderTextColor="#9CA3AF"
+                                style={styles.input}
+                                keyboardType="number-pad"
                             />
                         </View>
                     </View>
                 </View>
 
-                {/* Nơi sinh sống */}
-                <View style={styles.field}>
-                    <Text style={styles.label}>Nơi sinh sống</Text>
-                    <View style={styles.inputWrap}>
-                        <TextInput
-                            placeholder="Quốc gia"
-                            placeholderTextColor={COLORS.muted}
-                            style={[styles.input, styles.inputWithIcon]}
-                            editable={false}
-                            accessibilityLabel="Chọn quốc gia"
-                        />
-                        <View pointerEvents="none" style={styles.rightIcon}>
-                            <Ionicons name="chevron-down" size={18} color="#bbb" />
-                        </View>
-                    </View>
-                </View>
-
-                {/* Nút tiếp tục */}
-                <View style={styles.cta}>
+                {/* Button */}
+                <View style={styles.buttonContainer}>
                     <AppButton
                         title="Tiếp tục"
                         onPress={() => navigation.navigate('RegisterGoals' as never)}
+                        filled
+                        style={styles.continueButton}
                     />
                 </View>
             </KeyboardAwareScrollView>
@@ -160,54 +135,118 @@ const RegisterUserInfoScreen = () => {
 export default RegisterUserInfoScreen;
 
 const styles = StyleSheet.create({
-    safe: { flex: 1, backgroundColor: COLORS.background },
-
+    safe: {
+        flex: 1,
+        backgroundColor: COLORS.background,
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: SPACING.lg,
+        paddingVertical: SPACING.md,
+        backgroundColor: COLORS.background,
+    },
+    backButton: {
+        padding: SPACING.sm,
+        marginRight: SPACING.sm,
+    },
+    headerTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: COLORS.textStrong,
+    },
     container: {
-        paddingHorizontal: SPACING.lg, // 24
-        paddingTop: SPACING.lg,        // 24
-        paddingBottom: SPACING.xl,     // 32
+        flexGrow: 1,
+        paddingHorizontal: SPACING.xl,
+        paddingBottom: SPACING.xl,
     },
-
-    avatarWrap: { alignItems: 'center', marginBottom: 20 },
+    avatarSection: {
+        alignItems: 'center',
+        paddingVertical: SPACING.xl,
+    },
+    avatarContainer: {
+        position: 'relative',
+    },
     avatar: {
-        width: 128,
-        height: 128,
-        borderRadius: 64,
-        backgroundColor: '#EDEDED',
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        backgroundColor: '#E5E7EB',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
-    cameraBadge: {
+    cameraButton: {
         position: 'absolute',
-        bottom: 4,
-        right: 24,
+        bottom: 0,
+        right: 0,
         width: 32,
         height: 32,
         borderRadius: 16,
         backgroundColor: COLORS.primary,
-        alignItems: 'center',
         justifyContent: 'center',
+        alignItems: 'center',
         borderWidth: 3,
         borderColor: COLORS.background,
     },
-
-    field: { marginBottom: 14 },
-    label: { fontSize: 13, color: '#222', marginBottom: 8 },
-
-    inputWrap: { position: 'relative' },
-    input: {
-        height: 44,
-        borderWidth: 1,
-        borderColor: COLORS.primary,
-        borderRadius: RADII.md,       // 24
-        paddingHorizontal: 16,
-        fontSize: 15,
-        color: COLORS.text,
-        backgroundColor: COLORS.background,
+    form: {
+        flex: 1,
     },
-    inputWithIcon: { paddingRight: 36 },
-    rightIcon: { position: 'absolute', right: 12, top: 13 },
-
-    row: { flexDirection: 'row', gap: 12 },
-    col: { flex: 1 },
-
-    cta: { marginTop: 12 },
+    inputGroup: {
+        marginBottom: SPACING.lg,
+    },
+    label: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: COLORS.textStrong,
+        marginBottom: SPACING.sm,
+    },
+    input: {
+        height: 50,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        borderRadius: RADII.sm,
+        paddingHorizontal: SPACING.md,
+        fontSize: 16,
+        color: COLORS.text,
+        backgroundColor: '#F9FAFB',
+    },
+    row: {
+        flexDirection: 'row',
+        gap: SPACING.md,
+        marginBottom: SPACING.lg,
+    },
+    halfInput: {
+        flex: 1,
+    },
+    dropdownInput: {
+        height: 50,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        borderRadius: RADII.sm,
+        paddingHorizontal: SPACING.md,
+        backgroundColor: '#F9FAFB',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    dropdownPlaceholder: {
+        fontSize: 16,
+        color: '#9CA3AF',
+    },
+    buttonContainer: {
+        paddingTop: SPACING.xl,
+    },
+    continueButton: {
+        width: '100%',
+        borderRadius: 25,
+        paddingVertical: 16,
+        shadowColor: COLORS.primary,
+        shadowOffset: {
+            width: 0,
+            height: 3,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 6,
+        elevation: 6,
+    },
 });
