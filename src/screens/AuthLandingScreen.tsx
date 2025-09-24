@@ -6,7 +6,6 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
 import { COLORS, SPACING} from '../utils/theme';
-import backgroundImage from '../assets/FitPick.png';
 
 const { width, height } = Dimensions.get('window');
 
@@ -22,7 +21,7 @@ const AuthLandingScreen = () => {
         <View style={styles.logoSection}>
           <View style={styles.imageContainer}>
             <ImageBackground 
-              source={backgroundImage} 
+              source={require('../assets/FitPick.png')} 
               style={styles.backgroundImage}
               resizeMode="contain"
             />

@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
   checkboxContainer: {
     flexDirection: "row",
     alignItems: "flex-start",
-    marginBottom: SPACING.xl,
+    marginBottom: SPACING.md,
     paddingHorizontal: 4,
   },
   checkbox: {
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
   },
   checkboxText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 13,
     color: COLORS.textDim,
     lineHeight: 20,
   },
@@ -291,14 +291,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    paddingTop: SPACING.md,
+    paddingTop: SPACING.xs,
   },
   loginText: {
-    fontSize: 14,
+    fontSize: 13,
     color: COLORS.textDim,
   },
   loginLink: {
-    fontSize: 14,
+    fontSize: 13,
     color: COLORS.primary,
     fontWeight: "600",
   },
