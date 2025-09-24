@@ -1,12 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AppHeader from '../components/AppHeader';
-import AppButton from '../components/AppButton';
+import AppHeader from '../../components/AppHeader';
+import AppButton from '../../components/AppButton';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../types/navigation';
-import { COLORS, SPACING, RADII } from '../utils/theme';
+import { RootStackParamList } from '../../types/navigation';
+import { COLORS, SPACING, RADII } from '../../utils/theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'RegisterMealPlan'>;
 

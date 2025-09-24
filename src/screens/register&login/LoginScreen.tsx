@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AppHeader from '../components/AppHeader';
-import AppButton from '../components/AppButton';
+import AppHeader from '../../components/AppHeader';
+import AppButton from '../../components/AppButton';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../types/navigation';
-import { COLORS, SPACING, RADII, FONTS } from '../utils/theme';
-import { Logo } from '../components/Logo';
+import { RootStackParamList } from '../../types/navigation';
+import { COLORS, SPACING, RADII, FONTS } from '../../utils/theme';
+import { Logo } from '../../components/Logo';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Login'>;

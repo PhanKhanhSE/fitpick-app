@@ -1,12 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, TextInput, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AppHeader from '../components/AppHeader';
-import AppButton from '../components/AppButton';
+import AppHeader from '../../components/AppHeader';
+import AppButton from '../../components/AppButton';
 import { useNavigation } from '@react-navigation/native';
-import { COLORS, SPACING, RADII } from '../utils/theme';
+import { COLORS, SPACING, RADII } from '../../utils/theme';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../types/navigation';
+import { RootStackParamList } from '../../types/navigation';
 
 type GoalKey = 'healthy' | 'lose' | 'gain' | 'other' | null;
 type Nav = NativeStackNavigationProp<RootStackParamList, 'RegisterGoals'>;

@@ -5,14 +5,14 @@ import { RootStackParamList } from '../types/navigation';
 
 // Import các màn hình
 import AuthLandingScreen from '../screens/AuthLandingScreen';
-import RegisterScreen from '../screens/RegisterScreen';
-import RegisterUserInfoScreen from '../screens/RegisterUserInfoScreen';
-import RegisterGoalsScreen from '../screens/RegisterGoalsScreen';
-import RegisterLifestyleScreen from '../screens/RegisterLifestyleScreen';
-import RegisterMealPlanScreen from '../screens/RegisterMealPlanScreen';
-import LoginScreen from '../screens/LoginScreen';
+import LoginScreen from '../screens/register&login/LoginScreen';
+import RegisterUserInfoScreen from '../screens/register&login/RegisterUserInfoScreen';
+import RegisterGoalsScreen from '../screens/register&login/RegisterGoalsScreen';
+import RegisterLifestyleScreen from '../screens/register&login/RegisterLifestyleScreen';
+import RegisterMealPlanScreen from '../screens/register&login/RegisterMealPlanScreen';
 import BottomTabNavigator from './BottomTabNavigator';
 import MealDetailScreen from '../screens/detail/MealDetailScreen';
+import RegisterScreen from '../screens/register&login/RegisterScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
