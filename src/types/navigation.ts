@@ -2,10 +2,11 @@ export type RootStackParamList = {
     AuthLanding: undefined;
     Login: undefined;
     Register: undefined;
-    RegisterUserInfo: undefined;
-    RegisterGoals: undefined;
-    RegisterLifestyle: undefined;
-    RegisterMealPlan: undefined;
+    UserInfo: undefined;
+    Goals: undefined;
+    Lifestyle: undefined;
+    EatStyle: undefined;
+    CookingLevel: undefined;
     MainTabs: undefined;
     MealDetail: {
         meal: {
