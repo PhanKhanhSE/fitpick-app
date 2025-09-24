@@ -6,13 +6,14 @@ import { RootStackParamList } from '../types/navigation';
 // Import các màn hình
 import AuthLandingScreen from '../screens/AuthLandingScreen';
 import LoginScreen from '../screens/register&login/LoginScreen';
-import RegisterUserInfoScreen from '../screens/register&login/RegisterUserInfoScreen';
-import RegisterGoalsScreen from '../screens/register&login/RegisterGoalsScreen';
-import RegisterLifestyleScreen from '../screens/register&login/RegisterLifestyleScreen';
-import RegisterMealPlanScreen from '../screens/register&login/RegisterMealPlanScreen';
+import RegisterScreen from '../screens/register&login/RegisterScreen';
+import UserInfoScreen from '../screens/register&login/UserInfoScreen';
+import GoalsScreen from '../screens/register&login/GoalsScreen';
+import LifestyleScreen from '../screens/register&login/LifestyleScreen';
+import EatStyleScreen from '../screens/register&login/EatStyleScreen';
 import BottomTabNavigator from './BottomTabNavigator';
 import MealDetailScreen from '../screens/detail/MealDetailScreen';
-import RegisterScreen from '../screens/register&login/RegisterScreen';
+import CookingLevelScreen from '../screens/register&login/CookingLevelScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -31,23 +32,28 @@ export const MainNavigator = () => {
                     options={{ headerShown: false }}
                 />
                 <Stack.Screen
-                    name="RegisterUserInfo"
-                    component={RegisterUserInfoScreen}
+                    name="UserInfo"
+                    component={UserInfoScreen}
                     options={{ headerShown: false }}
                 />
                 <Stack.Screen
-                    name="RegisterGoals"
-                    component={RegisterGoalsScreen}
+                    name="Goals"
+                    component={GoalsScreen}
                     options={{ headerShown: false }}
                 />
                 <Stack.Screen
-                    name="RegisterLifestyle"
-                    component={RegisterLifestyleScreen}
+                    name="Lifestyle"
+                    component={LifestyleScreen}
                     options={{ headerShown: false }}
                 />
                 <Stack.Screen
-                    name="RegisterMealPlan"
-                    component={RegisterMealPlanScreen}
+                    name="EatStyle"
+                    component={EatStyleScreen}
+                    options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                    name="CookingLevel"
+                    component={CookingLevelScreen}
                     options={{ headerShown: false }}
                 />
                 <Stack.Screen

@@ -11,15 +11,22 @@ import { RootStackParamList } from '../../types/navigation';
 
 const { width } = Dimensions.get('window');
 
-type Nav = NativeStackNavigationProp<RootStackParamList, 'RegisterUserInfo'>;
+type Nav = NativeStackNavigationProp<RootStackParamList, 'UserInfo'>;
 
-const RegisterUserInfoScreen = () => {
+const UserInfoScreen = () => {
     const navigation = useNavigation<Nav>();
     const [fullName, setFullName] = useState('');
     const [gender, setGender] = useState('');
     const [age, setAge] = useState('');
     const [height, setHeight] = useState('');
     const [weight, setWeight] = useState('');
+    const [select, setSelected] = useState('');
+
+    const handleContinue = () => {
+        if (select) {
+            navigation.navigate('Goals' as never);
+        }
+    };
 
     return (
         <SafeAreaView style={styles.safe}>
@@ -122,7 +129,7 @@ const RegisterUserInfoScreen = () => {
                 <View style={styles.buttonContainer}>
                     <AppButton
                         title="Tiếp tục"
-                        onPress={() => navigation.navigate('RegisterGoals' as never)}
+                        onPress={() => navigation.navigate('Goals' as never)}
                         filled
                         style={styles.continueButton}
                     />
@@ -132,7 +139,7 @@ const RegisterUserInfoScreen = () => {
     );
 };
 
-export default RegisterUserInfoScreen;
+export default UserInfoScreen;
 
 const styles = StyleSheet.create({
     safe: {
