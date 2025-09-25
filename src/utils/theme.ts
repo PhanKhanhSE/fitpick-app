@@ -7,11 +7,14 @@ export const COLORS = {
     textStrong: '#111',
     textLabel: '#222',
     textDim: '#777',
+    process: '#4CAF50',
+    under_process: '#F0F0F0',
 } as const;
 
 export const SPACING = {
     xs: 4,
     sm: 8,
+    umd: 12,
     md: 16,
     lg: 24,
     xl: 32,
@@ -21,6 +24,7 @@ export const SPACING = {
 export const RADII = {
     xs: 4,
     sm: 8,
+    umd: 12,
     md: 24,
     xl: 40,
 };
