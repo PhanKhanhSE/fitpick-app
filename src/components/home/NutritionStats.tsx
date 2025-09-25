@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
   container: {
     marginHorizontal: SPACING.md,
     marginBottom: SPACING.lg,
-    backgroundColor: 'white',
+    backgroundColor: COLORS.background,
     borderRadius: 16,
     padding: SPACING.md,
     elevation: 2,
@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   statsCard: {
-    backgroundColor: 'white',
+    backgroundColor: COLORS.background,
     borderRadius: 16,
     padding: SPACING.md,
     flexDirection: 'row',

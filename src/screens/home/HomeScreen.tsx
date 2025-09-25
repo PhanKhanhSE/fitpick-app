@@ -11,6 +11,7 @@ import { COLORS, SPACING, RADII } from '../../utils/theme';
 import NutritionStats from '../../components/home/NutritionStats';
 import MyMenuSection from '../../components/home/MyMenuSection';
 import SuggestedSection from '../../components/home/SuggestedSection';
+import PremiumModal from '../../components/home/PremiumModal';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/navigation';
@@ -19,6 +20,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const HomeScreen: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState('personal'); // 'personal' or 'community'
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
   const navigation = useNavigation<NavigationProp>();
 
   // Sample meal data for "Thực đơn của tôi"
@@ -110,13 +112,24 @@ const HomeScreen: React.FC = () => {
     navigation.navigate('MealDetail', { meal });
   };
 
+  const handlePremiumPress = () => {
+    setShowPremiumModal(true);
+  };
+
+  const handleClosePremiumModal = () => {
+    setShowPremiumModal(false);
+  };
+
+  const handleUpgrade = () => {
+    // Handle upgrade logic here
+    console.log('Upgrade to premium');
+    setShowPremiumModal(false);
+  };
+
   return (
     <View style={styles.container}>
-      <ScrollView 
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ flexGrow: 1 }}
-      >
-        {/* Header with Tabs */}
+      {/* Header with Tabs - Sticky */}
+      <View style={styles.stickyHeader}>
         <View style={styles.header}>
           <View style={styles.tabContainer}>
             <TouchableOpacity 
@@ -139,13 +152,19 @@ const HomeScreen: React.FC = () => {
           
           <View style={styles.headerIcons}>
             <TouchableOpacity style={styles.iconButton}>
-              <Ionicons name="notifications-outline" size={24} color={COLORS.text} />
+              <Ionicons name="notifications-outline" size={20} color={COLORS.text} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.iconButton}>
-              <Ionicons name="person-circle-outline" size={24} color={COLORS.text} />
+              <Ionicons name="person-circle-outline" size={32} color={COLORS.text} />
             </TouchableOpacity>
           </View>
         </View>
+      </View>
+
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ flexGrow: 1 }}
+      >
 
         {/* Nutrition Stats */}
         <NutritionStats
@@ -165,7 +184,7 @@ const HomeScreen: React.FC = () => {
         {/* Premium Upgrade */}
         <View style={styles.premiumSection}>
           <Text style={styles.premiumText}>Có ngày thực đơn mới, gợi ý riêng cho bạn mỗi tuần.</Text>
-          <TouchableOpacity style={styles.premiumButton}>
+          <TouchableOpacity style={styles.premiumButton} onPress={handlePremiumPress}>
             <Text style={styles.premiumButtonText}>Nâng cấp lên Premium</Text>
           </TouchableOpacity>
         </View>
@@ -176,6 +195,13 @@ const HomeScreen: React.FC = () => {
           onMealPress={handleMealPress}
         />
       </ScrollView>
+
+      {/* Premium Modal */}
+      <PremiumModal
+        visible={showPremiumModal}
+        onClose={handleClosePremiumModal}
+        onUpgrade={handleUpgrade}
+      />
     </View>
   );
 };
@@ -184,6 +210,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+  },
+  stickyHeader: {
+    backgroundColor: COLORS.background,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5E5',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    zIndex: 1000,
   },
   header: {
     paddingHorizontal: SPACING.md,
@@ -231,7 +268,7 @@ const styles = StyleSheet.create({
   },
   premiumText: {
     fontSize: 14,
-    color: COLORS.textDim,
+    color: COLORS.text,
     textAlign: 'center',
     marginBottom: SPACING.xs,
     lineHeight: 25,
