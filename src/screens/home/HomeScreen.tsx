@@ -5,127 +5,105 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Image,
-  Dimensions,
-  Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SPACING, RADII, FONTS } from '../../utils/theme';
-import SearchBar from '../../components/SearchBar';
-import AppButton from '../../components/AppButton';
+import { COLORS, SPACING, RADII } from '../../utils/theme';
+import NutritionStats from '../../components/home/NutritionStats';
+import MyMenuSection from '../../components/home/MyMenuSection';
+import SuggestedSection from '../../components/home/SuggestedSection';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/navigation';
 
-const { width } = Dimensions.get('window');
-
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-interface MealCardProps {
-  title: string;
-  calories: string;
-  price: string;
-  image: any;
-  onPress: () => void;
-}
-
-const MealCard: React.FC<MealCardProps> = ({ title, calories, price, image, onPress }) => (
-  <TouchableOpacity style={styles.mealCard} onPress={onPress}>
-    <Image source={image} style={styles.mealImage} />
-    <TouchableOpacity style={styles.heartIcon}>
-      <Ionicons name="heart-outline" size={20} color="white" />
-    </TouchableOpacity>
-    <View style={styles.mealInfo}>
-      <Text style={styles.mealTitle}>{title}</Text>
-      <Text style={styles.mealDetails}>{calories} | {price}</Text>
-    </View>
-  </TouchableOpacity>
-);
-
 const HomeScreen: React.FC = () => {
-  const [searchText, setSearchText] = useState('');
-  const [selectedMealType, setSelectedMealType] = useState('breakfast');
+  const [selectedTab, setSelectedTab] = useState('personal'); // 'personal' or 'community'
   const navigation = useNavigation<NavigationProp>();
 
-  // Sample meal data
-  const mealData = [
+  // Sample meal data for "Thực đơn của tôi"
+  const myMealData = [
     {
       id: '1',
-      title: 'Sữa chua trái cây tươi',
-      calories: '300 kcal',
-      price: '30.000đ',
+      title: 'Cá hồi sốt tiêu kèm bơ xanh',
+      calories: '0 kcal',
+      time: '0 phút',
       image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
-      cookingTime: '10 phút',
+      tag: 'Bữa sáng',
     },
     {
       id: '2',
-      title: 'Cuốn ức gà rau củ',
-      calories: '500 kcal',
-      price: '55.000đ',
+      title: 'Cá hồi sốt tiêu kèm bơ xanh',
+      calories: '0 kcal',
+      time: '0 phút',
       image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
-      cookingTime: '20 phút',
+      tag: 'Bữa trưa',
     },
     {
       id: '3',
-      title: 'Bánh mì alpaca',
-      calories: '400 kcal',
-      price: '40.000đ',
+      title: 'Cá hồi sốt tiêu kèm bơ xanh',
+      calories: '0 kcal',
+      time: '0 phút',
       image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
-      cookingTime: '15 phút',
+      tag: 'Bữa trưa',
     },
     {
       id: '4',
-      title: 'Salad bơ tương ớt',
-      calories: '350 kcal',
-      price: '45.000đ',
+      title: 'Cá hồi sốt tiêu kèm bơ xanh',
+      calories: '0 kcal',
+      time: '0 phút',
       image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
-      cookingTime: '12 phút',
+      tag: 'Bữa trưa',
     },
   ];
 
+  // Sample meal data for "Gợi ý cho bạn"
   const suggestedMeals = [
     {
-      id: '5',
+      id: '1',
       title: 'Cá hồi sốt tiêu kèm bơ xanh',
-      calories: '300 kcal',
-      price: '30.000đ',
+      calories: '0 kcal',
+      time: '0 phút',
       image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
-      cookingTime: '25 phút',
+      tag: 'Cân bằng',
     },
     {
-      id: '6',
-      title: 'Bánh bí yến mạch',
-      calories: '500 kcal',
-      price: '55.000đ',
+      id: '2',
+      title: 'Cá hồi sốt tiêu kèm bơ xanh',
+      calories: '0 kcal',
+      time: '0 phút',
       image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
-      cookingTime: '30 phút',
+      tag: 'Cân bằng',
     },
     {
-      id: '7',
-      title: 'Gà nướng mật ong',
-      calories: '450 kcal',
-      price: '60.000đ',
+      id: '3',
+      title: 'Cá hồi sốt tiêu kèm bơ xanh',
+      calories: '0 kcal',
+      time: '0 phút',
       image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
-      cookingTime: '35 phút',
+      tag: 'Cân bằng',
     },
     {
-      id: '8',
-      title: 'Soup bí đỏ hạt chia',
-      calories: '280 kcal',
-      price: '35.000đ',
+      id: '4',
+      title: 'Cá hồi sốt tiêu kèm bơ xanh',
+      calories: '0 kcal',
+      time: '0 phút',
       image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
-      cookingTime: '18 phút',
+      tag: 'Cân bằng',
     },
   ];
 
-  const handleFilterPress = () => {
-    // Handle filter button press
-    console.log('Filter pressed');
+  // Nutrition data
+  const nutritionData = {
+    targetCalories: 1000,
+    consumedCalories: 1000,
+    starch: { current: 90, target: 100 },
+    protein: { current: 110, target: 100 },
+    fat: { current: 90, target: 100 },
   };
 
-  const handleMealTypePress = (mealType: string) => {
-    setSelectedMealType(mealType);
+  const handleTabPress = (tab: string) => {
+    setSelectedTab(tab);
   };
 
   const handleMealPress = (meal: any) => {
@@ -138,110 +116,65 @@ const HomeScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ flexGrow: 1 }}
       >
-        {/* Header */}
+        {/* Header with Tabs */}
         <View style={styles.header}>
-          <View style={styles.userInfo}>
-            <View style={styles.avatar}>
-              <Ionicons name="person-outline" size={24} color={COLORS.muted} />
-            </View>
-            <View>
-              <Text style={styles.greeting}>Xin chào</Text>
-              <Text style={styles.username}>Linh</Text>
-            </View>
+          <View style={styles.tabContainer}>
+            <TouchableOpacity 
+              style={[styles.tab, selectedTab === 'personal' && styles.activeTab]}
+              onPress={() => handleTabPress('personal')}
+            >
+              <Text style={[styles.tabText, selectedTab === 'personal' && styles.activeTabText]}>
+                Dành cho bạn
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.tab, selectedTab === 'community' && styles.activeTab]}
+              onPress={() => handleTabPress('community')}
+            >
+              <Text style={[styles.tabText, selectedTab === 'community' && styles.activeTabText]}>
+                Cộng đồng
+              </Text>
+            </TouchableOpacity>
+          </View>
+          
+          <View style={styles.headerIcons}>
+            <TouchableOpacity style={styles.iconButton}>
+              <Ionicons name="notifications-outline" size={24} color={COLORS.text} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.iconButton}>
+              <Ionicons name="person-circle-outline" size={24} color={COLORS.text} />
+            </TouchableOpacity>
           </View>
         </View>
 
-        {/* Search Bar */}
-        <SearchBar
-          value={searchText}
-          onChangeText={setSearchText}
-          placeholder="Tìm kiếm"
-          onFilterPress={handleFilterPress}
+        {/* Nutrition Stats */}
+        <NutritionStats
+          targetCalories={nutritionData.targetCalories}
+          consumedCalories={nutritionData.consumedCalories}
+          starch={nutritionData.starch}
+          protein={nutritionData.protein}
+          fat={nutritionData.fat}
         />
 
-        {/* Meal Type Buttons */}
-        <View style={styles.mealTypeContainer}>
-          <View style={styles.mealTypeButtonWrapper}>
-            <AppButton
-              title="Bữa sáng"
-              onPress={() => handleMealTypePress('breakfast')}
-              filled={selectedMealType === 'breakfast'}
-              style={styles.mealTypeButtonStyle}
-              textStyle={styles.mealTypeTextStyle}
-            />
-          </View>
-          <View style={styles.mealTypeButtonWrapper}>
-            <AppButton
-              title="Bữa trưa"
-              onPress={() => handleMealTypePress('lunch')}
-              filled={selectedMealType === 'lunch'}
-              style={styles.mealTypeButtonStyle}
-              textStyle={styles.mealTypeTextStyle}
-            />
-          </View>
-          <View style={styles.mealTypeButtonWrapper}>
-            <AppButton
-              title="Bữa tối"
-              onPress={() => handleMealTypePress('dinner')}
-              filled={selectedMealType === 'dinner'}
-              style={styles.mealTypeButtonStyle}
-              textStyle={styles.mealTypeTextStyle}
-            />
-          </View>
-        </View>
+        {/* My Menu Section */}
+        <MyMenuSection 
+          mealData={myMealData}
+          onMealPress={handleMealPress}
+        />
 
-        {/* Drinking Plan Section */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Kế hoạch ăn uống</Text>
-          <TouchableOpacity>
-            <Text style={styles.seeMore}>xem thêm</Text>
+        {/* Premium Upgrade */}
+        <View style={styles.premiumSection}>
+          <Text style={styles.premiumText}>Có ngày thực đơn mới, gợi ý riêng cho bạn mỗi tuần.</Text>
+          <TouchableOpacity style={styles.premiumButton}>
+            <Text style={styles.premiumButtonText}>Nâng cấp lên Premium</Text>
           </TouchableOpacity>
         </View>
-
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          style={styles.mealScrollView}
-          contentContainerStyle={styles.mealScrollContent}
-        >
-          {mealData.map((meal) => (
-            <MealCard
-              key={meal.id}
-              title={meal.title}
-              calories={meal.calories}
-              price={meal.price}
-              image={meal.image}
-              onPress={() => handleMealPress(meal)}
-            />
-          ))}
-        </ScrollView>
-        
 
         {/* Suggested Dishes Section */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Món ăn được gợi ý</Text>
-          <TouchableOpacity>
-            <Text style={styles.seeMore}>xem thêm</Text>
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          style={styles.mealScrollView}
-          contentContainerStyle={styles.mealScrollContent}
-        >
-          {suggestedMeals.map((meal) => (
-            <MealCard
-              key={meal.id}
-              title={meal.title}
-              calories={meal.calories}
-              price={meal.price}
-              image={meal.image}
-              onPress={() => handleMealPress(meal)}
-            />
-          ))}
-        </ScrollView>
+        <SuggestedSection 
+          mealData={suggestedMeals}
+          onMealPress={handleMealPress}
+        />
       </ScrollView>
     </View>
   );
@@ -254,127 +187,64 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.lg,
-    marginTop: SPACING.md,
-  },
-  userInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 28,
-    backgroundColor: COLORS.border,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: SPACING.md,
-  },
-  greeting: {
-    fontSize: FONTS.base,
-    color: COLORS.text,
-  },
-  username: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: COLORS.primary,
-  },
-  mealTypeContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: SPACING.md,
-    marginBottom: SPACING.md,
-    justifyContent: 'center',
-    gap: SPACING.sm,
-  },
-  mealTypeButtonWrapper: {
-    minWidth: (width - SPACING.md * 2 - SPACING.sm * 2) / 3, // Giảm kích thước nút
-  },
-  mealTypeButtonStyle: {
-    paddingVertical: 12, // Tương đương với search bar (paddingVertical: 6 + border)
-    paddingHorizontal: SPACING.sm,
-    borderRadius: 25, // Giống search bar
-    minWidth: (width - SPACING.md * 2 - SPACING.sm * 2) / 3, // Đặt chiều rộng tối thiểu
-    height: 48, // Giống filter button height
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: -8,
-  },
-  mealTypeTextStyle: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  sectionHeader: {
+    paddingVertical: SPACING.md,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: SPACING.md,
-    marginBottom: SPACING.md,
+    marginTop: SPACING.sm,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: COLORS.text,
-  },
-  seeMore: {
-    fontSize: 14,
-    color: COLORS.muted,
-  },
-  mealSection: {
+  tabContainer: {
     flexDirection: 'row',
+    flex: 1,
+  },
+  tab: {
+    paddingVertical: SPACING.sm,
     paddingHorizontal: SPACING.md,
-    marginBottom: SPACING.xl,
+    marginRight: SPACING.md,
   },
-  mealScrollView: {
-    marginBottom: SPACING.sm,
+  activeTab: {
+    borderBottomWidth: 2,
+    borderBottomColor: COLORS.primary,
   },
-  mealScrollContent: {
-    paddingHorizontal: SPACING.md,
+  tabText: {
+    fontSize: 16,
+    color: COLORS.muted,
+    fontWeight: '500',
   },
-  mealCard: {
-    width: (width - SPACING.md * 2.5) / 2, // Show 2 items with spacing
-    marginRight: SPACING.sm,
-    backgroundColor: 'white',
-    borderRadius: RADII.md,
-    overflow: 'hidden',
-    elevation: 2,
-    marginBottom: SPACING.xs,
-    ...Platform.select({
-    android: {
-      elevation: 2, // Chỉ Android
-    },
-    ios: {
-      shadowColor: '#000',
-      shadowOffset: { width: 2, height: 2 },
-      shadowOpacity: 1,
-      shadowRadius: 3.84,
-    },
-  }),
-},
-  mealImage: {
-    width: '100%',
-    height: 120,
-    backgroundColor: COLORS.border,
-  },
-  heartIcon: {
-    position: 'absolute',
-    top: SPACING.sm,
-    right: SPACING.sm,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    borderRadius: 15,
-    padding: SPACING.xs,
-  },
-  mealInfo: {
-    padding: SPACING.md,
-  },
-  mealTitle: {
-    fontSize: 14,
-    fontWeight: '600',
+  activeTabText: {
     color: COLORS.primary,
-    marginBottom: SPACING.xs,
+    fontWeight: 'bold',
   },
-  mealDetails: {
-    fontSize: 12,
-    color: COLORS.text,
+  headerIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  iconButton: {
+    marginLeft: SPACING.md,
+  },
+  premiumSection: {
+    marginHorizontal: SPACING.md,
+    borderRadius: RADII.md,
+    alignItems: 'center',
+    marginBottom: SPACING.md,
+    marginTop: SPACING.xs,
+  },
+  premiumText: {
+    fontSize: 14,
+    color: COLORS.textDim,
+    textAlign: 'center',
+    marginBottom: SPACING.xs,
+    lineHeight: 25,
+  },
+  premiumButton: {
+    backgroundColor: COLORS.primary,
+    borderRadius: RADII.umd,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.umd,
+  },
+  premiumButtonText: {
+    color: 'white',
+    fontSize: 14,
   },
 });
 
