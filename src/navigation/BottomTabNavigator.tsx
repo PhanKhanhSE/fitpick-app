@@ -25,80 +25,56 @@ const BottomTabNavigator: React.FC = () => {
             iconName = focused ? 'home' : 'home-outline';
           } else if (route.name === 'Explore') {
             iconName = focused ? 'search' : 'search-outline';
-          } else if (route.name === 'Menu') {
-            iconName = focused ? 'list' : 'list-outline';
           } else if (route.name === 'Favorites') {
             iconName = focused ? 'heart' : 'heart-outline';
+          } else if (route.name === 'Menu') {
+            iconName = focused ? 'restaurant' : 'restaurant-outline';
           } else if (route.name === 'Profile') {
-            iconName = focused ? 'person' : 'person-outline';
+            iconName = focused ? 'storefront' : 'storefront-outline';
           } else {
             iconName = 'home-outline';
           }
 
-          return <Ionicons name={iconName} size={size} color={color} />;
+          return <Ionicons name={iconName} size={focused ? 20 : 20} color={color} />;
         },
         tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor: COLORS.muted,
+        tabBarInactiveTintColor: '#8E8E93',
         tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '700',
+          fontSize: 10,
+          fontWeight: '500',
+          marginTop: -2,
         },
         tabBarStyle: {
-          height: 80,
+          height: 75,
           paddingBottom: 10,
-          paddingTop: 10,
-          backgroundColor: 'white',
-          borderTopWidth: 2,
-          borderTopColor: COLORS.border,
-          justifyContent: 'center',
+          paddingTop: 8,
+          backgroundColor: COLORS.background,
+          borderTopWidth: 1,
+          borderTopColor: '#E5E5EA',
+          shadowColor: '#000',
+          shadowOffset: {
+            width: 0,
+            height: -4,
+          },
+          shadowOpacity: 0.2,
+          shadowRadius: 12,
+          elevation: 12,
         },
         headerShown: false,
       })}
     >
       <Tab.Screen 
-        name="Explore" 
-        component={ExploreScreen}
-        options={{
-          tabBarLabel: 'Khám phá',
-        }}
-      />
-      <Tab.Screen 
-        name="Menu" 
-        component={MenuScreen}
-        options={{
-          tabBarLabel: 'Thực đơn',
-        }}
-      />
-      <Tab.Screen 
         name="Home" 
         component={HomeScreen}
         options={{
-          tabBarLabel: '',
-          tabBarIcon: ({ focused, color, size }) => (
-            <View style={{
-              width: 50,
-              height: 50,
-              backgroundColor: COLORS.primary,
-              borderRadius: 28,
-              justifyContent: 'center',
-              alignItems: 'center',
-              shadowColor: '#000',
-              marginTop: 10,
-              shadowOffset: {
-                width: 0,
-                height: 4,
-              },
-              shadowOpacity: 0.3,
-              shadowRadius: 4.65,
-              elevation: 8,
-            }}>
-              <Ionicons 
-                name={focused ? 'home' : 'home-outline'} 
-                size={24} 
-                color="white"
-              />
-            </View>
-          ),
+          tabBarLabel: 'Trang chủ',
+        }}
+      />
+      <Tab.Screen 
+        name="Explore" 
+        component={ExploreScreen}
+        options={{
+          tabBarLabel: 'Tìm kiếm',
         }}
       />
       <Tab.Screen 
@@ -109,10 +85,17 @@ const BottomTabNavigator: React.FC = () => {
         }}
       />
       <Tab.Screen 
+        name="Menu" 
+        component={MenuScreen}
+        options={{
+          tabBarLabel: 'Thực đơn',
+        }}
+      />
+      <Tab.Screen 
         name="Profile" 
         component={ProfileScreen}
         options={{
-          tabBarLabel: 'Hồ sơ',
+          tabBarLabel: 'Sản phẩm',
         }}
       />
     </Tab.Navigator>

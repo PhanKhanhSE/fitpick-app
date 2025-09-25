@@ -1,14 +1,14 @@
 export const COLORS = {
-    primary: '#F63E7C',
-    text: '#000',
+    primary: '#F73E6C',
+    text: '#191919',
     muted: '#999',
-    background: '#fff',
+    background: '#F5F5F5',
     border: '#F2F2F2',
     textStrong: '#111',
     textLabel: '#222',
     textDim: '#777',
     process: '#4CAF50',
-    under_process: '#F0F0F0',
+    under_process: '#CCD6DD',
 } as const;
 
 export const SPACING = {

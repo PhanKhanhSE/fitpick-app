@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
   },
   mealCard: {
-    width: (width - SPACING.md * 2.5) / 2,
+    width: (width - SPACING.md * 3.5) / 2,
     marginRight: SPACING.sm,
     backgroundColor: 'white',
     borderRadius: RADII.sm,
