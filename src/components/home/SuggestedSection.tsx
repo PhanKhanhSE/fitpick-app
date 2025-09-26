@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Platform } from 'react-native';
 import { COLORS, SPACING, RADII } from '../../utils/theme';
-import MealCard from '../MealCard';
+import MealCardOverlay from '../MealCardOverlay';
 
 const { width } = Dimensions.get('window');
 
@@ -20,6 +20,16 @@ interface SuggestedSectionProps {
 }
 
 const SuggestedSection: React.FC<SuggestedSectionProps> = ({ mealData, onMealPress }) => {
+  const [favorites, setFavorites] = useState<string[]>([]);
+
+  const handleFavoritePress = (id: string) => {
+    setFavorites(prev => 
+      prev.includes(id) 
+        ? prev.filter(fav => fav !== id)
+        : [...prev, id]
+    );
+  };
+
   return (
     <>
       <View style={styles.sectionHeader}>
@@ -37,15 +47,18 @@ const SuggestedSection: React.FC<SuggestedSectionProps> = ({ mealData, onMealPre
       >
         {mealData.map((meal) => (
           <View key={meal.id} style={styles.mealCardWrapper}>
-            <MealCard
+            <MealCardOverlay
               id={meal.id}
               title={meal.title}
               calories={meal.calories}
               time={meal.time}
               image={meal.image}
               tag={meal.tag}
+              isFavorite={favorites.includes(meal.id)}
+              onFavoritePress={() => handleFavoritePress(meal.id)}
               onPress={() => onMealPress(meal)}
-              width={(width - SPACING.md * 3.5) / 2}
+              width={180}
+              height={220}
             />
           </View>
         ))}
@@ -89,7 +102,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
   },
   mealCardWrapper: {
-    marginRight: SPACING.umd,
+    marginRight: SPACING.sm,
   },
   noMoreSuggestions: {
     flexDirection: 'row',

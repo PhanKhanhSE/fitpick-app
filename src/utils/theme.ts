@@ -24,7 +24,7 @@ export const SPACING = {
 export const RADII = {
     xs: 4,
     sm: 8,
-    umd: 12,
+    umd: 10,
     md: 24,
     xl: 40,
     xxl: 48,

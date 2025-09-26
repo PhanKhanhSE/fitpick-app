@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Platform } from 'react-native';
 import { COLORS, SPACING, RADII } from '../../utils/theme';
-import MealCard from '../MealCard';
+import MealCardVertical from '../MealCardVertical';
 
 const { width } = Dimensions.get('window');
 
@@ -20,6 +20,16 @@ interface MyMenuSectionProps {
 }
 
 const MyMenuSection: React.FC<MyMenuSectionProps> = ({ mealData, onMealPress }) => {
+  const [favorites, setFavorites] = useState<string[]>([]);
+
+  const handleFavoritePress = (id: string) => {
+    setFavorites(prev => 
+      prev.includes(id) 
+        ? prev.filter(fav => fav !== id)
+        : [...prev, id]
+    );
+  };
+
   return (
     <View style={styles.myMenuSection}>
       <View style={[styles.sectionHeader, styles.myMenuSectionHeader]}>
@@ -37,15 +47,18 @@ const MyMenuSection: React.FC<MyMenuSectionProps> = ({ mealData, onMealPress }) 
       >
         {mealData.map((meal) => (
           <View key={meal.id} style={styles.mealCardWrapper}>
-            <MealCard
+            <MealCardVertical
               id={meal.id}
               title={meal.title}
               calories={meal.calories}
               time={meal.time}
               image={meal.image}
               tag={meal.tag}
+              isFavorite={favorites.includes(meal.id)}
+              onFavoritePress={() => handleFavoritePress(meal.id)}
               onPress={() => onMealPress(meal)}
-              width={(width - SPACING.md * 3.5) / 2}
+              width={158}
+              height={175}
             />
           </View>
         ))}
@@ -82,7 +95,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
   },
   mealCardWrapper: {
-    marginRight: SPACING.umd,
+    marginRight: SPACING.sm,
   },
   myMenuSection: {
     backgroundColor: COLORS.primary,

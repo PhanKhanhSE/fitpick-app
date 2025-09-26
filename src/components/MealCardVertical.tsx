@@ -7,14 +7,11 @@ import {
   Image,
   ImageSourcePropType,
   Platform,
-  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADII } from '../utils/theme';
 
-const { width } = Dimensions.get('window');
-
-interface MealCardProps {
+interface MealCardVerticalProps {
   id?: string;
   title: string;
   calories: string;
@@ -25,11 +22,11 @@ interface MealCardProps {
   isFavorite?: boolean;
   onPress?: () => void;
   onFavoritePress?: () => void;
-  width?: number; // Cho phép custom width
-  height?: number; // Cho phép custom height
+  width?: number;
+  height?: number;
 }
 
-const MealCard: React.FC<MealCardProps> = ({
+const MealCardVertical: React.FC<MealCardVerticalProps> = ({
   id,
   title,
   calories,
@@ -40,15 +37,12 @@ const MealCard: React.FC<MealCardProps> = ({
   isFavorite = false,
   onPress,
   onFavoritePress,
-  width: customWidth,
-  height: customHeight,
+  width = 158,
+  height = 175,
 }) => {
-  const cardWidth = customWidth || (width - SPACING.md * 3.5) / 2;
-  const cardHeight = customHeight;
-
   return (
     <TouchableOpacity 
-      style={[styles.container, { width: cardWidth, height: cardHeight }]} 
+      style={[styles.container, { width, height }]} 
       onPress={onPress}
       disabled={isLocked}
     >
@@ -100,7 +94,6 @@ const styles = StyleSheet.create({
     borderRadius: RADII.umd,
     overflow: 'hidden',
     marginBottom: SPACING.xs,
-    gap: -SPACING.xs,
     ...Platform.select({
       android: {
         elevation: 2,
@@ -162,12 +155,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: COLORS.text,
-    marginBottom: SPACING.xs,
+    marginTop: -SPACING.sm,
+    marginLeft: -SPACING.sm,
   },
   info: {
     fontSize: 12,
     color: COLORS.muted,
+    marginLeft: -SPACING.sm,
   },
 });
 
-export default MealCard;
+export default MealCardVertical;
