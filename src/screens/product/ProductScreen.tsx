@@ -1,14 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS, SPACING } from '../utils/theme';
+import { COLORS, SPACING } from '../../utils/theme';
 
-const ExploreScreen: React.FC = () => {
+const ProductScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>Khám phá</Text>
-        <Text style={styles.subtitle}>Tính năng khám phá sẽ được phát triển sớm</Text>
+        <Text style={styles.title}>Hồ sơ</Text>
+        <Text style={styles.subtitle}>Thông tin cá nhân và cài đặt</Text>
       </View>
     </SafeAreaView>
   );
@@ -38,4 +38,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ExploreScreen;
+export default ProductScreen;
