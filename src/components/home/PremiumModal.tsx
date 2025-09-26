@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     paddingHorizontal: 12,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: RADII.umd,
   },
   proTagText: {
     color: "white",
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
     lineHeight: 28,
   },
   comparisonContainer: {
-    marginBottom: SPACING.xl,
+    marginBottom: SPACING.umd,
   },
   tableContainer: {
     position: "relative",

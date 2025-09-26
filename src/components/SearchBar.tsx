@@ -7,7 +7,7 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SPACING, FONTS } from '../utils/theme';
+import { COLORS, RADII, SPACING } from '../utils/theme';
 
 interface SearchBarProps {
   value: string;
@@ -35,7 +35,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
         />
       </View>
       <TouchableOpacity style={styles.filterButton} onPress={onFilterPress}>
-        <Ionicons name="options" size={20} color="white" />
+        <Ionicons name="menu" size={24} color={COLORS.text} />
       </TouchableOpacity>
     </View>
   );
@@ -45,42 +45,41 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     paddingHorizontal: SPACING.md,
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.md,
     alignItems: 'center',
+    paddingTop: SPACING.sm,
   },
   searchBar: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'white',
-    borderRadius: 25,
+    borderRadius: RADII.xxl,
     paddingHorizontal: SPACING.md,
-    paddingVertical: 6,
     marginRight: SPACING.sm,
     borderWidth: 1,
-    borderColor: COLORS.primary,
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: SPACING.sm,
-    fontSize: FONTS.base,
-    color: COLORS.text,
-  },
-  filterButton: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 25,
-    width: 48,
-    height: 48,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 2,
+    borderColor: COLORS.border,
+    elevation: 1,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 1,
     },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.05,
     shadowRadius: 2,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: SPACING.sm,
+    fontSize: 16,
+    color: COLORS.text,
+  },
+  filterButton: {
+    backgroundColor: COLORS.background,
+    width: 48,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

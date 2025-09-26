@@ -6,10 +6,10 @@ import { COLORS } from '../utils/theme';
 
 // Import screens
 import HomeScreen from '../screens/home/HomeScreen';
-import ExploreScreen from '../screens/ExploreScreen';
-import MenuScreen from '../screens/MenuScreen';
+import SearchScreen from '../screens/search/SearchScreen';
 import FavoritesScreen from '../screens/favorite/FavoritesScreen';
-import ProfileScreen from '../screens/ProfileScreen';
+import ProductScreen from '../screens/product/ProductScreen';
+import MenuScreen from '../screens/menu/MenuScreen';
 
 const Tab = createBottomTabNavigator();
  
@@ -72,7 +72,7 @@ const BottomTabNavigator: React.FC = () => {
       />
       <Tab.Screen 
         name="Explore" 
-        component={ExploreScreen}
+        component={SearchScreen}
         options={{
           tabBarLabel: 'Tìm kiếm',
         }}
@@ -93,7 +93,7 @@ const BottomTabNavigator: React.FC = () => {
       />
       <Tab.Screen 
         name="Profile" 
-        component={ProfileScreen}
+        component={ProductScreen}
         options={{
           tabBarLabel: 'Sản phẩm',
         }}

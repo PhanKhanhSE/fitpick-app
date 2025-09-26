@@ -27,6 +27,7 @@ export const RADII = {
     umd: 12,
     md: 24,
     xl: 40,
+    xxl: 48,
 };
 
 export const FONTS = {
