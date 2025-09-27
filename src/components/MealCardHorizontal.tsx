@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
     marginLeft: -SPACING.sm,
   },
   info: {
-    fontSize: 12,
+    fontSize: 10,
     color: COLORS.muted,
     marginLeft: -SPACING.sm,
   },

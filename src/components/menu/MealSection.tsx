@@ -72,9 +72,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.md,
     backgroundColor: COLORS.background,
+    paddingLeft: 18,
   },
   title: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '600',
     color: COLORS.text,
     marginBottom: 4,
@@ -84,14 +85,14 @@ const styles = StyleSheet.create({
     color: COLORS.muted,
   },
   mealsList: {
-    backgroundColor: 'white',
     marginHorizontal: SPACING.md,
+    marginTop: -SPACING.md,
   },
   divider: {
     height: 1,
-    backgroundColor: '#E5E5E5',
+    backgroundColor: COLORS.under_process,
     marginHorizontal: SPACING.md,
-    marginVertical: SPACING.lg,
+    marginVertical: SPACING.xs,
   },
 });
 

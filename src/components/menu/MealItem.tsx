@@ -58,7 +58,7 @@ const MealItem: React.FC<MealItemProps> = ({
       </View>
 
       <TouchableOpacity style={styles.optionsButton} onPress={onOptionsPress}>
-        <Ionicons name="ellipsis-vertical" size={20} color={COLORS.muted} />
+        <Ionicons name="ellipsis-vertical" size={20} color={COLORS.text} />
       </TouchableOpacity>
     </TouchableOpacity>
   );
@@ -68,8 +68,9 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.md,
+    paddingHorizontal: SPACING.xs,
     backgroundColor: COLORS.background,
     marginBottom: 1,
   },
@@ -90,8 +91,8 @@ const styles = StyleSheet.create({
     borderColor: COLORS.primary,
   },
   image: {
-    width: 60,
-    height: 60,
+    width: 101,
+    height: 101,
     borderRadius: 8,
     marginRight: SPACING.md,
     backgroundColor: COLORS.border,
@@ -100,17 +101,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     color: COLORS.text,
     marginBottom: 4,
   },
   info: {
-    fontSize: 14,
+    fontSize: 12,
     color: COLORS.muted,
   },
   optionsButton: {
-    padding: SPACING.xs,
+    paddingLeft: SPACING.sm,
   },
 });
 

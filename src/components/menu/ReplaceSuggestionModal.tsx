@@ -8,24 +8,19 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADII } from '../../utils/theme';
-import { FoodItem } from './FavoriteCard';
 
-interface FavoriteActionModalProps {
+interface ReplaceSuggestionModalProps {
   visible: boolean;
-  item: FoodItem | null;
   onClose: () => void;
-  onAddToMealPlan: () => void;
-  onAddToProductList: () => void;
-  onDelete: () => void;
+  onReplaceByGoal: () => void;
+  onReplaceByFavorites: () => void;
 }
 
-const FavoriteActionModal: React.FC<FavoriteActionModalProps> = ({
+const ReplaceSuggestionModal: React.FC<ReplaceSuggestionModalProps> = ({
   visible,
-  item,
   onClose,
-  onAddToMealPlan,
-  onAddToProductList,
-  onDelete,
+  onReplaceByGoal,
+  onReplaceByFavorites,
 }) => {
   const insets = useSafeAreaInsets();
   
@@ -44,26 +39,19 @@ const FavoriteActionModal: React.FC<FavoriteActionModalProps> = ({
           activeOpacity={1}
         />
         <View style={[styles.modalContent, { paddingBottom: insets.bottom + SPACING.md }]}>
-        <TouchableOpacity
-          style={styles.modalItem}
-          onPress={onAddToMealPlan}
-        >
-          <Text style={styles.modalItemText}>Thêm vào thực đơn của tôi</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.modalItem}
-          onPress={onAddToProductList}
-        >
-          <Text style={styles.modalItemText}>Thêm vào danh sách sản phẩm</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity
-          style={[styles.lastModalItem, styles.deleteItem]}
-          onPress={onDelete}
-        >
-          <Text style={styles.deleteText}>Xóa</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.modalItem}
+            onPress={onReplaceByGoal}
+          >
+            <Text style={styles.modalItemText}>Thay đổi theo gợi ý</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.modalItem, styles.lastModalItem]}
+            onPress={onReplaceByFavorites}
+          >
+            <Text style={styles.modalItemText}>Thay đổi theo danh sách yêu thích</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </Modal>
@@ -74,6 +62,7 @@ const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
     justifyContent: 'flex-end',
+    marginBottom: -SPACING.lg,
   },
   modalOverlay: {
     position: 'absolute',
@@ -90,25 +79,18 @@ const styles = StyleSheet.create({
     borderTopRightRadius: RADII.md,
   },
   modalItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: SPACING.md,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
   },
   lastModalItem: {
-    paddingVertical: SPACING.md,
     borderBottomWidth: 0,
   },
   modalItemText: {
     fontSize: 16,
     color: COLORS.text,
-  },
-  deleteItem: {
-    backgroundColor: '#fee',
-  },
-  deleteText: {
-    fontSize: 16,
-    color: 'red',
+    flex: 1,
   },
 });
 
-export default FavoriteActionModal;
+export default ReplaceSuggestionModal;

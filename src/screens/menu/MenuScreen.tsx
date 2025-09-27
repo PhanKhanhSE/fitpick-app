@@ -9,11 +9,27 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADII } from '../../utils/theme';
-import MealSection from '../../components/menu/MealSection';
+import { 
+  MealSection, 
+  MealItemActionModal, 
+  MenuActionModal,
+  ConfirmDeleteModal, 
+  ReplaceSuggestionModal, 
+  SuccessModal 
+} from '../../components/menu';
 
 const MenuScreen: React.FC = () => {
   const [selectedMeals, setSelectedMeals] = useState<string[]>([]);
   const [currentDate, setCurrentDate] = useState('Thứ Hai, 8 tháng 9');
+  
+  // Modal states
+  const [selectedMeal, setSelectedMeal] = useState<any>(null);
+  const [showMealActionModal, setShowMealActionModal] = useState(false);
+  const [showMenuActionModal, setShowMenuActionModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showReplaceModal, setShowReplaceModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   // Sample data
   const breakfastMeals = [
@@ -73,15 +89,91 @@ const MenuScreen: React.FC = () => {
   };
 
   const handleOptionsPress = (meal: any) => {
-    console.log('Options pressed for:', meal.title);
+    setSelectedMeal(meal);
+    setShowMealActionModal(true);
+  };
+
+  const handleMorePress = () => {
+    setShowMenuActionModal(true);
+  };
+
+  // Modal handlers
+  const handleCloseModal = () => {
+    setShowMealActionModal(false);
+    setShowMenuActionModal(false);
+    setShowDeleteModal(false);
+    setShowReplaceModal(false);
+    setShowSuccessModal(false);
+    setSelectedMeal(null);
+  };
+
+  const handleAddToFavorites = () => {
+    setShowMealActionModal(false);
+    setSuccessMessage('Đã thêm vào yêu thích');
+    setShowSuccessModal(true);
+  };
+
+  const handleAddToProductList = () => {
+    setShowMealActionModal(false);
+    setSuccessMessage('Đã thêm vào danh sách sản phẩm');
+    setShowSuccessModal(true);
+  };
+
+  const handleShowReplaceModal = () => {
+    setShowMealActionModal(false);
+    setShowReplaceModal(true);
+  };
+
+  const handleReplaceFromFavorites = () => {
+    setShowMealActionModal(false);
+    setSuccessMessage('Đã thay đổi theo danh sách yêu thích');
+    setShowSuccessModal(true);
+  };
+
+  const handleShowDeleteModal = () => {
+    setShowMealActionModal(false);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = () => {
+    setShowDeleteModal(false);
+    setSuccessMessage('Đã xóa món thành công');
+    setShowSuccessModal(true);
+  };
+
+  const handleReplaceByGoal = () => {
+    setShowReplaceModal(false);
+    setSuccessMessage('Đã thay đổi theo gợi ý');
+    setShowSuccessModal(true);
+  };
+
+  const handleReplaceByFavorites = () => {
+    setShowReplaceModal(false);
+    setSuccessMessage('Đã thay đổi theo danh sách yêu thích');
+    setShowSuccessModal(true);
+  };
+
+  const handleShowDailyView = () => {
+    setShowMenuActionModal(false);
+    setSuccessMessage('Chuyển sang hiển thị theo ngày');
+    setShowSuccessModal(true);
+  };
+
+  const handleShowWeeklyView = () => {
+    setShowMenuActionModal(false);
+    setSuccessMessage('Tính năng PRO - vui lòng nâng cấp');
+    setShowSuccessModal(true);
   };
 
   const handleAddAllToShoppingList = () => {
-    console.log('Add all to shopping list');
+    setSuccessMessage('Đã thêm tất cả vào danh sách sản phẩm');
+    setShowSuccessModal(true);
   };
 
   const handleClearAll = () => {
     setSelectedMeals([]);
+    setSuccessMessage('Đã xóa tất cả thành công');
+    setShowSuccessModal(true);
   };
 
   const handleDateNavigation = (direction: 'prev' | 'next') => {
@@ -94,8 +186,8 @@ const MenuScreen: React.FC = () => {
       <View style={styles.stickyHeader}>
         <View style={styles.titleContainer}>
           <Text style={styles.title}>Thực đơn của tôi</Text>
-          <TouchableOpacity style={styles.moreButton}>
-            <Ionicons name="ellipsis-vertical" size={24} color={COLORS.text} />
+          <TouchableOpacity style={styles.moreButton} onPress={handleMorePress}>
+            <Ionicons name="ellipsis-vertical" size={20} color={COLORS.text} />
           </TouchableOpacity>
         </View>
         
@@ -145,7 +237,7 @@ const MenuScreen: React.FC = () => {
           totalCalories="0 kcal"
           meals={dinnerMeals}
           selectedMeals={selectedMeals}
-          showDivider={false}
+          showDivider={true}
           onMealPress={handleMealPress}
           onToggleSelect={handleToggleSelect}
           onOptionsPress={handleOptionsPress}
@@ -172,6 +264,44 @@ const MenuScreen: React.FC = () => {
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
+      
+      {/* Modals */}
+      <MealItemActionModal
+        visible={showMealActionModal}
+        item={selectedMeal}
+        onClose={handleCloseModal}
+        onAddToFavorites={handleAddToFavorites}
+        onAddToProductList={handleAddToProductList}
+        onReplaceWithSuggestion={handleShowReplaceModal}
+        onReplaceFromFavorites={handleReplaceFromFavorites}
+        onDelete={handleShowDeleteModal}
+      />
+      
+      <MenuActionModal
+        visible={showMenuActionModal}
+        onClose={handleCloseModal}
+        onShowDailyView={handleShowDailyView}
+        onShowWeeklyView={handleShowWeeklyView}
+      />
+      
+      <ConfirmDeleteModal
+        visible={showDeleteModal}
+        onClose={handleCloseModal}
+        onConfirm={handleConfirmDelete}
+      />
+      
+      <ReplaceSuggestionModal
+        visible={showReplaceModal}
+        onClose={handleCloseModal}
+        onReplaceByGoal={handleReplaceByGoal}
+        onReplaceByFavorites={handleReplaceByFavorites}
+      />
+      
+      <SuccessModal
+        visible={showSuccessModal}
+        onClose={handleCloseModal}
+        message={successMessage}
+      />
     </SafeAreaView>
   );
 };
@@ -180,9 +310,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+    marginBottom: -SPACING.lg,
   },
   stickyHeader: {
     backgroundColor: COLORS.background,
+    marginBottom: -SPACING.md,
   },
   titleContainer: {
     flexDirection: 'row',
@@ -192,14 +324,16 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: '600',
     color: COLORS.text,
     flex: 1,
     textAlign: 'center',
-    marginHorizontal: SPACING.md,
   },
   moreButton: {
     padding: SPACING.xs,
+    position: 'absolute',
+    right: SPACING.umd,
+    top: SPACING.xs,
   },
   dateContainer: {
     flexDirection: 'row',
@@ -212,6 +346,8 @@ const styles = StyleSheet.create({
   },
   dateNavButton: {
     padding: SPACING.xs,
+    marginLeft: SPACING.md,
+    marginRight: SPACING.md,
   },
   dateText: {
     fontSize: 14,
@@ -225,30 +361,31 @@ const styles = StyleSheet.create({
   actionButtons: {
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.lg,
+    marginBottom: -SPACING.xl,
   },
   primaryButton: {
     backgroundColor: COLORS.primary,
-    borderRadius: RADII.sm,
+    borderRadius: RADII.umd,
     paddingVertical: SPACING.md,
     alignItems: 'center',
     marginBottom: SPACING.md,
   },
   primaryButtonText: {
     color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '500',
   },
   secondaryButton: {
     borderWidth: 2,
     borderColor: COLORS.primary,
-    borderRadius: RADII.sm,
+    borderRadius: RADII.umd,
     paddingVertical: SPACING.md,
     alignItems: 'center',
   },
   secondaryButtonText: {
     color: COLORS.primary,
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '500',
   },
   bottomSpacing: {
     height: SPACING.xl,
