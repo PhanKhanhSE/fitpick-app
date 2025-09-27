@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Platform } from 'react-native';
 import { COLORS, SPACING, RADII } from '../../utils/theme';
-import MealCardVertical from '../MealCardVertical';
+import MealCardVertical from '../MealCardHorizontal';
 
 const { width } = Dimensions.get('window');
 

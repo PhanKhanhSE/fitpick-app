@@ -26,11 +26,8 @@ const SuggestedSection: React.FC<SuggestedSectionProps> = ({
   onMealPress,
   onFavoritePress,
 }) => {
-  const renderSuggestedItem = ({ item, index }: { item: MealData; index: number }) => (
-    <View style={[
-      styles.suggestedItem,
-      index % 2 === 0 ? styles.suggestedItemLeft : styles.suggestedItemRight
-    ]}>
+  const renderSuggestedItem = ({ item }: { item: MealData }) => (
+    <View style={styles.suggestedItem}>
       <MealCardOverlay
         id={item.id}
         title={item.title}
@@ -43,8 +40,6 @@ const SuggestedSection: React.FC<SuggestedSectionProps> = ({
         onPress={() => onMealPress(item)}
         onFavoritePress={() => onFavoritePress(item.id)}
         layout="vertical"
-        width={158}
-        height={193}
       />
     </View>
   );
@@ -59,6 +54,7 @@ const SuggestedSection: React.FC<SuggestedSectionProps> = ({
         numColumns={2}
         scrollEnabled={false}
         contentContainerStyle={styles.gridList}
+        columnWrapperStyle={styles.row}
       />
     </View>
   );
@@ -76,18 +72,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
   },
   gridList: {
-    paddingHorizontal: SPACING.md,
+    paddingHorizontal: SPACING.xs,
+    marginLeft: SPACING.sm, // Đảm bảo khoảng cách đều giữa các card
+  },
+  row: {
     justifyContent: 'space-between',
+    marginBottom: SPACING.xs,
   },
   suggestedItem: {
     flex: 1,
-    marginBottom: SPACING.sm,
-  },
-  suggestedItemLeft: {
-    marginRight: SPACING.sm / 2,
-  },
-  suggestedItemRight: {
-    marginLeft: SPACING.sm / 2,
+    justifyContent: 'center',
   },
 });
 

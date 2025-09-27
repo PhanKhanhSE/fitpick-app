@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
-import MealCardVertical from './MealCardVertical';
+import MealCardVertical from './MealCardHorizontal';
 import MealCardOverlay from './MealCardOverlay';
 import { SPACING } from '../utils/theme';
 

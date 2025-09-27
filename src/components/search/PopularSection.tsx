@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList } from 'react-native';
 import { COLORS, SPACING } from '../../utils/theme';
-import MealCardVertical from '../MealCardVertical';
+import MealCardVertical from '../MealCardHorizontal';
 
 interface MealData {
   id: string;
