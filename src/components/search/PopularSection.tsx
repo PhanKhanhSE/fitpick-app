@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList } from 'react-native';
 import { COLORS, SPACING } from '../../utils/theme';
-import MealCard from '../MealCard';
+import MealCardVertical from '../MealCardHorizontal';
 
 interface MealData {
   id: string;
@@ -28,7 +28,7 @@ const PopularSection: React.FC<PopularSectionProps> = ({
 }) => {
   const renderPopularItem = ({ item }: { item: MealData }) => (
     <View style={styles.popularItem}>
-      <MealCard
+      <MealCardVertical
         id={item.id}
         title={item.title}
         calories={item.calories}
@@ -39,7 +39,8 @@ const PopularSection: React.FC<PopularSectionProps> = ({
         isFavorite={favorites.includes(item.id)}
         onPress={() => onMealPress(item)}
         onFavoritePress={() => onFavoritePress(item.id)}
-        width={160}
+        width={158}
+        height={175}
       />
     </View>
   );
@@ -67,14 +68,15 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: COLORS.text,
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.umd,
+    marginTop: SPACING.umd,
     paddingHorizontal: SPACING.md,
   },
   horizontalList: {
     paddingHorizontal: SPACING.md,
   },
   popularItem: {
-    marginRight: SPACING.md,
+    marginRight: SPACING.sm,
   },
 });
 

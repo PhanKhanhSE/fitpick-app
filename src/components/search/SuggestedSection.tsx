@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList } from 'react-native';
 import { COLORS, SPACING } from '../../utils/theme';
-import MealCard from '../MealCard';
+import MealCardOverlay from '../MealCardOverlay';
 
 interface MealData {
   id: string;
@@ -28,7 +28,7 @@ const SuggestedSection: React.FC<SuggestedSectionProps> = ({
 }) => {
   const renderSuggestedItem = ({ item }: { item: MealData }) => (
     <View style={styles.suggestedItem}>
-      <MealCard
+      <MealCardOverlay
         id={item.id}
         title={item.title}
         calories={item.calories}
@@ -39,6 +39,7 @@ const SuggestedSection: React.FC<SuggestedSectionProps> = ({
         isFavorite={favorites.includes(item.id)}
         onPress={() => onMealPress(item)}
         onFavoritePress={() => onFavoritePress(item.id)}
+        layout="vertical"
       />
     </View>
   );
@@ -53,6 +54,7 @@ const SuggestedSection: React.FC<SuggestedSectionProps> = ({
         numColumns={2}
         scrollEnabled={false}
         contentContainerStyle={styles.gridList}
+        columnWrapperStyle={styles.row}
       />
     </View>
   );
@@ -66,16 +68,20 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: COLORS.text,
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.umd,
     paddingHorizontal: SPACING.md,
   },
   gridList: {
-    paddingHorizontal: SPACING.md,
+    paddingHorizontal: SPACING.xs,
+    marginLeft: SPACING.sm, // Đảm bảo khoảng cách đều giữa các card
+  },
+  row: {
+    justifyContent: 'space-between',
+    marginBottom: SPACING.xs,
   },
   suggestedItem: {
     flex: 1,
-    marginHorizontal: SPACING.xs,
-    marginBottom: SPACING.sm,
+    justifyContent: 'center',
   },
 });
 

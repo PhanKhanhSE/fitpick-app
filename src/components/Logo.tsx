@@ -1,6 +1,6 @@
 import { Text, StyleSheet } from 'react-native';
 
-export const Logo = () => (
+ const Logo = () => (
     <Text style={styles.logo}>FIT{"\n"}PICK</Text>
 );
 
@@ -14,3 +14,5 @@ const styles = StyleSheet.create({
         lineHeight: 68,
     },
 });
+
+export default Logo;

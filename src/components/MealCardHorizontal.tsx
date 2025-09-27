@@ -7,14 +7,11 @@ import {
   Image,
   ImageSourcePropType,
   Platform,
-  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADII } from '../utils/theme';
 
-const { width } = Dimensions.get('window');
-
-interface MealCardProps {
+interface MealCardVerticalProps {
   id?: string;
   title: string;
   calories: string;
@@ -25,10 +22,11 @@ interface MealCardProps {
   isFavorite?: boolean;
   onPress?: () => void;
   onFavoritePress?: () => void;
-  width?: number; // Cho phép custom width
+  width?: number;
+  height?: number;
 }
 
-const MealCard: React.FC<MealCardProps> = ({
+const MealCardVertical: React.FC<MealCardVerticalProps> = ({
   id,
   title,
   calories,
@@ -39,13 +37,12 @@ const MealCard: React.FC<MealCardProps> = ({
   isFavorite = false,
   onPress,
   onFavoritePress,
-  width: customWidth,
+  width = 158,
+  height = 175,
 }) => {
-  const cardWidth = customWidth || (width - SPACING.md * 3.5) / 2;
-
   return (
     <TouchableOpacity 
-      style={[styles.container, { width: cardWidth }]} 
+      style={[styles.container, { width, height }]} 
       onPress={onPress}
       disabled={isLocked}
     >
@@ -67,7 +64,7 @@ const MealCard: React.FC<MealCardProps> = ({
           <Ionicons 
             name={isFavorite ? "heart" : "heart-outline"} 
             size={20} 
-            color={COLORS.primary} 
+            color={isFavorite ? COLORS.primary : COLORS.primary} 
           />
         </TouchableOpacity>
         
@@ -94,10 +91,9 @@ const MealCard: React.FC<MealCardProps> = ({
 const styles = StyleSheet.create({
   container: {
     backgroundColor: 'white',
-    borderRadius: RADII.sm,
+    borderRadius: RADII.umd,
     overflow: 'hidden',
     marginBottom: SPACING.xs,
-    gap: -SPACING.xs,
     ...Platform.select({
       android: {
         elevation: 2,
@@ -136,8 +132,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: SPACING.sm,
     right: SPACING.sm,
-    backgroundColor: COLORS.background,
-    borderRadius: 15,
+    backgroundColor: 'white',
+    borderRadius: 16,
     padding: SPACING.xs,
   },
   lockContainer: {
@@ -152,17 +148,21 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: SPACING.md,
+    flex: 1,
+    paddingRight: SPACING.sm,
   },
   title: {
     fontSize: 14,
     fontWeight: '600',
     color: COLORS.text,
-    marginBottom: SPACING.xs,
+    marginTop: -SPACING.sm,
+    marginLeft: -SPACING.sm,
   },
   info: {
     fontSize: 12,
     color: COLORS.muted,
+    marginLeft: -SPACING.sm,
   },
 });
 
-export default MealCard;
+export default MealCardVertical;

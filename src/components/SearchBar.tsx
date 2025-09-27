@@ -48,6 +48,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
     alignItems: 'center',
     paddingTop: SPACING.sm,
+    backgroundColor: COLORS.background,
   },
   searchBar: {
     flex: 1,
