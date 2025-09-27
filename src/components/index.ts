@@ -1,5 +1,4 @@
 // Export meal card components
-export { default as MealCard } from './MealCard';
 export { default as MealCardVertical } from './MealCardHorizontal';
 export { default as MealCardOverlay } from './MealCardOverlay';
 

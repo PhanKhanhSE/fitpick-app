@@ -1,168 +1,191 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
+  FlatList,
   TouchableOpacity,
-  Image,
-  Dimensions,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SPACING, RADII } from '../../utils/theme';
-import SearchBar from '../../components/SearchBar';
-import AppButton from '../../components/AppButton';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../types/navigation';
-
-
-
-const { width } = Dimensions.get('window');
-
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-
-interface FoodItem {
-  id: string;
-  name: string;
-  calories: number;
-  weight: number;
-  image: any;
-}
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import { COLORS, SPACING, RADII } from "../../utils/theme";
+import {
+  FavoriteCard,
+  FavoriteActionModal,
+  FavoriteBottomBar,
+  MealPlannerModal,
+  FoodItem,
+} from "../../components/fav";
 
 const FavoritesScreen: React.FC = () => {
-  const [searchText, setSearchText] = useState('');
-  const navigation = useNavigation<NavigationProp>();
+  const [multiSelect, setMultiSelect] = useState(false);
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [actionItem, setActionItem] = useState<FoodItem | null>(null);
+  const [showMealPlanner, setShowMealPlanner] = useState(false);
 
-  const handleFilterPress = () => {
-    // Handle filter button press
-    console.log('Filter pressed in favorites');
-  };
-
-  const handleDeleteFavorites = () => {
-    // Handle delete favorites
-    console.log('Delete favorites pressed');
-  };
-
-  const handleSuggestMeals = () => {
-    // Handle suggest meals
-    console.log('Suggest meals pressed');
-  };
-
-  const handleMealPress = (item: FoodItem) => {
-    // Convert FoodItem to meal format for detail screen
-    const meal = {
-      id: item.id,
-      title: item.name,
-      calories: `${item.calories} kcal`,
-      price: `${item.weight.toLocaleString()}đ`, // Using weight as price for now
-      image: item.image,
-      cookingTime: '15 phút',
-    };
-    navigation.navigate('MealDetail', { meal });
-  };
-
-  // Dữ liệu mẫu cho các món ăn yêu thích
+  // Dữ liệu mẫu
   const favoriteItems: FoodItem[] = [
     {
-      id: '1',
-      name: 'Salad cải kale',
-      calories: 173,
-      weight: 25.000,
-      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' }, // Thay thế bằng hình ảnh thực tế
+      id: "1",
+      name: "Cá hồi sốt tiêu kèm bơ xanh",
+      calories: 200,
+      weight: 250,
+      image: {
+        uri: "https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg",
+      },
     },
     {
-      id: '2',
-      name: 'Ức gà sốt me rang tiêu xay',
+      id: "2",
+      name: "Ức gà sốt me rang tiêu xay",
       calories: 700,
-      weight: 45.000,
-      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' }, // Thay thế bằng hình ảnh thực tế
+      weight: 45,
+      image: {
+        uri: "https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg",
+      },
     },
     {
-      id: '3',
-      name: 'Cơm gạo lứt bò nướng',
-      calories: 300,
-      weight: 30.000,
-      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' }, // Thay thế bằng hình ảnh thực tế
+      id: "3",
+      name: "Cơm gạo lứt bò nướng",
+      calories: 550,
+      weight: 30,
+      image: {
+        uri: "https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg",
+      },
     },
     {
-      id: '4',
-      name: 'Bánh yến mạch',
+      id: "4",
+      name: "Bánh yến mạch",
       calories: 300,
-      weight: 30.000,
-      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' }, // Thay thế bằng hình ảnh thực tế
+      weight: 30,
+      image: {
+        uri: "https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg",
+      },
     },
     {
-      id: '5',
-      name: 'Bánh yến mạch',
-      calories: 300,
-      weight: 30.000,
-      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' }, // Thay thế bằng hình ảnh thực tế
+      id: "5",
+      name: "Salad bí đỏ",
+      calories: 200,
+      weight: 25,
+      image: {
+        uri: "https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg",
+      },
     },
     {
-      id: '6',
-      name: 'Bánh yến mạch',
-      calories: 300,
-      weight: 30.000,
-      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' }, // Thay thế bằng hình ảnh thực tế
+      id: "6",
+      name: "Canh rau củ thập cẩm",
+      calories: 180,
+      weight: 300,
+      image: {
+        uri: "https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg",
+      },
+    },
+    {
+      id: "7",
+      name: "Gỏi cuốn tôm thịt",
+      calories: 250,
+      weight: 35,
+      image: {
+        uri: "https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg",
+      },
+    },
+    {
+      id: "8",
+      name: "Phở gà",
+      calories: 400,
+      weight: 350,
+      image: {
+        uri: "https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg",
+      },
     },
   ];
 
-  const filteredItems = favoriteItems.filter(item =>
-    item.name.toLowerCase().includes(searchText.toLowerCase())
-  );
+  const toggleSelect = (id: string) => {
+    setSelectedItems((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
 
-  const renderFoodItem = (item: FoodItem) => (
-    <TouchableOpacity key={item.id} style={styles.foodItem} onPress={() => handleMealPress(item)}>
-      <Image source={item.image} style={styles.foodImage} />
-      <View style={styles.foodInfo}>
-        <Text style={styles.foodName}>{item.name}</Text>
-        <Text style={styles.foodDetails}>
-          {item.calories} kcal | {item.weight.toLocaleString()}g
-        </Text>
-      </View>
-      <TouchableOpacity style={styles.addButton}>
-        <Ionicons name="heart" size={24} color={COLORS.primary} />
-      </TouchableOpacity>
-    </TouchableOpacity>
-  );
+  const handleMealPlannerSave = (selectedDays: string[], mealType: string) => {
+    // Xử lý lưu vào meal planner
+    console.log("Saving to meal planner:", {
+      selectedDays,
+      mealType,
+      item: actionItem,
+    });
+  };
+
+  const renderFoodCard = ({ item }: { item: FoodItem }) => {
+    const isSelected = selectedItems.includes(item.id);
+    return (
+      <FavoriteCard
+        item={item}
+        multiSelect={multiSelect}
+        isSelected={isSelected}
+        onPress={() =>
+          multiSelect
+            ? toggleSelect(item.id)
+            : console.log("Navigate to detail")
+        }
+        onMorePress={() => setActionItem(item)}
+      />
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Món ăn yêu thích</Text>
+        <Text style={styles.title}>Yêu thích</Text>
       </View>
+      <TouchableOpacity onPress={() => setMultiSelect(!multiSelect)}>
+        <Text style={styles.actionText}>
+          {multiSelect ? "Bỏ chọn tất cả" : "Chọn nhiều món"}
+        </Text>
+      </TouchableOpacity>
 
-      {/* Search Bar */}
-      <SearchBar
-        value={searchText}
-        onChangeText={setSearchText}
-        placeholder="Tìm kiếm"
-        onFilterPress={handleFilterPress}
+      {/* Grid danh sách */}
+
+      <FlatList
+        data={favoriteItems}
+        renderItem={renderFoodCard}
+        keyExtractor={(item) => item.id}
+        numColumns={2}
+        contentContainerStyle={styles.list}
+        columnWrapperStyle={styles.row}
       />
 
-      {/* Food List */}
-      <ScrollView style={styles.foodList} showsVerticalScrollIndicator={false}>
-        {filteredItems.map(renderFoodItem)}
-      </ScrollView>
+      {/* Components */}
+      <FavoriteBottomBar
+        visible={multiSelect}
+        selectedCount={selectedItems.length}
+        onAddToProductList={() => console.log("Add to product list")}
+        onDelete={() => console.log("Delete selected items")}
+      />
 
-      {/* Bottom Buttons */}
-      <View style={styles.bottomContainer}>
-        <AppButton
-          title="Xóa khỏi yêu thích"
-          onPress={handleDeleteFavorites}
-          filled={true}
-          style={styles.primaryButton}
-        />
-        <AppButton
-          title="Gợi ý món ăn"
-          onPress={handleSuggestMeals}
-          filled={false}
-          style={styles.secondaryButton}
-        />
-      </View>
+      <FavoriteActionModal
+        visible={!!actionItem}
+        item={actionItem}
+        onClose={() => setActionItem(null)}
+        onAddToMealPlan={() => {
+          setActionItem(null);
+          setShowMealPlanner(true);
+        }}
+        onAddToProductList={() => {
+          console.log("Add to product list");
+          setActionItem(null);
+        }}
+        onDelete={() => {
+          console.log("Delete item");
+          setActionItem(null);
+        }}
+      />
+
+      <MealPlannerModal
+        visible={showMealPlanner}
+        item={actionItem}
+        onClose={() => setShowMealPlanner(false)}
+        onSave={handleMealPlannerSave}
+      />
     </SafeAreaView>
   );
 };
@@ -171,86 +194,34 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+    paddingBottom: -SPACING.lg,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.md,
+    paddingVertical: SPACING.xs,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  backButtonText: {
-    fontSize: 24,
-    color: COLORS.text,
-  },
-  headerTitle: {
-    flex: 1,
+  title: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.text,
-    textAlign: 'center',
+    textAlign: "center",
   },
-  editButtonText: {
-    fontSize: 20,
-    color: COLORS.text,
-  },
-  foodList: {
-    flex: 1,
-    paddingHorizontal: SPACING.md,
-  },
-  foodItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: SPACING.md,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  foodImage: {
-    width: 100,
-    height: 100,
-    borderRadius: RADII.sm,
-    marginRight: SPACING.md,
-  },
-  foodInfo: {
-    flex: 1,
-  },
-  foodName: {
-    fontSize: 16,
-    fontWeight: '600',
+  actionText: {
     color: COLORS.primary,
-    marginBottom: SPACING.xs,
-  },
-  foodDetails: {
     fontSize: 14,
-    color: COLORS.textDim,
+    textAlign: "right",
+    paddingTop: -SPACING.lg,
+    paddingBottom: SPACING.sm,
+    marginRight: SPACING.md,
+    textDecorationLine: "underline",
   },
-  addButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  addButtonText: {
-    fontSize: 24,
-    color: COLORS.textDim,
-    fontWeight: '300',
-  },
-  bottomContainer: {
+  list: {
     paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.md,
-    marginBottom: -40,
+    paddingBottom: 100,
   },
-  primaryButton: {
-    marginBottom: SPACING.md,
-  },
-  secondaryButton: {
-    borderColor: COLORS.primary,
+  row: {
+    justifyContent: 'space-between',
+    paddingHorizontal: 0,
   },
 });
 
