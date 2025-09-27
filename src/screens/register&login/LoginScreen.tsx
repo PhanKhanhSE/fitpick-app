@@ -92,12 +92,12 @@ const LoginScreen = () => {
                 >
                   <Ionicons
                     name={showPassword ? "eye-off" : "eye"}
-                    size={20}
+                    size={18}
                     color={COLORS.muted}
                   />
                 </TouchableOpacity>
               </View>
-            </View>
+            </View> 
 
             {/* Remember password & Forgot password */}
             <View style={styles.optionsRow}>
@@ -152,7 +152,7 @@ const LoginScreen = () => {
 };
 
 export default LoginScreen;
-
+         
 const styles = StyleSheet.create({
   container: {
     flex: 1,

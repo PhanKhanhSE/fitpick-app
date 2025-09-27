@@ -136,15 +136,14 @@ const FavoritesScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Yêu thích</Text>
-         <TouchableOpacity onPress={() => setMultiSelect(!multiSelect)}>
+      </View>
+
+      {/* Grid danh sách */}
+      <TouchableOpacity onPress={() => setMultiSelect(!multiSelect)}>
         <Text style={styles.actionText}>
           {multiSelect ? "Bỏ chọn tất cả" : "Chọn nhiều món"}
         </Text>
       </TouchableOpacity>
-      </View>
-     
-
-      {/* Grid danh sách */}
 
       <FlatList
         data={favoriteItems}
@@ -200,17 +199,13 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.xs,
-    
   },
   title: {
     fontSize: 18,
     fontWeight: "600",
     color: COLORS.text,
     textAlign: "center",
-    paddingTop: SPACING.sm,
-    marginBottom: SPACING.lg,
-    borderColor: COLORS.primary,
-    borderWidth: 2,
+    paddingTop: SPACING.md,
   },
   actionText: {
     color: COLORS.primary,
@@ -221,15 +216,13 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING.sm,
     marginRight: SPACING.md,
     textDecorationLine: "underline",
-    borderColor: 'black',
-    borderWidth: 1,
   },
   list: {
     paddingHorizontal: SPACING.md,
     paddingBottom: 100,
   },
   row: {
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
     paddingHorizontal: 0,
   },
 });

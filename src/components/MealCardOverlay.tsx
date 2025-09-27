@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
     textShadowRadius: 2,
   },
   info: {
-    fontSize: 12,
+    fontSize: 10,
     color: 'rgba(255, 255, 255, 0.9)',
     textAlign: 'right',
     marginLeft: -SPACING.sm,
