@@ -132,16 +132,17 @@ const FavoritesScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Yêu thích</Text>
-      </View>
-      <TouchableOpacity onPress={() => setMultiSelect(!multiSelect)}>
+         <TouchableOpacity onPress={() => setMultiSelect(!multiSelect)}>
         <Text style={styles.actionText}>
           {multiSelect ? "Bỏ chọn tất cả" : "Chọn nhiều món"}
         </Text>
       </TouchableOpacity>
+      </View>
+     
 
       {/* Grid danh sách */}
 
@@ -186,7 +187,7 @@ const FavoritesScreen: React.FC = () => {
         onClose={() => setShowMealPlanner(false)}
         onSave={handleMealPlannerSave}
       />
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -199,21 +200,29 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.xs,
+    
   },
   title: {
     fontSize: 18,
     fontWeight: "600",
     color: COLORS.text,
     textAlign: "center",
+    paddingTop: SPACING.sm,
+    marginBottom: SPACING.lg,
+    borderColor: COLORS.primary,
+    borderWidth: 2,
   },
   actionText: {
     color: COLORS.primary,
     fontSize: 14,
     textAlign: "right",
+    marginBottom: SPACING.sm,
     paddingTop: -SPACING.lg,
     paddingBottom: SPACING.sm,
     marginRight: SPACING.md,
     textDecorationLine: "underline",
+    borderColor: 'black',
+    borderWidth: 1,
   },
   list: {
     paddingHorizontal: SPACING.md,

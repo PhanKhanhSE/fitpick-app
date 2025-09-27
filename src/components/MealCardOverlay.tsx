@@ -20,6 +20,7 @@ interface MealCardOverlayProps {
   tag?: string;
   isLocked?: boolean;
   isFavorite?: boolean;
+  showFavoriteButton?: boolean;
   onPress?: () => void;
   onFavoritePress?: () => void;
   width?: number;
@@ -36,6 +37,7 @@ const MealCardOverlay: React.FC<MealCardOverlayProps> = ({
   tag,
   isLocked = false,
   isFavorite = false,
+  showFavoriteButton = true,
   onPress,
   onFavoritePress,
   width = 180,
@@ -71,16 +73,18 @@ const MealCardOverlay: React.FC<MealCardOverlayProps> = ({
       )}
       
       {/* Favorite Button */}
-      <TouchableOpacity 
-        style={styles.favoriteButton} 
-        onPress={onFavoritePress}
-      >
-        <Ionicons 
-          name={isFavorite ? "heart" : "heart-outline"} 
-          size={20} 
-          color={isFavorite ? COLORS.primary : COLORS.primary} 
-        />
-      </TouchableOpacity>
+      {showFavoriteButton && (
+        <TouchableOpacity 
+          style={styles.favoriteButton} 
+          onPress={onFavoritePress}
+        >
+          <Ionicons 
+            name={isFavorite ? "heart" : "heart-outline"} 
+            size={20} 
+            color={isFavorite ? COLORS.primary : COLORS.primary} 
+          />
+        </TouchableOpacity>
+      )}
       
       {/* Text Content - Positioned based on layout */}
       <View style={[

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   TouchableOpacity,
   View,
@@ -6,7 +6,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SPACING, RADII } from '../../utils/theme';
+import { SPACING, RADII, COLORS } from '../../utils/theme';
 import MealCardOverlay from '../MealCardOverlay';
 
 const { width } = Dimensions.get('window');
@@ -35,6 +35,15 @@ const FavoriteCard: React.FC<FavoriteCardProps> = ({
   onPress,
   onMorePress,
 }) => {
+  const [showCheckbox, setShowCheckbox] = useState(false);
+
+  const handleCardPress = () => {
+    if (multiSelect) {
+      setShowCheckbox(true);
+    }
+    onPress();
+  };
+
   return (
     <View style={styles.container}>
       <MealCardOverlay
@@ -43,18 +52,18 @@ const FavoriteCard: React.FC<FavoriteCardProps> = ({
         calories={`${item.calories} kcal`}
         time={`${item.weight}g`}
         image={item.image}
-        onPress={onPress}
+        onPress={handleCardPress}
         width={CARD_WIDTH}
         height={CARD_WIDTH * 1.2}
-        isFavorite={true}
+        showFavoriteButton={false}
       />
       
-      {/* Multi-select checkbox */}
-      {multiSelect && (
+      {/* Multi-select checkbox - chỉ hiện khi ấn */}
+      {multiSelect && showCheckbox && (
         <TouchableOpacity
           style={[
             styles.checkbox,
-            { backgroundColor: isSelected ? 'rgba(255, 0, 100, 0.8)' : 'rgba(0, 0, 0, 0.3)' }
+            { backgroundColor: isSelected ? COLORS.primary : 'transparent' },
           ]}
           onPress={onPress}
         >
@@ -83,23 +92,20 @@ const styles = StyleSheet.create({
   },
   checkbox: {
     position: 'absolute',
-    top: 8,
-    left: 8,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 2,
-    borderColor: 'white',
+    top: '50%',
+    left: '50%',
+    width: 42,
+    height: 42,
+    borderRadius: 50,
     justifyContent: 'center',
     alignItems: 'center',
+    transform: [{ translateX: -21 }, { translateY: -21 }],
   },
   moreButton: {
     position: 'absolute',
     top: 8,
     right: 8,
     padding: 4,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    borderRadius: RADII.sm,
   },
 });
 

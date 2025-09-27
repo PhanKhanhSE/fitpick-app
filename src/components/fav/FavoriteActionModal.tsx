@@ -6,6 +6,7 @@ import {
   Modal,
   TouchableOpacity,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADII } from '../../utils/theme';
 import { FoodItem } from './FavoriteCard';
 
@@ -26,6 +27,8 @@ const FavoriteActionModal: React.FC<FavoriteActionModalProps> = ({
   onAddToProductList,
   onDelete,
 }) => {
+  const insets = useSafeAreaInsets();
+  
   return (
     <Modal
       visible={visible}
@@ -33,12 +36,13 @@ const FavoriteActionModal: React.FC<FavoriteActionModalProps> = ({
       animationType="slide"
       onRequestClose={onClose}
     >
-      <TouchableOpacity
-        style={styles.modalOverlay}
-        onPress={onClose}
-        activeOpacity={1}
-      />
-      <View style={styles.modalContent}>
+      <View style={styles.modalContainer}>
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          onPress={onClose}
+          activeOpacity={1}
+        />
+        <View style={[styles.modalContent, { paddingBottom: insets.bottom + SPACING.md }]}>
         <TouchableOpacity
           style={styles.modalItem}
           onPress={onAddToMealPlan}
@@ -59,25 +63,30 @@ const FavoriteActionModal: React.FC<FavoriteActionModalProps> = ({
         >
           <Text style={styles.deleteText}>Xóa</Text>
         </TouchableOpacity>
+        </View>
       </View>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  modalOverlay: {
+  modalContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'flex-end',
+  },
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalContent: {
     backgroundColor: 'white',
     padding: SPACING.md,
-    borderTopLeftRadius: RADII.xl,
-    borderTopRightRadius: RADII.xl,
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+    borderTopLeftRadius: RADII.md,
+    borderTopRightRadius: RADII.md,
   },
   modalItem: {
     paddingVertical: SPACING.md,
