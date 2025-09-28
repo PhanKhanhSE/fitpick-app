@@ -12,14 +12,16 @@ interface MealData {
   time: string;
   image: { uri: string };
   tag: string;
+  isLocked?: boolean;
 }
 
 interface MyMenuSectionProps {
   mealData: MealData[];
   onMealPress: (meal: MealData) => void;
+  onSeeMore?: () => void;
 }
 
-const MyMenuSection: React.FC<MyMenuSectionProps> = ({ mealData, onMealPress }) => {
+const MyMenuSection: React.FC<MyMenuSectionProps> = ({ mealData, onMealPress, onSeeMore }) => {
   const [favorites, setFavorites] = useState<string[]>([]);
 
   const handleFavoritePress = (id: string) => {
@@ -34,7 +36,7 @@ const MyMenuSection: React.FC<MyMenuSectionProps> = ({ mealData, onMealPress }) 
     <View style={styles.myMenuSection}>
       <View style={[styles.sectionHeader, styles.myMenuSectionHeader]}>
         <Text style={[styles.sectionTitle, styles.myMenuTitle]}>Thực đơn của tôi</Text>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={onSeeMore}>
           <Text style={[styles.seeMore, styles.myMenuSeeMore]}>xem thêm</Text>
         </TouchableOpacity>
       </View>
@@ -54,6 +56,7 @@ const MyMenuSection: React.FC<MyMenuSectionProps> = ({ mealData, onMealPress }) 
               time={meal.time}
               image={meal.image}
               tag={meal.tag}
+              isLocked={meal.isLocked}
               isFavorite={favorites.includes(meal.id)}
               onFavoritePress={() => handleFavoritePress(meal.id)}
               onPress={() => onMealPress(meal)}

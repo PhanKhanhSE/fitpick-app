@@ -44,7 +44,6 @@ const MealCardVertical: React.FC<MealCardVerticalProps> = ({
     <TouchableOpacity 
       style={[styles.container, { width, height }]} 
       onPress={onPress}
-      disabled={isLocked}
     >
       <View style={styles.imageContainer}>
         <Image source={image} style={styles.image} />

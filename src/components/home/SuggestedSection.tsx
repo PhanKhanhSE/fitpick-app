@@ -3,8 +3,6 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Platf
 import { COLORS, SPACING, RADII } from '../../utils/theme';
 import MealCardOverlay from '../MealCardOverlay';
 
-const { width } = Dimensions.get('window');
-
 interface MealData {
   id: string;
   title: string;
@@ -12,14 +10,16 @@ interface MealData {
   time: string;
   image: { uri: string };
   tag: string;
+  isLocked?: boolean;
 }
 
 interface SuggestedSectionProps {
   mealData: MealData[];
   onMealPress: (meal: MealData) => void;
+  onSeeMore?: () => void;
 }
 
-const SuggestedSection: React.FC<SuggestedSectionProps> = ({ mealData, onMealPress }) => {
+const SuggestedSection: React.FC<SuggestedSectionProps> = ({ mealData, onMealPress, onSeeMore }) => {
   const [favorites, setFavorites] = useState<string[]>([]);
 
   const handleFavoritePress = (id: string) => {
@@ -34,7 +34,7 @@ const SuggestedSection: React.FC<SuggestedSectionProps> = ({ mealData, onMealPre
     <>
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Gợi ý cho bạn</Text>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={onSeeMore}>
           <Text style={styles.seeMore}>xem thêm</Text>
         </TouchableOpacity>
       </View>
@@ -54,6 +54,7 @@ const SuggestedSection: React.FC<SuggestedSectionProps> = ({ mealData, onMealPre
               time={meal.time}
               image={meal.image}
               tag={meal.tag}
+              isLocked={meal.isLocked}
               isFavorite={favorites.includes(meal.id)}
               onFavoritePress={() => handleFavoritePress(meal.id)}
               onPress={() => onMealPress(meal)}
@@ -66,7 +67,7 @@ const SuggestedSection: React.FC<SuggestedSectionProps> = ({ mealData, onMealPre
 
       <View style={styles.noMoreSuggestions}>
         <Text style={styles.noMoreText}>Chưa thấy món ưng ý? </Text>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={onSeeMore}>
           <Text style={styles.exploreMore}>Khám phá thêm</Text>
         </TouchableOpacity>
       </View>

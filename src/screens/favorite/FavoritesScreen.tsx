@@ -7,8 +7,13 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../types/navigation';
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS, SPACING, RADII } from "../../utils/theme";
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 import {
   FavoriteCard,
   FavoriteActionModal,
@@ -18,6 +23,7 @@ import {
 } from "../../components/fav";
 
 const FavoritesScreen: React.FC = () => {
+  const navigation = useNavigation<NavigationProp>();
   const [multiSelect, setMultiSelect] = useState(false);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [actionItem, setActionItem] = useState<FoodItem | null>(null);
@@ -99,6 +105,29 @@ const FavoritesScreen: React.FC = () => {
     },
   ];
 
+  // Convert FoodItem to meal format for MealDetailScreen
+  const convertFoodItemToMeal = (item: FoodItem) => {
+    return {
+      id: item.id,
+      title: item.name,
+      calories: `${item.calories} kcal`,
+      price: "0 VND", // Default price
+      image: item.image,
+      cookingTime: "0 phút", // Default cooking time
+      ingredients: [
+        { name: "Thành phần chính", amount: `${item.weight}g` },
+      ],
+      instructions: [
+        "Hướng dẫn sẽ được cập nhật sau.",
+      ],
+    };
+  };
+
+  const handleNavigateToDetail = (item: FoodItem) => {
+    const meal = convertFoodItemToMeal(item);
+    navigation.navigate('MealDetail', { meal });
+  };
+
   const toggleSelect = (id: string) => {
     setSelectedItems((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
@@ -124,7 +153,7 @@ const FavoritesScreen: React.FC = () => {
         onPress={() =>
           multiSelect
             ? toggleSelect(item.id)
-            : console.log("Navigate to detail")
+            : handleNavigateToDetail(item)
         }
         onMorePress={() => setActionItem(item)}
       />

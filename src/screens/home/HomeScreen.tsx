@@ -32,14 +32,16 @@ const HomeScreen: React.FC = () => {
       time: '0 phút',
       image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
       tag: 'Bữa sáng',
+      isLocked: false,
     },
     {
       id: '2',
-      title: 'Cá hồi sốt tiêu kèm bơ xanh',
+      title: 'Cá hồi sốt tiêu kèm bơ xanh (Premium)',
       calories: '0 kcal',
       time: '0 phút',
       image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
       tag: 'Bữa trưa',
+      isLocked: true,
     },
     {
       id: '3',
@@ -48,14 +50,16 @@ const HomeScreen: React.FC = () => {
       time: '0 phút',
       image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
       tag: 'Bữa trưa',
+      isLocked: false,
     },
     {
       id: '4',
-      title: 'Cá hồi sốt tiêu kèm bơ xanh',
+      title: 'Thực đơn cao cấp (Premium)',
       calories: '0 kcal',
       time: '0 phút',
       image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
       tag: 'Bữa trưa',
+      isLocked: true,
     },
   ];
 
@@ -68,14 +72,16 @@ const HomeScreen: React.FC = () => {
       time: '0 phút',
       image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
       tag: 'Cân bằng',
+      isLocked: false,
     },
     {
       id: '2',
-      title: 'Cá hồi sốt tiêu kèm bơ xanh',
+      title: 'Món ăn Premium đặc biệt',
       calories: '0 kcal',
       time: '0 phút',
       image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
       tag: 'Cân bằng',
+      isLocked: true,
     },
     {
       id: '3',
@@ -84,14 +90,16 @@ const HomeScreen: React.FC = () => {
       time: '0 phút',
       image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
       tag: 'Cân bằng',
+      isLocked: false,
     },
     {
       id: '4',
-      title: 'Cá hồi sốt tiêu kèm bơ xanh',
+      title: 'Thực đơn VIP (Premium)',
       calories: '0 kcal',
       time: '0 phút',
       image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
       tag: 'Cân bằng',
+      isLocked: true,
     },
   ];
 
@@ -109,7 +117,11 @@ const HomeScreen: React.FC = () => {
   };
 
   const handleMealPress = (meal: any) => {
-    navigation.navigate('MealDetail', { meal });
+    if (meal.isLocked) {
+      setShowPremiumModal(true);
+    } else {
+      navigation.navigate('MealDetail', { meal });
+    }
   };
 
   const handlePremiumPress = () => {
@@ -124,6 +136,14 @@ const HomeScreen: React.FC = () => {
     // Handle upgrade logic here
     console.log('Upgrade to premium');
     setShowPremiumModal(false);
+  };
+
+  const handleSeeMore = () => {
+    (navigation as any).jumpTo('Explore');
+  };
+
+  const handleSeeMoreMenu = () => {
+    (navigation as any).jumpTo('Menu');
   };
 
   return (
@@ -179,6 +199,7 @@ const HomeScreen: React.FC = () => {
         <MyMenuSection 
           mealData={myMealData}
           onMealPress={handleMealPress}
+          onSeeMore={handleSeeMoreMenu}
         />
 
         {/* Premium Upgrade */}
@@ -193,6 +214,7 @@ const HomeScreen: React.FC = () => {
         <SuggestedSection 
           mealData={suggestedMeals}
           onMealPress={handleMealPress}
+          onSeeMore={handleSeeMore}
         />
       </ScrollView>
 
