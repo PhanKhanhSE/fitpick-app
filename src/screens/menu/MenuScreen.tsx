@@ -7,8 +7,13 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../types/navigation';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADII } from '../../utils/theme';
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 import { 
   MealSection, 
   MealItemActionModal, 
@@ -19,6 +24,7 @@ import {
 } from '../../components/menu';
 
 const MenuScreen: React.FC = () => {
+  const navigation = useNavigation<NavigationProp>();
   const [selectedMeals, setSelectedMeals] = useState<string[]>([]);
   const [currentDate, setCurrentDate] = useState('Thứ Hai, 8 tháng 9');
   
@@ -76,6 +82,24 @@ const MenuScreen: React.FC = () => {
     },
   ];
 
+  // Convert menu meal to format expected by MealDetailScreen
+  const convertMenuMealToMeal = (meal: any) => {
+    return {
+      id: meal.id,
+      title: meal.title,
+      calories: meal.calories,
+      price: "0 VND", // Default price
+      image: meal.image,
+      cookingTime: meal.time,
+      ingredients: [
+        { name: "Thành phần chính", amount: "200g" },
+      ],
+      instructions: [
+        "Hướng dẫn sẽ được cập nhật sau.",
+      ],
+    };
+  };
+
   const handleToggleSelect = (id: string) => {
     setSelectedMeals(prev => 
       prev.includes(id) 
@@ -85,7 +109,8 @@ const MenuScreen: React.FC = () => {
   };
 
   const handleMealPress = (meal: any) => {
-    console.log('Meal pressed:', meal.title);
+    const convertedMeal = convertMenuMealToMeal(meal);
+    navigation.navigate('MealDetail', { meal: convertedMeal });
   };
 
   const handleOptionsPress = (meal: any) => {

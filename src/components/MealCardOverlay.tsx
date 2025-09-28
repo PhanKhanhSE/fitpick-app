@@ -57,7 +57,6 @@ const MealCardOverlay: React.FC<MealCardOverlayProps> = ({
         layout === 'horizontal' && styles.horizontalContainer
       ]} 
       onPress={onPress}
-      disabled={isLocked}
     >
       {/* Background Image */}
       <Image source={image} style={styles.backgroundImage} />
