@@ -27,4 +27,21 @@ export type RootStackParamList = {
             instructions?: Array<string>;
         };
     };
+    ReviewsScreen: {
+        mealId: string;
+        mealTitle?: string;
+        refresh?: boolean;
+        newReview?: {
+            id: string;
+            user: string;
+            date: string;
+            rating: number;
+            content: string;
+            avatar: string;
+        };
+    };
+    AddReviewScreen: {
+        mealId: string;
+        mealTitle?: string;
+    };
 };

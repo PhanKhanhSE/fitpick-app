@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS, SPACING, RADII } from '../../utils/theme';
+import { COLORS, SPACING, RADII } from '../utils/theme';
 
 interface SuccessModalProps {
   visible: boolean;
