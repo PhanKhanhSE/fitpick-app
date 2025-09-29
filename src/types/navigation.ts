@@ -44,4 +44,5 @@ export type RootStackParamList = {
         mealId: string;
         mealTitle?: string;
     };
+    ProfileScreen: undefined;
 };

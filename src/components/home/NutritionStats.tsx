@@ -86,6 +86,9 @@ const NutritionStats: React.FC<NutritionStatsProps> = ({
 const styles = StyleSheet.create({
   container: {
     marginHorizontal: SPACING.md,
+    borderWidth: 1,
+    marginTop: SPACING.md,
+    borderColor: COLORS.under_process,
     marginBottom: SPACING.lg,
     backgroundColor: COLORS.background,
     borderRadius: 16,
@@ -97,6 +100,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   statsCard: {
+    marginTop: -SPACING.md,
     backgroundColor: COLORS.background,
     borderRadius: 16,
     padding: SPACING.md,

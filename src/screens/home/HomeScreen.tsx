@@ -9,9 +9,10 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADII } from '../../utils/theme';
 import NutritionStats from '../../components/home/NutritionStats';
-import MyMenuSection from '../../components/home/MyMenuSection';
-import SuggestedSection from '../../components/home/SuggestedSection';
+import MyMenuSection from '../../components/home/personal/MyMenuSection';
+import SuggestedSection from '../../components/home/personal/SuggestedSection';
 import PremiumModal from '../../components/home/PremiumModal';
+import { CommunityScreen } from '../../components/home/community';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/navigation';
@@ -146,6 +147,10 @@ const HomeScreen: React.FC = () => {
     (navigation as any).jumpTo('Menu');
   };
 
+  const handleProfilePress = () => {
+    navigation.navigate('ProfileScreen');
+  };
+
   return (
     <View style={styles.container}>
       {/* Header with Tabs - Sticky */}
@@ -174,49 +179,54 @@ const HomeScreen: React.FC = () => {
             <TouchableOpacity style={styles.iconButton}>
               <Ionicons name="notifications-outline" size={20} color={COLORS.text} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton}>
+            <TouchableOpacity style={styles.iconButton} onPress={handleProfilePress}>
               <Ionicons name="person-circle-outline" size={32} color={COLORS.text} />
             </TouchableOpacity>
           </View>
         </View>
       </View>
 
-      <ScrollView 
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ flexGrow: 1 }}
-      >
+      {selectedTab === 'personal' ? (
+        <ScrollView 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ flexGrow: 1 }}
+        >
+          {/* Nutrition Stats */}
+          <NutritionStats
+            targetCalories={nutritionData.targetCalories}
+            consumedCalories={nutritionData.consumedCalories}
+            starch={nutritionData.starch}
+            protein={nutritionData.protein}
+            fat={nutritionData.fat}
+          />
 
-        {/* Nutrition Stats */}
-        <NutritionStats
-          targetCalories={nutritionData.targetCalories}
-          consumedCalories={nutritionData.consumedCalories}
-          starch={nutritionData.starch}
-          protein={nutritionData.protein}
-          fat={nutritionData.fat}
-        />
+          {/* My Menu Section */}
+          <MyMenuSection 
+            mealData={myMealData}
+            onMealPress={handleMealPress}
+            onSeeMore={handleSeeMoreMenu}
+          />
 
-        {/* My Menu Section */}
-        <MyMenuSection 
-          mealData={myMealData}
-          onMealPress={handleMealPress}
-          onSeeMore={handleSeeMoreMenu}
-        />
+          {/* Premium Upgrade */}
+          <View style={styles.premiumSection}>
+            <Text style={styles.premiumText}>Có ngày thực đơn mới, gợi ý riêng cho bạn mỗi tuần.</Text>
+            <TouchableOpacity style={styles.premiumButton} onPress={handlePremiumPress}>
+              <Text style={styles.premiumButtonText}>Nâng cấp lên Premium</Text>
+            </TouchableOpacity>
+          </View>
 
-        {/* Premium Upgrade */}
-        <View style={styles.premiumSection}>
-          <Text style={styles.premiumText}>Có ngày thực đơn mới, gợi ý riêng cho bạn mỗi tuần.</Text>
-          <TouchableOpacity style={styles.premiumButton} onPress={handlePremiumPress}>
-            <Text style={styles.premiumButtonText}>Nâng cấp lên Premium</Text>
-          </TouchableOpacity>
+          {/* Suggested Dishes Section */}
+          <SuggestedSection 
+            mealData={suggestedMeals}
+            onMealPress={handleMealPress}
+            onSeeMore={handleSeeMore}
+          />
+        </ScrollView>
+      ) : (
+        <View style={styles.communityContainer}>
+          <CommunityScreen />
         </View>
-
-        {/* Suggested Dishes Section */}
-        <SuggestedSection 
-          mealData={suggestedMeals}
-          onMealPress={handleMealPress}
-          onSeeMore={handleSeeMore}
-        />
-      </ScrollView>
+      )}
 
       {/* Premium Modal */}
       <PremiumModal
@@ -258,12 +268,14 @@ const styles = StyleSheet.create({
   },
   tab: {
     paddingVertical: SPACING.sm,
-    paddingHorizontal: SPACING.md,
+    paddingHorizontal: -SPACING.md,
     marginRight: SPACING.md,
+    paddingBottom: -SPACING.md,
+
   },
   activeTab: {
     borderBottomWidth: 2,
-    borderBottomColor: COLORS.primary,
+    borderBottomColor: COLORS.primary,  
   },
   tabText: {
     fontSize: 16,
@@ -304,6 +316,9 @@ const styles = StyleSheet.create({
   premiumButtonText: {
     color: 'white',
     fontSize: 14,
+  },
+  communityContainer: {
+    flex: 1,
   },
 });
 

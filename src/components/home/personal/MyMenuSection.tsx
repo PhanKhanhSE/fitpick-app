@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Platform } from 'react-native';
-import { COLORS, SPACING, RADII } from '../../utils/theme';
-import MealCardOverlay from '../MealCardOverlay';
+import { COLORS, SPACING, RADII } from '../../../utils/theme';
+import MealCardVertical from '../../MealCardHorizontal';
+
+const { width } = Dimensions.get('window');
 
 interface MealData {
   id: string;
@@ -13,13 +15,13 @@ interface MealData {
   isLocked?: boolean;
 }
 
-interface SuggestedSectionProps {
+interface MyMenuSectionProps {
   mealData: MealData[];
   onMealPress: (meal: MealData) => void;
   onSeeMore?: () => void;
 }
 
-const SuggestedSection: React.FC<SuggestedSectionProps> = ({ mealData, onMealPress, onSeeMore }) => {
+const MyMenuSection: React.FC<MyMenuSectionProps> = ({ mealData, onMealPress, onSeeMore }) => {
   const [favorites, setFavorites] = useState<string[]>([]);
 
   const handleFavoritePress = (id: string) => {
@@ -31,11 +33,11 @@ const SuggestedSection: React.FC<SuggestedSectionProps> = ({ mealData, onMealPre
   };
 
   return (
-    <>
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Gợi ý cho bạn</Text>
+    <View style={styles.myMenuSection}>
+      <View style={[styles.sectionHeader, styles.myMenuSectionHeader]}>
+        <Text style={[styles.sectionTitle, styles.myMenuTitle]}>Thực đơn của tôi</Text>
         <TouchableOpacity onPress={onSeeMore}>
-          <Text style={styles.seeMore}>xem thêm</Text>
+          <Text style={[styles.seeMore, styles.myMenuSeeMore]}>xem thêm</Text>
         </TouchableOpacity>
       </View>
 
@@ -47,7 +49,7 @@ const SuggestedSection: React.FC<SuggestedSectionProps> = ({ mealData, onMealPre
       >
         {mealData.map((meal) => (
           <View key={meal.id} style={styles.mealCardWrapper}>
-            <MealCardOverlay
+            <MealCardVertical
               id={meal.id}
               title={meal.title}
               calories={meal.calories}
@@ -58,20 +60,13 @@ const SuggestedSection: React.FC<SuggestedSectionProps> = ({ mealData, onMealPre
               isFavorite={favorites.includes(meal.id)}
               onFavoritePress={() => handleFavoritePress(meal.id)}
               onPress={() => onMealPress(meal)}
-              width={180}
-              height={220}
+              width={158}
+              height={175}
             />
           </View>
         ))}
       </ScrollView>
-
-      <View style={styles.noMoreSuggestions}>
-        <Text style={styles.noMoreText}>Chưa thấy món ưng ý? </Text>
-        <TouchableOpacity onPress={onSeeMore}>
-          <Text style={styles.exploreMore}>Khám phá thêm</Text>
-        </TouchableOpacity>
-      </View>
-    </>
+    </View>
   );
 };
 
@@ -105,23 +100,23 @@ const styles = StyleSheet.create({
   mealCardWrapper: {
     marginRight: SPACING.sm,
   },
-  noMoreSuggestions: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: SPACING.md,
+  myMenuSection: {
+    backgroundColor: COLORS.primary,
+    paddingTop: -SPACING.md,
   },
-  noMoreText: {
-    fontSize: 14,
-    color: COLORS.text,
-    marginTop: -SPACING.md,
+  myMenuTitle: {
+    color: 'white',
+    marginTop: SPACING.sm,
+    marginBottom: -SPACING.xs,
   },
-  exploreMore: {
-    fontSize: 14,
-    color: COLORS.primary,
-    fontWeight: '500',
-    marginTop: -SPACING.md,
+  myMenuSeeMore: {
+    color: 'white',
+    textDecorationLine: 'underline',
+  },
+  myMenuSectionHeader: {
+    marginTop: 0,
+    marginBottom: SPACING.md,
   },
 });
 
-export default SuggestedSection;
+export default MyMenuSection;

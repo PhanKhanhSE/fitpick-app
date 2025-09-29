@@ -221,14 +221,14 @@ const MenuScreen: React.FC = () => {
             style={styles.dateNavButton}
             onPress={() => handleDateNavigation('prev')}
           >
-            <Ionicons name="chevron-back" size={20} color="white" />
+            <Ionicons name="arrow-back-outline" size={18} color="white" />
           </TouchableOpacity>
           <Text style={styles.dateText}>{currentDate}</Text>
           <TouchableOpacity 
             style={styles.dateNavButton}
             onPress={() => handleDateNavigation('next')}
           >
-            <Ionicons name="chevron-forward" size={20} color="white" />
+            <Ionicons name="arrow-forward-outline" size={18} color="white" />
           </TouchableOpacity>
         </View>
       </View>
@@ -371,8 +371,8 @@ const styles = StyleSheet.create({
   },
   dateNavButton: {
     padding: SPACING.xs,
-    marginLeft: SPACING.md,
-    marginRight: SPACING.md,
+    marginLeft: SPACING.lg,
+    marginRight: SPACING.lg,
   },
   dateText: {
     fontSize: 14,
