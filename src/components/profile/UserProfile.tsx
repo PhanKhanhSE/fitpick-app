@@ -9,9 +9,6 @@ interface UserProfileProps {
 }
 
 const UserProfile: React.FC<UserProfileProps> = ({
-  name,
-  accountType,
-  avatar,
 }) => {
   return (
     <View style={styles.profileSection}>
