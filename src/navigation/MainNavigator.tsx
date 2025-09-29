@@ -14,8 +14,8 @@ import EatStyleScreen from '../screens/register&login/EatStyleScreen';
 import BottomTabNavigator from './BottomTabNavigator';
 import MealDetailScreen from '../screens/detail/MealDetailScreen';
 import CookingLevelScreen from '../screens/register&login/CookingLevelScreen';
-
-import {ReviewsScreen}  from '../components/details';
+import ProfileScreen from '../screens/profile/ProfileScreen';
+import ReviewsScreen from '../screens/detail/review/ReviewsScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -76,6 +76,11 @@ export const MainNavigator = () => {
                 <Stack.Screen
                     name="ReviewsScreen"
                     component={ReviewsScreen}
+                    options={{ headerShown: false }} 
+                />
+                <Stack.Screen
+                    name="ProfileScreen"
+                    component={ProfileScreen}
                     options={{ headerShown: false }} 
                 />
 

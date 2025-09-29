@@ -146,6 +146,10 @@ const HomeScreen: React.FC = () => {
     (navigation as any).jumpTo('Menu');
   };
 
+  const handleProfilePress = () => {
+    navigation.navigate('ProfileScreen');
+  };
+
   return (
     <View style={styles.container}>
       {/* Header with Tabs - Sticky */}
@@ -174,7 +178,7 @@ const HomeScreen: React.FC = () => {
             <TouchableOpacity style={styles.iconButton}>
               <Ionicons name="notifications-outline" size={20} color={COLORS.text} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton}>
+            <TouchableOpacity style={styles.iconButton} onPress={handleProfilePress}>
               <Ionicons name="person-circle-outline" size={32} color={COLORS.text} />
             </TouchableOpacity>
           </View>
@@ -258,12 +262,14 @@ const styles = StyleSheet.create({
   },
   tab: {
     paddingVertical: SPACING.sm,
-    paddingHorizontal: SPACING.md,
+    paddingHorizontal: -SPACING.md,
     marginRight: SPACING.md,
+    paddingBottom: -SPACING.md,
+
   },
   activeTab: {
     borderBottomWidth: 2,
-    borderBottomColor: COLORS.primary,
+    borderBottomColor: COLORS.primary,  
   },
   tabText: {
     fontSize: 16,

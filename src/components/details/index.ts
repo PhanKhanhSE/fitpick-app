@@ -4,4 +4,3 @@ export { default as MealTitleQuantity } from './MealTitleQuantity';
 export { default as NutritionSummary } from './NutritionSummary';
 export { default as MealDetailTabs } from './MealDetailTabs';
 export { default as MealDetailActions } from './MealDetailActions';
-export { default as ReviewsScreen } from '../../screens/detail/ReviewsScreen';

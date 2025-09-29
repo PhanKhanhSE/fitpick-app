@@ -1,16 +1,16 @@
 import React, { useState, Fragment } from 'react';
 import { StyleSheet, SafeAreaView, StatusBar } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../types/navigation';
-import { COLORS } from '../../utils/theme';
-import { SuccessModal } from '../../components/menu';
+import { RootStackParamList } from '../../../types/navigation';
+import { COLORS } from '../../../utils/theme';
+import { SuccessModal } from '../../../components/menu';
 import {
   ReviewsHeader,
   ReviewsList,
   AddReviewInput,
   AddReviewModal,
   Review,
-} from '../../components/details/reviewScreen';
+} from '../../../components/details/reviewScreen';
 
 type ReviewsScreenProps = NativeStackScreenProps<RootStackParamList, 'ReviewsScreen'>;
 
