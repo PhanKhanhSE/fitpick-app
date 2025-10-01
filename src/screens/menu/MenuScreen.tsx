@@ -345,11 +345,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.xs,
+    paddingVertical: SPACING.umd,
+    marginTop: -SPACING.sm,
   },
   title: {
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.text,
     flex: 1,
     textAlign: 'center',
@@ -358,7 +359,6 @@ const styles = StyleSheet.create({
     padding: SPACING.xs,
     position: 'absolute',
     right: SPACING.umd,
-    top: SPACING.xs,
   },
   dateContainer: {
     flexDirection: 'row',

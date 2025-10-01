@@ -16,6 +16,9 @@ import MealDetailScreen from '../screens/detail/MealDetailScreen';
 import CookingLevelScreen from '../screens/register&login/CookingLevelScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
 import ReviewsScreen from '../screens/detail/review/ReviewsScreen';
+import NotificationsScreen from '../screens/home/NotificationsScreen';
+import PersonalNutritionScreen from '../screens/profile/setting/PersonalNutritionScreen';
+import SettingScreen from '../screens/profile/setting/SettingScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -81,6 +84,21 @@ export const MainNavigator = () => {
                 <Stack.Screen
                     name="ProfileScreen"
                     component={ProfileScreen}
+                    options={{ headerShown: false }} 
+                />
+                <Stack.Screen
+                    name="NotificationsScreen"
+                    component={NotificationsScreen}
+                    options={{ headerShown: false }} 
+                />
+                <Stack.Screen
+                    name="PersonalNutritionScreen"
+                    component={PersonalNutritionScreen}
+                    options={{ headerShown: false }} 
+                />
+                <Stack.Screen
+                    name="SettingScreen"
+                    component={SettingScreen}
                     options={{ headerShown: false }} 
                 />
 

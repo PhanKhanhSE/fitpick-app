@@ -167,13 +167,7 @@ const FavoritesScreen: React.FC = () => {
         <Text style={styles.title}>Yêu thích</Text>
       </View>
 
-      {/* Grid danh sách */}
-      <TouchableOpacity onPress={() => setMultiSelect(!multiSelect)}>
-        <Text style={styles.actionText}>
-          {multiSelect ? "Bỏ chọn tất cả" : "Chọn nhiều món"}
-        </Text>
-      </TouchableOpacity>
-
+      {/* Grid danh sách với nút action */}
       <FlatList
         data={favoriteItems}
         renderItem={renderFoodCard}
@@ -181,6 +175,13 @@ const FavoritesScreen: React.FC = () => {
         numColumns={2}
         contentContainerStyle={styles.list}
         columnWrapperStyle={styles.row}
+        ListHeaderComponent={
+          <TouchableOpacity onPress={() => setMultiSelect(!multiSelect)}>
+            <Text style={styles.actionText}>
+              {multiSelect ? "Bỏ chọn tất cả" : "Chọn nhiều món"}
+            </Text>
+          </TouchableOpacity>
+        }
       />
 
       {/* Components */}
@@ -227,23 +228,21 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.xs,
+    paddingVertical: SPACING.md,
+    marginTop: SPACING.xs,
   },
   title: {
-    fontSize: 18,
-    fontWeight: "600",
+    fontSize: 20,
+    fontWeight: '700',
     color: COLORS.text,
-    textAlign: "center",
-    paddingTop: SPACING.md,
+    textAlign: 'center',
   },
   actionText: {
     color: COLORS.primary,
     fontSize: 14,
     textAlign: "right",
-    marginBottom: SPACING.sm,
-    paddingTop: -SPACING.lg,
-    paddingBottom: SPACING.sm,
-    marginRight: SPACING.md,
+    marginBottom: SPACING.md,
+    marginRight: SPACING.sm,
     textDecorationLine: "underline",
   },
   list: {

@@ -9,6 +9,7 @@ export const COLORS = {
     textDim: '#777',
     process: '#4CAF50',
     under_process: '#CCD6DD',
+    white: '#FFFFFF',
 } as const;
 
 export const SPACING = {
