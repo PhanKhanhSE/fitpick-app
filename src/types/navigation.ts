@@ -45,4 +45,7 @@ export type RootStackParamList = {
         mealTitle?: string;
     };
     ProfileScreen: undefined;
+    NotificationsScreen: undefined;
+    PersonalNutritionScreen: undefined;
+    SettingScreen: undefined;
 };

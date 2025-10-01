@@ -151,6 +151,14 @@ const HomeScreen: React.FC = () => {
     navigation.navigate('ProfileScreen');
   };
 
+  const handleNotificationsPress = () => {
+    navigation.navigate('NotificationsScreen');
+  };
+
+  const handlePersonalNutritionPress = () => {
+    navigation.navigate('PersonalNutritionScreen');
+  };
+
   return (
     <View style={styles.container}>
       {/* Header with Tabs - Sticky */}
@@ -176,8 +184,8 @@ const HomeScreen: React.FC = () => {
           </View>
           
           <View style={styles.headerIcons}>
-            <TouchableOpacity style={styles.iconButton}>
-              <Ionicons name="notifications-outline" size={20} color={COLORS.text} />
+            <TouchableOpacity style={styles.iconButton} onPress={handleNotificationsPress}>
+              <Ionicons name="notifications-outline" size={22} color={COLORS.text} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.iconButton} onPress={handleProfilePress}>
               <Ionicons name="person-circle-outline" size={32} color={COLORS.text} />
@@ -191,16 +199,15 @@ const HomeScreen: React.FC = () => {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ flexGrow: 1 }}
         >
-          {/* Nutrition Stats */}
-          <NutritionStats
-            targetCalories={nutritionData.targetCalories}
-            consumedCalories={nutritionData.consumedCalories}
-            starch={nutritionData.starch}
-            protein={nutritionData.protein}
-            fat={nutritionData.fat}
-          />
-
-          {/* My Menu Section */}
+        {/* Nutrition Stats */}
+        <NutritionStats
+          targetCalories={nutritionData.targetCalories}
+          consumedCalories={nutritionData.consumedCalories}
+          starch={nutritionData.starch}
+          protein={nutritionData.protein}
+          fat={nutritionData.fat}
+          onPress={handlePersonalNutritionPress}
+        />          {/* My Menu Section */}
           <MyMenuSection 
             mealData={myMealData}
             onMealPress={handleMealPress}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { COLORS, SPACING } from '../../utils/theme';
 import CircularProgress from './CircularProgress';
 
@@ -9,6 +9,7 @@ interface NutritionStatsProps {
   starch: { current: number; target: number };
   protein: { current: number; target: number };
   fat: { current: number; target: number };
+  onPress?: () => void;
 }
 
 const NutritionStats: React.FC<NutritionStatsProps> = ({
@@ -17,13 +18,14 @@ const NutritionStats: React.FC<NutritionStatsProps> = ({
   starch,
   protein,
   fat,
+  onPress,
 }) => {
   const progress = Math.min(consumedCalories / targetCalories, 1);
   const circumference = 2 * Math.PI * 60; // radius = 60
   const strokeDashoffset = circumference - progress * circumference;
 
   return (
-    <View style={styles.container}>
+    <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.8}>
       <View style={styles.statsCard}>
         <View style={styles.caloriesSection}>
           <Text style={styles.targetLabel}>Mục tiêu:</Text>
@@ -79,7 +81,7 @@ const NutritionStats: React.FC<NutritionStatsProps> = ({
       </View>
       
       <Text style={styles.seeMore}>xem thêm</Text>
-    </View>
+    </TouchableOpacity>
   );
 };
 

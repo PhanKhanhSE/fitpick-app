@@ -103,8 +103,7 @@ const ProfileScreen: React.FC = () => {
   };
 
   const handleSettings = () => {
-    // Navigate to settings or show settings modal
-    console.log('Settings pressed');
+    navigation.navigate('SettingScreen');
   };
 
   const handleMealPress = (meal: any) => {
