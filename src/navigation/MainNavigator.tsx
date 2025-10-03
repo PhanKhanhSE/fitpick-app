@@ -19,6 +19,9 @@ import ReviewsScreen from '../screens/detail/review/ReviewsScreen';
 import NotificationsScreen from '../screens/home/NotificationsScreen';
 import PersonalNutritionScreen from '../screens/profile/setting/PersonalNutritionScreen';
 import SettingScreen from '../screens/profile/setting/SettingScreen';
+import PostDetailScreen from '../screens/PostDetailScreen';
+import EditPostScreen from '../screens/EditPostScreen';
+import CreatePostScreen from '../screens/CreatePostScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -101,7 +104,21 @@ export const MainNavigator = () => {
                     component={SettingScreen}
                     options={{ headerShown: false }} 
                 />
-
+                <Stack.Screen
+                    name="PostDetailScreen"
+                    component={PostDetailScreen}
+                    options={{ headerShown: false }} 
+                />
+                <Stack.Screen
+                    name="EditPostScreen"
+                    component={EditPostScreen}
+                    options={{ headerShown: false }} 
+                />
+                <Stack.Screen
+                    name="CreatePostScreen"
+                    component={CreatePostScreen}
+                    options={{ headerShown: false }} 
+                />
             </Stack.Navigator>
         </NavigationContainer>
     );

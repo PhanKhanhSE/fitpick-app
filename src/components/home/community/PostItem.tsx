@@ -1,7 +1,6 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
-import { COLORS, SPACING, FONTS, RADII } from "../../../utils/theme";
-import SimpleLineIcons from "@expo/vector-icons/SimpleLineIcons";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { COLORS, SPACING, RADII } from "../../../utils/theme";
 import { Ionicons } from "@expo/vector-icons";
 
 interface PostItemProps {
@@ -17,9 +16,17 @@ interface PostItemProps {
   };
   onLike: (postId: string) => void;
   onComment: (postId: string) => void;
+  onMenuPress?: () => void;       // ✅ thêm prop này
+  currentUserName?: string;       // ✅ thêm prop này
 }
 
-const PostItem: React.FC<PostItemProps> = ({ post, onLike, onComment }) => {
+const PostItem: React.FC<PostItemProps> = ({ 
+  post, 
+  onLike, 
+  onComment, 
+  onMenuPress, 
+  currentUserName 
+}) => {
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -29,6 +36,13 @@ const PostItem: React.FC<PostItemProps> = ({ post, onLike, onComment }) => {
           <Text style={styles.userName}>{post.userName}</Text>
           <Text style={styles.timeAgo}>{post.timeAgo}</Text>
         </View>
+
+        {/* Hiển thị 3 chấm nếu là chính chủ */}
+        {post.userName === currentUserName && onMenuPress && (
+          <TouchableOpacity onPress={onMenuPress}>
+            <Ionicons name="ellipsis-vertical" size={18} color={COLORS.text} />
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Content */}
@@ -38,9 +52,7 @@ const PostItem: React.FC<PostItemProps> = ({ post, onLike, onComment }) => {
       {post.imageUrl && (
         <View style={styles.imageContainer}>
           <View style={styles.imagePlaceholder}>
-            <Text style={{ color: COLORS.muted, fontSize: 12 }}>
-              📷 Hình ảnh
-            </Text>
+            <Text style={{ color: COLORS.muted, fontSize: 12 }}>📷 Hình ảnh</Text>
           </View>
         </View>
       )}
@@ -99,10 +111,7 @@ const styles = StyleSheet.create({
     borderRadius: RADII.umd,
     padding: SPACING.md,
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
@@ -122,9 +131,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: SPACING.md,
   },
-  userInfo: {
-    flex: 1,
-  },
+  userInfo: { flex: 1 },
   userName: {
     fontSize: 16,
     fontWeight: "600",
@@ -142,11 +149,9 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: SPACING.md,
   },
-  imageContainer: {
-    marginBottom: SPACING.md,
-  },
+  imageContainer: { marginBottom: SPACING.md },
   imagePlaceholder: {
-    width: 327,
+    width: "100%",
     height: 250,
     backgroundColor: "#E5E5E5",
     borderRadius: RADII.sm,
@@ -177,15 +182,9 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.sm,
     paddingHorizontal: SPACING.lg,
     borderRadius: RADII.md,
-    backgroundColor: "transparent",
-    borderWidth: 1,
-    borderColor: "transparent",
   },
-  likedButton: {
-  },
-  actionIcon: {
-    marginRight: SPACING.sm,
-  },
+  likedButton: {},
+  actionIcon: { marginRight: SPACING.sm },
   actionText: {
     fontSize: 14,
     color: COLORS.text,

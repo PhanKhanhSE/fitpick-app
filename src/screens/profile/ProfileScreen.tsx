@@ -1,18 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
-  SafeAreaView,
   StatusBar,
   useWindowDimensions,
-} from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../types/navigation';
-import { COLORS, SPACING } from '../../utils/theme';
-import { NutritionStats } from '../../components/home';
+  Alert,
+  TouchableOpacity,
+  Modal,
+} from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../../types/navigation";
+import { COLORS, SPACING } from "../../utils/theme";
+import { NutritionStats } from "../../components/home";
 import {
   NavigationHeader,
   UserProfile,
@@ -20,23 +22,25 @@ import {
   NutritionBars,
   TipSection,
   UsedMeals,
-} from '../../components/profile';
+} from "../../components/profile";
+import { CreatePostInput, PostItem } from "../../components/home/community";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const ProfileScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
-  const [activeTab, setActiveTab] = useState<'nutrition' | 'posts'>('nutrition');
+  const [activeTab, setActiveTab] = useState<"nutrition" | "posts">("nutrition");
   const { height } = useWindowDimensions();
-  
-  // Check if screen is short (less than 700px height)
-  const isShortScreen = height < 700;
+
+  // State cho post & modal menu
+  const [selectedPost, setSelectedPost] = useState<any | null>(null);
+  const [menuVisible, setMenuVisible] = useState(false);
 
   // Sample user data
   const userData = {
-    name: 'Quang Minh',
-    accountType: 'FREE',
-    avatar: 'https://i.pravatar.cc/100?img=1',
+    name: "Quang Minh",
+    accountType: "FREE",
+    avatar: "https://i.pravatar.cc/100?img=1",
   };
 
   // Nutrition data
@@ -50,101 +54,136 @@ const ProfileScreen: React.FC = () => {
 
   // Nutrition bars data
   const nutritionBars = [
-    { label: 'Đường', current: 0, target: 0, unit: 'g', color: COLORS.primary },
-    { label: 'Natri (Sodium)', current: 0, target: 0, unit: 'mg', color: COLORS.primary },
-    { label: 'Chất béo bão hòa', current: 0, target: 0, unit: 'g', color: COLORS.primary },
-    { label: 'Canxi (Calcium)', current: 0, target: 0, unit: 'mg', color: COLORS.primary },
-    { label: 'Vitamin D', current: 0, target: 0, unit: 'IU', color: COLORS.primary },
+    { label: "Đường", current: 0, target: 0, unit: "g", color: COLORS.primary },
+    { label: "Natri (Sodium)", current: 0, target: 0, unit: "mg", color: COLORS.primary },
+    { label: "Chất béo bão hòa", current: 0, target: 0, unit: "g", color: COLORS.primary },
+    { label: "Canxi (Calcium)", current: 0, target: 0, unit: "mg", color: COLORS.primary },
+    { label: "Vitamin D", current: 0, target: 0, unit: "IU", color: COLORS.primary },
   ];
 
   // Sample used meals
   const usedMeals = [
     {
-      id: '1',
-      title: 'Cá hồi sốt tiêu kèm bơ xanh',
-      calories: '0 kcal',
-      time: '0 phút',
-      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
-      tag: 'Bữa sáng',
-      isLocked: false,
-    },
-    {
-      id: '2',
-      title: 'Cá hồi sốt tiêu kèm bơ xanh',
-      calories: '0 kcal',
-      time: '0 phút',
-      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
-      tag: 'Bữa trưa',
-      isLocked: false,
-    },
-
-    {
-      id: '3',
-      title: 'Cá hồi sốt tiêu kèm bơ xanh',
-      calories: '0 kcal',
-      time: '0 phút',
-      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
-      tag: 'Bữa trưa',
-      isLocked: false,
-    },
-    {
-      id: '4',
-      title: 'Cá hồi sốt tiêu kèm bơ xanh',
-      calories: '0 kcal',
-      time: '0 phút',
-      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
-      tag: 'Bữa trưa',
+      id: "1",
+      title: "Cá hồi sốt tiêu kèm bơ xanh",
+      calories: "0 kcal",
+      time: "0 phút",
+      image: {
+        uri: "https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg",
+      },
+      tag: "Bữa sáng",
       isLocked: false,
     },
   ];
 
-  const handleGoBack = () => {
-    navigation.goBack();
+  // Posts của user
+  const [userPosts, setUserPosts] = useState([
+    {
+      id: "1",
+      userName: userData.name,
+      timeAgo: "2 giờ",
+      content: "Bài viết đầu tiên trong trang cá nhân!",
+      likesCount: 2,
+      commentsCount: 1,
+      isLiked: false,
+    },
+    {
+      id: "2",
+      userName: userData.name,
+      timeAgo: "1 ngày",
+      content: "Hôm nay ăn salad bơ rất ngon!",
+      imageUrl:
+        "https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg",
+      likesCount: 5,
+      commentsCount: 0,
+      isLiked: true,
+    },
+  ]);
+
+  // ---- Navigation handlers ----
+  const handleGoBack = () => navigation.goBack();
+  const handleSettings = () => navigation.navigate("SettingScreen");
+  const handleMealPress = (meal: any) =>
+    navigation.navigate("MealDetail", { meal });
+  const handleTabChange = (tab: "nutrition" | "posts") => setActiveTab(tab);
+  const handlePreviousDate = () => console.log("Previous date");
+  const handleNextDate = () => console.log("Next date");
+
+  // ---- POST handlers ----
+  const handleCreatePost = () => {
+    Alert.alert("Tạo bài viết", "Chức năng tạo bài viết sẽ được phát triển sau");
   };
 
-  const handleSettings = () => {
-    navigation.navigate('SettingScreen');
+  const handleLike = (postId: string) => {
+    setUserPosts((prev) =>
+      prev.map((post) =>
+        post.id === postId
+          ? {
+              ...post,
+              isLiked: !post.isLiked,
+              likesCount: post.isLiked
+                ? post.likesCount - 1
+                : post.likesCount + 1,
+            }
+          : post
+      )
+    );
   };
 
-  const handleMealPress = (meal: any) => {
-    navigation.navigate('MealDetail', { meal });
+  const handleComment = (postId: string) => {
+    Alert.alert("Nhận xét", `Bạn nhấn comment ở post ${postId}`);
   };
 
-  const handleTabChange = (tab: 'nutrition' | 'posts') => {
-    setActiveTab(tab);
+  // ---- Menu handlers ----
+  const handleOpenMenu = (post: any) => {
+    setSelectedPost(post);
+    setMenuVisible(true);
+  };
+  const handleEditPost = () => {
+    if (selectedPost) {
+      setMenuVisible(false);
+      navigation.navigate("EditPostScreen", { post: selectedPost });
+    }
   };
 
-  const handlePreviousDate = () => {
-    console.log('Previous date');
+  const handleDeletePost = () => {
+    if (selectedPost) {
+      Alert.alert("Xóa bài viết", "Bạn có chắc muốn xóa?", [
+        { text: "Hủy", style: "cancel" },
+        {
+          text: "Xóa",
+          style: "destructive",
+          onPress: () => {
+            setUserPosts((prev) => prev.filter((p) => p.id !== selectedPost.id));
+            setMenuVisible(false);
+          },
+        },
+      ]);
+    }
   };
 
-  const handleNextDate = () => {
-    console.log('Next date');
+  // ---- Bấm vào post đi chi tiết ----
+  const handlePostPress = (post: any) => {
+    navigation.navigate("PostDetailScreen", { post });
   };
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
-      
-      {/* Navigation Header - Always on top */}
-      <NavigationHeader
-        onGoBack={handleGoBack}
-        onSettings={handleSettings}
-      />
 
-      <ScrollView 
-        style={styles.content} 
+      <NavigationHeader onGoBack={handleGoBack} onSettings={handleSettings} />
+
+      <ScrollView
+        style={styles.content}
         showsVerticalScrollIndicator={false}
-        stickyHeaderIndices={[1]} // Make the tabs sticky
+        stickyHeaderIndices={[1]}
       >
-        {/* User Profile - Will scroll normally */}
         <UserProfile
           name={userData.name}
           accountType={userData.accountType}
           avatar={userData.avatar}
         />
 
-        {/* Sticky Tabs with Date - Will stick when scrolling */}
         <StickyTabsWithDate
           activeTab={activeTab}
           onTabChange={handleTabChange}
@@ -153,55 +192,96 @@ const ProfileScreen: React.FC = () => {
           onNextDate={handleNextDate}
         />
 
-        {/* Content based on active tab */}
-        {activeTab === 'nutrition' ? (
+        {activeTab === "nutrition" ? (
           <>
-            <NutritionStats
-              targetCalories={nutritionData.targetCalories}
-              consumedCalories={nutritionData.consumedCalories}
-              starch={nutritionData.starch}
-              protein={nutritionData.protein}
-              fat={nutritionData.fat}
-            />
-            
+            <NutritionStats {...nutritionData} />
             <NutritionBars nutritionBars={nutritionBars} />
-            
-            <TipSection 
-              tipText="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer at quam nec sapien fringilla ultrices."
-            />
-
-            <UsedMeals
-              meals={usedMeals}
-              onMealPress={handleMealPress}
-            />
+            <TipSection tipText="Lorem ipsum dolor sit amet..." />
+            <UsedMeals meals={usedMeals} onMealPress={handleMealPress} />
           </>
         ) : (
           <View style={styles.postsContainer}>
-            <Text style={styles.emptyText}>Chưa có bài viết nào</Text>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <CreatePostInput onPress={handleCreatePost} />
+              {userPosts.length > 0 ? (
+                userPosts.map((post) => (
+                  <TouchableOpacity
+                    key={post.id}
+                    activeOpacity={0.9}
+                    onPress={() => handlePostPress(post)}
+                  >
+                    <PostItem
+                      post={post}
+                      onLike={handleLike}
+                      onComment={handleComment}
+                      onMenuPress={() => handleOpenMenu(post)}
+                      currentUserName={userData.name}
+                    />
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <Text style={styles.emptyText}>Chưa có bài viết nào</Text>
+              )}
+              <View style={{ height: SPACING.xxl }} />
+            </ScrollView>
           </View>
         )}
       </ScrollView>
+
+      {/* Menu Modal */}
+      <Modal
+        visible={menuVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setMenuVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <TouchableOpacity style={styles.modalBtn} onPress={handleEditPost}>
+              <Text style={styles.modalText}>Chỉnh sửa</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.modalBtn} onPress={handleDeletePost}>
+              <Text style={[styles.modalText, { color: "red" }]}>Xóa</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  content: {
-    flex: 1,
-  },
-  postsContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: SPACING.xl,
-  },
+  container: { flex: 1, backgroundColor: COLORS.background },
+  content: { flex: 1 },
+  postsContainer: { flex: 1, paddingVertical: SPACING.md },
   emptyText: {
     fontSize: 16,
+    textAlign: "center",
     color: COLORS.muted,
+    marginTop: SPACING.lg,
+  },
+
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.4)",
+  },
+  modalContent: {
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+  },
+  modalBtn: {
+    paddingVertical: 8,
+  },
+  modalText: {
+    fontSize: 16,
+    color: COLORS.text,
+    textAlign: "left",
   },
 });
 
