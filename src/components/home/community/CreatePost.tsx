@@ -6,13 +6,13 @@ import {
   TouchableOpacity,
   Image,
 } from "react-native";
-import { COLORS, SPACING, FONTS, RADII } from "../../../utils/theme";
+import { COLORS, SPACING, RADII } from "../../../utils/theme";
 
-interface CreatePostInputProps {
+interface CreatePostProps {
   onPress: () => void;
 }
 
-const CreatePostInput: React.FC<CreatePostInputProps> = ({ onPress }) => {
+const CreatePost: React.FC<CreatePostProps> = ({ onPress }) => {
   return (
     <TouchableOpacity
       style={styles.container}
@@ -70,4 +70,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default CreatePostInput;
+export default CreatePost;

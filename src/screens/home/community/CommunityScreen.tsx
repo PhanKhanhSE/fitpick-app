@@ -3,18 +3,21 @@ import {
   View, 
   ScrollView, 
   StyleSheet, 
-  Alert,
+  Alert, 
+  TouchableOpacity 
 } from 'react-native';
-import { COLORS, SPACING } from '../../../utils/theme';
-import { CreatePostInput, PostItem } from './index';
+import { useNavigation } from '@react-navigation/native';
 
-// Mock data cho demo
+import { COLORS, SPACING } from '../../../utils/theme';
+import CreatePost from '../../../components/home/community/CreatePost';
+import PostItem from '../../../components/home/community/PostItem';
+
 const mockPosts = [
   {
     id: '1',
     userName: 'Quang Minh',
     timeAgo: '1 ngày',
-    content: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer at quam nec sapien fringilla ultrices. Vivamus ut lorem at nisl commodo placerat.',
+    content: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
     imageUrl: 'placeholder',
     likesCount: 0,
     commentsCount: 0,
@@ -24,7 +27,8 @@ const mockPosts = [
     id: '2',
     userName: 'Mai Anh',
     timeAgo: '2 giờ',
-    content: 'Hôm nay tôi đã thử một công thức mới rất ngon! Ai muốn chia sẻ kinh nghiệm nấu ăn không?',
+    content: 'Hôm nay tôi đã thử một công thức mới rất ngon!',
+    imageUrl: undefined,
     likesCount: 5,
     commentsCount: 3,
     isLiked: true,
@@ -33,7 +37,8 @@ const mockPosts = [
     id: '3',
     userName: 'Hoàng Long',
     timeAgo: '3 ngày',
-    content: 'Tip nhỏ: Uống nước trước bữa ăn 30 phút sẽ giúp cải thiện quá trình tiêu hóa đấy các bạn!',
+    content: 'Tip nhỏ: Uống nước trước bữa ăn 30 phút giúp tiêu hóa tốt hơn!',
+    imageUrl: undefined,
     likesCount: 12,
     commentsCount: 8,
     isLiked: false,
@@ -42,10 +47,12 @@ const mockPosts = [
 
 const CommunityScreen: React.FC = () => {
   const [posts, setPosts] = useState(mockPosts);
+  const navigation = useNavigation<any>(); // ✅ bỏ kiểu strict, tránh lỗi TS
 
   const handleCreatePost = () => {
-    Alert.alert('Tạo bài viết', 'Chức năng tạo bài viết sẽ được phát triển sau');
+    navigation.navigate("CreatePostScreen");
   };
+
 
   const handleLike = (postId: string) => {
     setPosts(prevPosts => 
@@ -63,7 +70,14 @@ const CommunityScreen: React.FC = () => {
   };
 
   const handleComment = (postId: string) => {
-    Alert.alert('Nhận xét', 'Chức năng nhận xét sẽ được phát triển sau');
+    const post = posts.find(p => p.id === postId);
+    if (post) {
+      navigation.navigate('PostDetailScreen', { post });
+    }
+  };
+
+  const handlePressPost = (post: any) => {
+    navigation.navigate('PostDetailScreen', { post });
   };
 
   return (
@@ -72,18 +86,18 @@ const CommunityScreen: React.FC = () => {
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
       >
-        <CreatePostInput onPress={handleCreatePost} />
+        <CreatePost onPress={handleCreatePost} />
         
         {posts.map(post => (
-          <PostItem
-            key={post.id}
-            post={post}
-            onLike={handleLike}
-            onComment={handleComment}
-          />
+          <TouchableOpacity key={post.id} onPress={() => handlePressPost(post)}>
+            <PostItem
+              post={post}
+              onLike={handleLike}
+              onComment={handleComment}
+            />
+          </TouchableOpacity>
         ))}
         
-        {/* Bottom spacing for better scrolling */}
         <View style={styles.bottomSpacing} />
       </ScrollView>
     </View>
@@ -96,9 +110,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   scrollView: {
-    flex: 1,
-  },
-  placeholderContainer: {
     flex: 1,
   },
   bottomSpacing: {

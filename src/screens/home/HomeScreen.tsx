@@ -12,7 +12,7 @@ import NutritionStats from '../../components/home/NutritionStats';
 import MyMenuSection from '../../components/home/personal/MyMenuSection';
 import SuggestedSection from '../../components/home/personal/SuggestedSection';
 import PremiumModal from '../../components/home/PremiumModal';
-import { CommunityScreen } from '../../components/home/community';
+import CommunityScreen from './community/CommunityScreen';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/navigation';

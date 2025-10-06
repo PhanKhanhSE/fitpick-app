@@ -8,6 +8,7 @@ import {
   Animated,
   Dimensions,
 } from "react-native";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS, SPACING, RADII } from "../../utils/theme";
 
@@ -25,6 +26,7 @@ const PremiumModal: React.FC<PremiumModalProps> = ({
   onClose,
   onUpgrade,
 }) => {
+  const insets = useSafeAreaInsets();
   const slideAnim = React.useRef(new Animated.Value(height)).current;
 
   React.useEffect(() => {
@@ -60,13 +62,20 @@ const PremiumModal: React.FC<PremiumModalProps> = ({
       transparent
       animationType="none"
       onRequestClose={onClose}
+      statusBarTranslucent={true}
     >
-      <View style={styles.overlay}>
+      <View style={styles.modalContainerWrapper}>
+        <TouchableOpacity
+          style={[styles.overlay, { paddingTop: insets.top }]}
+          onPress={onClose}
+          activeOpacity={1}
+        />
         <Animated.View
           style={[
             styles.modalContainer,
             {
               transform: [{ translateY: slideAnim }],
+              paddingBottom: insets.bottom + 40,
             },
           ]}
         >
@@ -173,10 +182,18 @@ const PremiumModal: React.FC<PremiumModalProps> = ({
 };
 
 const styles = StyleSheet.create({
-  overlay: {
+  modalContainerWrapper: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
+    justifyContent: 'flex-end',
+    marginBottom: -SPACING.lg,
+  },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalContainer: {
     backgroundColor: COLORS.background,
