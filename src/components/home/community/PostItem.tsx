@@ -95,7 +95,12 @@ const PostItem: React.FC<PostItemProps> = ({
           onPress={() => onComment(post.id)}
           activeOpacity={0.7}
         >
-          <Text style={styles.actionIcon}>💬</Text>
+          <Ionicons 
+            name="chatbubble-outline" 
+            size={18} 
+            color={COLORS.text} 
+            style={styles.actionIcon}
+          />
           <Text style={styles.actionText}>Nhận xét</Text>
         </TouchableOpacity>
       </View>

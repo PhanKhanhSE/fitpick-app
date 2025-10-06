@@ -19,9 +19,9 @@ import ReviewsScreen from '../screens/detail/review/ReviewsScreen';
 import NotificationsScreen from '../screens/home/NotificationsScreen';
 import PersonalNutritionScreen from '../screens/profile/setting/PersonalNutritionScreen';
 import SettingScreen from '../screens/profile/setting/SettingScreen';
-import PostDetailScreen from '../screens/PostDetailScreen';
-import EditPostScreen from '../screens/EditPostScreen';
-import CreatePostScreen from '../screens/CreatePostScreen';
+import PostDetailScreen from '../screens/home/community/PostDetailScreen';
+import CreatePostScreen from '../screens/home/community/CreatePostScreen';
+import EditPostScreen from '../screens/home/community/EditPostScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 

@@ -7,23 +7,21 @@ import {
   TouchableOpacity,
   Image,
   ScrollView,
-  StatusBar,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { COLORS, SPACING, RADII } from "../utils/theme";
+import { COLORS, SPACING, RADII } from "../../../utils/theme";
 
-const EditPostScreen: React.FC<any> = ({ route, navigation }) => {
-  const { post } = route.params;
-  const [content, setContent] = useState(post.content || "");
-  const [image, setImage] = useState(post.imageUrl || null);
+const CreatePostScreen: React.FC<any> = ({ navigation }) => {
+  const [content, setContent] = useState("");
+  const [image, setImage] = useState<string | null>(null);
 
   const handleSave = () => {
-    // Xử lý lưu (call API hoặc emit event)
-    console.log("Lưu bài viết:", { content, image });
+    // Xử lý tạo mới (call API hoặc emit event)
+    console.log("Tạo bài viết:", { content, image });
 
-    // Quay lại màn trước + truyền dữ liệu (nếu cần)
+    // Quay lại màn trước (nếu cần refresh thì emit event hoặc gọi API)
     navigation.goBack();
   };
 
@@ -32,17 +30,14 @@ const EditPostScreen: React.FC<any> = ({ route, navigation }) => {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
-
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={22} color={COLORS.text} />
+          <Ionicons name="chevron-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Chỉnh sửa bài viết</Text>
+        <Text style={styles.headerTitle}>Tạo bài viết</Text>
       </View>
 
-      {/* Nội dung cuộn */}
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ padding: SPACING.md }}
@@ -70,73 +65,83 @@ const EditPostScreen: React.FC<any> = ({ route, navigation }) => {
         />
       </ScrollView>
 
-      {/* Nút lưu ở cuối màn hình */}
+      {/* Nút lưu */}
       <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-        <Text style={styles.saveBtnText}>Lưu</Text>
+        <Text style={styles.saveBtnText}>Đăng</Text>
       </TouchableOpacity>
     </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    paddingVertical: SPACING.md,
+    backgroundColor: COLORS.background,
   },
   headerTitle: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 20,
+    fontWeight: "700",
     color: COLORS.text,
-    marginLeft: SPACING.sm, // cách icon back 1 chút
+    marginLeft: SPACING.sm,
   },
   label: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: COLORS.text,
-    marginTop: SPACING.md,
+    fontSize: 16,
+    fontWeight: "700",
+    color: COLORS.text, 
     marginBottom: SPACING.sm,
   },
   imageBox: {
-    width: "100%",
-    height: 180,
-    backgroundColor: "#f0f0f0",
-    borderRadius: RADII.md,
+    minWidth: 327,
+    height: 250,
+    borderRadius: RADII.umd,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: SPACING.md,
+    borderWidth: 1,
+    borderColor: COLORS.under_process,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.md,
   },
   image: {
-    width: "100%",
-    height: "100%",
+    minWidth: 327,
+    height: 250,
     borderRadius: RADII.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.md,
   },
   input: {
-    minHeight: 120,
-    backgroundColor: COLORS.white,
-    borderRadius: RADII.md,
-    padding: SPACING.md,
+    minWidth: 327,
+    minHeight: 170,
+    backgroundColor: COLORS.background,
+    borderRadius: RADII.umd,
+    borderWidth: 1,
+    borderColor: COLORS.under_process,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.md,
     textAlignVertical: "top",
     fontSize: 14,
     color: COLORS.text,
   },
   saveBtn: {
     backgroundColor: COLORS.primary,
-    borderRadius: RADII.lg,
+    borderRadius: RADII.umd,
     paddingVertical: 14,
     alignItems: "center",
     margin: SPACING.md,
+    marginBottom: SPACING.xxl,
   },
   saveBtnText: {
     color: COLORS.white,
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
   },
 });
 
-export default EditPostScreen;
+export default CreatePostScreen;

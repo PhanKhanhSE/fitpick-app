@@ -12,17 +12,18 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { COLORS, SPACING, RADII } from "../utils/theme";
+import { COLORS, SPACING, RADII } from "../../../utils/theme";
 
-const CreatePostScreen: React.FC<any> = ({ navigation }) => {
-  const [content, setContent] = useState("");
-  const [image, setImage] = useState<string | null>(null);
+const EditPostScreen: React.FC<any> = ({ route, navigation }) => {
+  const { post } = route.params;
+  const [content, setContent] = useState(post.content || "");
+  const [image, setImage] = useState(post.imageUrl || null);
 
   const handleSave = () => {
-    // Xử lý tạo mới (call API hoặc emit event)
-    console.log("Tạo bài viết:", { content, image });
+    // Xử lý lưu (call API hoặc emit event)
+    console.log("Lưu bài viết:", { content, image });
 
-    // Quay lại màn trước (nếu cần refresh thì emit event hoặc gọi API)
+    // Quay lại màn trước + truyền dữ liệu (nếu cần)
     navigation.goBack();
   };
 
@@ -38,9 +39,10 @@ const CreatePostScreen: React.FC<any> = ({ navigation }) => {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={22} color={COLORS.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Tạo bài viết</Text>
+        <Text style={styles.headerTitle}>Chỉnh sửa bài viết</Text>
       </View>
 
+      {/* Nội dung cuộn */}
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ padding: SPACING.md }}
@@ -68,9 +70,9 @@ const CreatePostScreen: React.FC<any> = ({ navigation }) => {
         />
       </ScrollView>
 
-      {/* Nút lưu */}
+      {/* Nút lưu ở cuối màn hình */}
       <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-        <Text style={styles.saveBtnText}>Đăng</Text>
+        <Text style={styles.saveBtnText}>Lưu</Text>
       </TouchableOpacity>
     </KeyboardAvoidingView>
   );
@@ -91,7 +93,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: COLORS.text,
-    marginLeft: SPACING.sm,
+    marginLeft: SPACING.sm, // cách icon back 1 chút
   },
   label: {
     fontSize: 14,
@@ -137,4 +139,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default CreatePostScreen;
+export default EditPostScreen;

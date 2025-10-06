@@ -23,7 +23,7 @@ import {
   TipSection,
   UsedMeals,
 } from "../../components/profile";
-import { CreatePostInput, PostItem } from "../../components/home/community";
+import { CreatePost, PostItem } from "../../components/home/community";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -83,6 +83,7 @@ const ProfileScreen: React.FC = () => {
       userName: userData.name,
       timeAgo: "2 giờ",
       content: "Bài viết đầu tiên trong trang cá nhân!",
+      imageUrl: undefined,
       likesCount: 2,
       commentsCount: 1,
       isLiked: false,
@@ -111,7 +112,7 @@ const ProfileScreen: React.FC = () => {
 
   // ---- POST handlers ----
   const handleCreatePost = () => {
-    Alert.alert("Tạo bài viết", "Chức năng tạo bài viết sẽ được phát triển sau");
+    navigation.navigate("CreatePostScreen");
   };
 
   const handleLike = (postId: string) => {
@@ -131,7 +132,10 @@ const ProfileScreen: React.FC = () => {
   };
 
   const handleComment = (postId: string) => {
-    Alert.alert("Nhận xét", `Bạn nhấn comment ở post ${postId}`);
+    const post = userPosts.find(p => p.id === postId);
+    if (post) {
+      navigation.navigate('PostDetailScreen', { post });
+    }
   };
 
   // ---- Menu handlers ----
@@ -202,7 +206,7 @@ const ProfileScreen: React.FC = () => {
         ) : (
           <View style={styles.postsContainer}>
             <ScrollView showsVerticalScrollIndicator={false}>
-              <CreatePostInput onPress={handleCreatePost} />
+              <CreatePost onPress={handleCreatePost} />
               {userPosts.length > 0 ? (
                 userPosts.map((post) => (
                   <TouchableOpacity

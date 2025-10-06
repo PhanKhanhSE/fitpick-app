@@ -6,12 +6,11 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  StatusBar,
   FlatList,
   Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { COLORS, SPACING, RADII } from "../utils/theme";
+import { COLORS, SPACING, RADII } from "../../../utils/theme";
 
 interface Comment {
   id: string;
@@ -36,6 +35,35 @@ const mockComments: Comment[] = [
     content: "Mình cũng đang tìm hiểu về vấn đề này.",
     avatarUrl: "https://i.pravatar.cc/100?img=2",
   },
+  {
+    id: "3",
+    userName: "user456",
+    timeAgo: "2 giờ",
+    content: "Mình cũng đang tìm hiểu về vấn đề này.",
+    avatarUrl: "https://i.pravatar.cc/100?img=2",
+  },
+  {
+    id: "4",
+    userName: "user456",
+    timeAgo: "2 giờ",
+    content: "Mình cũng đang tìm hiểu về vấn đề này.",
+    avatarUrl: "https://i.pravatar.cc/100?img=2",
+  },
+  {
+    id: "5",
+    userName: "user456",
+    timeAgo: "2 giờ",
+    content: "Mình cũng đang tìm hiểu về vấn đề này.",
+    avatarUrl: "https://i.pravatar.cc/100?img=2",
+  },
+  {
+    id: "6",
+    userName: "user456",
+    timeAgo: "2 giờ",
+    content: "Mình cũng đang tìm hiểu về vấn đề này.",
+    avatarUrl: "https://i.pravatar.cc/100?img=2",
+  },
+
 ];
 
 const PostDetailScreen: React.FC<any> = ({ route, navigation }) => {
@@ -58,17 +86,12 @@ const PostDetailScreen: React.FC<any> = ({ route, navigation }) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
-
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={22} color={COLORS.text} />
+          <Ionicons name="chevron-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Bài viết</Text>
-        <TouchableOpacity>
-          <Ionicons name="ellipsis-vertical" size={20} color={COLORS.text} />
-        </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -134,7 +157,7 @@ const PostDetailScreen: React.FC<any> = ({ route, navigation }) => {
                 <Text style={styles.commentContent}>{item.content}</Text>
               </View>
               <TouchableOpacity>
-                <Ionicons name="heart-outline" size={16} color={COLORS.text} />
+                <Ionicons name="heart-outline" size={20} color={COLORS.text} />
               </TouchableOpacity>
             </View>
           )}
@@ -170,83 +193,134 @@ const PostDetailScreen: React.FC<any> = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    backgroundColor: COLORS.white,
+    paddingVertical: SPACING.md,
+    backgroundColor: COLORS.background,
   },
-  headerTitle: { fontSize: 16, fontWeight: "600", color: COLORS.text },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: COLORS.text,
+    marginLeft: SPACING.sm,
+  },
 
   content: { flex: 1 },
 
   postContainer: {
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.background,
     padding: SPACING.md,
     marginBottom: SPACING.md,
   },
-  postHeader: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: RADII.lg,
-    backgroundColor: "#d3d3d3",
-    marginRight: SPACING.sm,
+  postHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
   },
-  userName: { fontSize: 14, fontWeight: "600", color: COLORS.text },
-  timeAgo: { fontSize: 12, color: COLORS.muted },
+  avatar: {
+    width: 45,
+    height: 45,
+    borderRadius: RADII.xl,
+    backgroundColor: "#D3D3D3",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: SPACING.md,
+  },
+  userName: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: COLORS.text,
+  },
+  timeAgo: {
+    fontSize: 12,
+    fontWeight: '300',
+    color: COLORS.text,
+  },
   postContent: {
-    fontSize: 14,
+    fontSize: 16,
+    fontWeight: "400",
     lineHeight: 20,
     color: COLORS.text,
     marginBottom: SPACING.md,
   },
   imagePlaceholder: {
-    width: "100%",
-    height: 180,
-    borderRadius: RADII.sm,
-    backgroundColor: "#eee",
+    minWidth: 327,
+    height: 250,
+    borderRadius: RADII.umd,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: SPACING.md,
+    borderWidth: 1,
+    borderColor: COLORS.under_process,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.md,
   },
   stats: {
     flexDirection: "row",
     justifyContent: "space-between",
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
     paddingBottom: 6,
     marginBottom: 6,
   },
-  statsText: { fontSize: 12, color: COLORS.muted },
+  statsText: {
+    fontSize: 14,
+    fontWeight: "300",
+    color: COLORS.text,
+  },
   actions: {
     flexDirection: "row",
     justifyContent: "space-around",
     marginVertical: 4,
   },
-  actionBtn: { flexDirection: "row", alignItems: "center", gap: 6 },
-  actionText: { fontSize: 14, color: COLORS.text },
+  actionBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  actionText: {
+    fontSize: 14,
+    fontWeight: "300",
+    color: COLORS.text,
+  },
 
   // Comments
   commentItem: {
     flexDirection: "row",
     padding: SPACING.md,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.background,
     marginBottom: 1,
   },
   commentAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#ccc",
-    marginRight: SPACING.sm,
+    width: 45,
+    height: 45,
+    borderRadius: RADII.xl,
+    backgroundColor: "#D3D3D3",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: SPACING.md,
   },
-  commentUser: { fontSize: 13, fontWeight: "600", color: COLORS.text },
-  commentTime: { fontSize: 11, color: COLORS.muted },
-  commentContent: { fontSize: 13, color: COLORS.text, marginTop: 2 },
+  commentUser: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: COLORS.text,
+  },
+  commentTime: {
+    fontSize: 12,
+    fontWeight: '300',
+    color: COLORS.text,
+  },
+  commentContent: {
+    fontSize: 16,
+    lineHeight: 20,
+    fontWeight: "400",
+    color: COLORS.text,
+    marginTop: 2,
+  },
 
   // Input Comment
   commentInputContainer: {
@@ -257,23 +331,25 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: SPACING.sm,
-    paddingVertical: 6,
-    backgroundColor: COLORS.white,
+    paddingVertical: SPACING.md,
+    backgroundColor: COLORS.background,
     borderTopWidth: 1,
     borderTopColor: "#eee",
   },
   inputAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 45,
+    height: 45,
+    borderRadius: RADII.xl,
     marginRight: SPACING.sm,
   },
   commentInput: {
     flex: 1,
-    height: 36,
-    backgroundColor: "#f8f8f8",
-    borderRadius: 18,
-    paddingHorizontal: 12,
+    height: 40,
+    borderWidth: 1,
+    borderColor: COLORS.under_process,
+    backgroundColor: COLORS.background,
+    borderRadius: RADII.umd,
+    paddingHorizontal: SPACING.md,
     fontSize: 14,
     marginRight: SPACING.sm,
   },

@@ -9,7 +9,8 @@ import {
 import { useNavigation } from '@react-navigation/native';
 
 import { COLORS, SPACING } from '../../../utils/theme';
-import { CreatePostInput, PostItem } from './index';
+import CreatePost from '../../../components/home/community/CreatePost';
+import PostItem from '../../../components/home/community/PostItem';
 
 const mockPosts = [
   {
@@ -27,6 +28,7 @@ const mockPosts = [
     userName: 'Mai Anh',
     timeAgo: '2 giờ',
     content: 'Hôm nay tôi đã thử một công thức mới rất ngon!',
+    imageUrl: undefined,
     likesCount: 5,
     commentsCount: 3,
     isLiked: true,
@@ -36,6 +38,7 @@ const mockPosts = [
     userName: 'Hoàng Long',
     timeAgo: '3 ngày',
     content: 'Tip nhỏ: Uống nước trước bữa ăn 30 phút giúp tiêu hóa tốt hơn!',
+    imageUrl: undefined,
     likesCount: 12,
     commentsCount: 8,
     isLiked: false,
@@ -67,11 +70,14 @@ const CommunityScreen: React.FC = () => {
   };
 
   const handleComment = (postId: string) => {
-    Alert.alert('Nhận xét', 'Chức năng nhận xét sẽ được phát triển sau');
+    const post = posts.find(p => p.id === postId);
+    if (post) {
+      navigation.navigate('PostDetailScreen', { post });
+    }
   };
 
   const handlePressPost = (post: any) => {
-    navigation.navigate('PostDetailScreen', { post }); // ✅ không cần ép kiểu [never, never] nữa
+    navigation.navigate('PostDetailScreen', { post });
   };
 
   return (
@@ -80,7 +86,7 @@ const CommunityScreen: React.FC = () => {
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
       >
-        <CreatePostInput onPress={handleCreatePost} />
+        <CreatePost onPress={handleCreatePost} />
         
         {posts.map(post => (
           <TouchableOpacity key={post.id} onPress={() => handlePressPost(post)}>
