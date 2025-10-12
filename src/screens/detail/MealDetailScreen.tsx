@@ -5,6 +5,7 @@ import {
   Animated,
   StatusBar,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../../utils/theme';
 import {
   MealDetailHeader,
@@ -87,7 +88,7 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
   });
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
       {/* Header Overlay */}
@@ -153,7 +154,7 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
         onAddToPlan={handleAddToPlan}
         onAddToFavorites={handleAddToFavorites}
       />
-    </View>
+    </SafeAreaView>
   );
 };
 

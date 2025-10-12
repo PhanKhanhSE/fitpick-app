@@ -6,10 +6,14 @@ import {
   ScrollView,
   TouchableOpacity,
   Switch,
+  Alert,
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS, RADII, SPACING } from "../../../utils/theme";
+import PremiumModal from "../../../components/home/PremiumModal";
+import ChangePasswordModal from "./ChangePasswordModal";
 
 type NavigationProp = any;
 
@@ -17,9 +21,47 @@ const SettingsScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const [notify, setNotify] = useState(true);
   const accountType: string = "FREE"; // hoặc 'PRO' để test
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+
+  const handleUpgradeToPro = () => {
+    // Logic nâng cấp lên PRO
+    console.log('Upgrading to PRO...');
+    Alert.alert('Thành công', 'Bạn đã nâng cấp lên PRO thành công!');
+    setShowPremiumModal(false);
+  };
+
+  const handleChangePassword = (oldPassword: string, newPassword: string) => {
+    // Logic đổi mật khẩu
+    console.log('Changing password...', { oldPassword, newPassword });
+    Alert.alert('Thành công', 'Mật khẩu đã được thay đổi thành công!');
+  };
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Đăng xuất', 
+      'Bạn có chắc chắn muốn đăng xuất?',
+      [
+        { text: 'Hủy', style: 'cancel' },
+        { 
+          text: 'Đăng xuất', 
+          style: 'destructive',
+          onPress: () => {
+            // TODO: Clear user data/token
+            console.log('Logging out user...');
+            // Navigate to AuthLanding screen
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'AuthLanding' }],
+            });
+          }
+        }
+      ]
+    );
+  };
 
   return (
-    <View style={styles.safe}>
+    <SafeAreaView style={styles.safe}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -51,7 +93,10 @@ const SettingsScreen: React.FC = () => {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.item}>
+        <TouchableOpacity 
+          style={styles.item}
+          onPress={() => setShowPremiumModal(true)}
+        >
           <Text style={styles.itemNormal}>Nâng cấp lên PRO</Text>
           <Ionicons name="chevron-forward" size={18} color={COLORS.text} style={styles.forwardButton} />
         </TouchableOpacity>
@@ -61,7 +106,10 @@ const SettingsScreen: React.FC = () => {
           <Text style={styles.subText}>a@gmail.com</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.item}>
+        <TouchableOpacity 
+          style={styles.item}
+          onPress={() => setShowChangePasswordModal(true)}
+        >
           <Text style={styles.itemNormal}>Đổi mật khẩu</Text>
           <Ionicons name="chevron-forward" size={18} color={COLORS.text} style={styles.forwardButton} />
         </TouchableOpacity>
@@ -74,7 +122,10 @@ const SettingsScreen: React.FC = () => {
         <View style={styles.sectionSpacer} />
 
         {/* ===== Thông tin cá nhân ===== */}
-        <TouchableOpacity style={styles.item}>
+        <TouchableOpacity 
+          style={styles.item}
+          onPress={() => navigation.navigate("UserInfo")}
+        >
           <Text style={styles.itemLargeText}>Thông tin cá nhân</Text>
           <Ionicons name="chevron-forward" size={20} color={COLORS.text} style={styles.forwardButton} />
         </TouchableOpacity>
@@ -117,12 +168,26 @@ const SettingsScreen: React.FC = () => {
         </TouchableOpacity>
 
         <View style={styles.logoutWrapper}>
-          <TouchableOpacity style={styles.logoutButton}>
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
             <Text style={styles.logoutText}>Đăng xuất</Text>
           </TouchableOpacity>
         </View>
       </View>
-    </View>
+
+      {/* Premium Modal */}
+      <PremiumModal
+        visible={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+        onUpgrade={handleUpgradeToPro}
+      />
+
+      {/* Change Password Modal */}
+      <ChangePasswordModal
+        visible={showChangePasswordModal}
+        onClose={() => setShowChangePasswordModal(false)}
+        onSave={handleChangePassword}
+      />
+    </SafeAreaView>
   );
 };
 
@@ -158,7 +223,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   accountRow: {
-    paddingHorizontal: SPACING.lg,
+    marginLeft: SPACING.sm,
+    paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
   },
   accountLeft: {
@@ -166,6 +232,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   accountLabel: {
+    marginLeft: -SPACING.sm,
     fontSize: 18,
     fontWeight: "500",
     color: COLORS.text,
@@ -195,9 +262,11 @@ const styles = StyleSheet.create({
     color: "#fff",
   },
   item: {
-    paddingHorizontal: SPACING.lg,
+    paddingHorizontal: SPACING.umd,
     paddingVertical: SPACING.umd,
-    marginHorizontal: SPACING.lg,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: COLORS.muted,
+    marginHorizontal: SPACING.sm,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -212,8 +281,8 @@ const styles = StyleSheet.create({
     color: COLORS.text,
   },
   itemLargeText: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 18,
+    fontWeight: "700",
   },
   subText: {
     fontSize: 14,
@@ -225,9 +294,8 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   itemSwitch: {
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.umd,
-    marginHorizontal: SPACING.lg,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",

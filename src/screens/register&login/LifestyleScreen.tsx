@@ -25,7 +25,19 @@ const LifestyleScreen = () => {
     const [selected, setSelected] = useState<LifestyleKey>(null);
 
     const handleContinue = () => {
-        navigation.navigate('EatStyle');
+        // Kiểm tra nếu đang ở trong flow cài đặt
+        const isSettingsFlow = navigation.getState().routes.some(route => 
+            route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'
+        );
+        
+        if (isSettingsFlow) {
+            // Nếu đang trong settings, lưu mức độ vận động và quay lại
+            console.log('Lưu mức độ vận động:', { selected });
+            navigation.goBack();
+        } else {
+            // Nếu đang trong flow đăng ký, tiếp tục đến màn hình EatStyle
+            navigation.navigate('EatStyle');
+        }
     };
 
     return (
@@ -85,7 +97,9 @@ const LifestyleScreen = () => {
 
             <View style={styles.buttonContainer}>
                 <AppButton 
-                    title="Tiếp tục" 
+                    title={navigation.getState().routes.some(route => 
+                        route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'
+                    ) ? "Lưu" : "Tiếp tục"}
                     onPress={handleContinue} 
                     filled 
                     style={StyleSheet.flatten([

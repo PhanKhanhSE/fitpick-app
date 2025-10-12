@@ -31,7 +31,19 @@ const GoalsScreen = () => {
     }, [selected, otherText]);
 
     const handleContinue = () => {
-        navigation.navigate('Lifestyle');
+        // Kiểm tra nếu đang ở trong flow cài đặt
+        const isSettingsFlow = navigation.getState().routes.some(route => 
+            route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'
+        );
+        
+        if (isSettingsFlow) {
+            // Nếu đang trong settings, lưu mục tiêu và quay lại
+            console.log('Lưu mục tiêu:', { selected, otherText });
+            navigation.goBack();
+        } else {
+            // Nếu đang trong flow đăng ký, tiếp tục đến màn hình Lifestyle
+            navigation.navigate('Lifestyle');
+        }
     };
 
     return (
@@ -107,7 +119,9 @@ const GoalsScreen = () => {
 
                 <View style={styles.buttonContainer}>
                 <AppButton 
-                    title="Tiếp tục" 
+                    title={navigation.getState().routes.some(route => 
+                        route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'
+                    ) ? "Lưu" : "Tiếp tục"}
                     onPress={handleContinue} 
                     filled 
                     style={StyleSheet.flatten([

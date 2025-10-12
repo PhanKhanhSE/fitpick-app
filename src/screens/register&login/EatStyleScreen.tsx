@@ -52,8 +52,19 @@ const EatStyleScreen = () => {
     const [selected, setSelected] = useState<DietPlanKey>(null);
 
     const handleContinue = () => {
-        // Chuyển sang màn hình CookingLevel
-        navigation.navigate('CookingLevel');
+        // Kiểm tra nếu đang ở trong flow cài đặt
+        const isSettingsFlow = navigation.getState().routes.some(route => 
+            route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'
+        );
+        
+        if (isSettingsFlow) {
+            // Nếu đang trong settings, lưu chế độ ăn và quay lại
+            console.log('Lưu chế độ ăn:', { selected });
+            navigation.goBack();
+        } else {
+            // Nếu đang trong flow đăng ký, tiếp tục đến màn hình CookingLevel
+            navigation.navigate('CookingLevel');
+        }
     };
 
     return (
@@ -121,7 +132,9 @@ const EatStyleScreen = () => {
 
             <View style={styles.buttonContainer}>
                 <AppButton 
-                    title="Tiếp tục" 
+                    title={navigation.getState().routes.some(route => 
+                        route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'
+                    ) ? "Lưu" : "Tiếp tục"}
                     onPress={handleContinue} 
                     filled 
                     style={styles.continueButton}

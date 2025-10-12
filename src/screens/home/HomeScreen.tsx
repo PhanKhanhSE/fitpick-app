@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADII } from '../../utils/theme';
 import NutritionStats from '../../components/home/NutritionStats';
@@ -157,10 +158,10 @@ const HomeScreen: React.FC = () => {
 
   const handlePersonalNutritionPress = () => {
     navigation.navigate('PersonalNutritionScreen');
-  };
+  };  
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Header with Tabs - Sticky */}
       <View style={styles.stickyHeader}>
         <View style={styles.header}>
@@ -207,7 +208,9 @@ const HomeScreen: React.FC = () => {
           protein={nutritionData.protein}
           fat={nutritionData.fat}
           onPress={handlePersonalNutritionPress}
-        />          {/* My Menu Section */}
+        />
+        
+          {/* My Menu Section */}
           <MyMenuSection 
             mealData={myMealData}
             onMealPress={handleMealPress}
@@ -241,7 +244,7 @@ const HomeScreen: React.FC = () => {
         onClose={handleClosePremiumModal}
         onUpgrade={handleUpgrade}
       />
-    </View>
+    </SafeAreaView>
   );
 };
 

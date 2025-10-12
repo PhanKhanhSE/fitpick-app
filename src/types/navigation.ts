@@ -48,6 +48,9 @@ export type RootStackParamList = {
     NotificationsScreen: undefined;
     PersonalNutritionScreen: undefined;
     SettingScreen: undefined;
+    ForgotPasswordScreen: undefined;
+    VerifyCodeScreen: { email: string };
+    CreateNewPasswordScreen: { email: string; code: string };
     PostDetailScreen: { post: any };
     CommunityScreen: undefined;
     EditPostScreen: { post: any };

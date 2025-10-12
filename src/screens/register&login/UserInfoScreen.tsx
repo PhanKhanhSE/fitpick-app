@@ -23,8 +23,21 @@ const UserInfoScreen = () => {
     const [select, setSelected] = useState('');
 
     const handleContinue = () => {
-        if (select) {
-            navigation.navigate('Goals' as never);
+        // Kiểm tra nếu đang ở trong flow cài đặt (có thể check route params hoặc navigation stack)
+        const isSettingsFlow = navigation.getState().routes.some(route => 
+            route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'
+        );
+        
+        if (isSettingsFlow) {
+            // Nếu đang trong settings, lưu thông tin và quay lại
+            // TODO: Thêm logic lưu thông tin tại đây
+            console.log('Lưu thông tin cá nhân:', { fullName, gender, age, height, weight });
+            navigation.goBack();
+        } else {
+            // Nếu đang trong flow đăng ký, tiếp tục đến màn hình Goals
+            if (select) {
+                navigation.navigate('Goals' as never);
+            }
         }
     };
 
@@ -128,8 +141,10 @@ const UserInfoScreen = () => {
                 {/* Button */}
                 <View style={styles.buttonContainer}>
                     <AppButton
-                        title="Tiếp tục"
-                        onPress={() => navigation.navigate('Goals' as never)}
+                        title={navigation.getState().routes.some(route => 
+                            route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'
+                        ) ? "Lưu" : "Tiếp tục"}
+                        onPress={handleContinue}
                         filled
                         style={styles.continueButton}
                     />
@@ -245,7 +260,7 @@ const styles = StyleSheet.create({
     },
     continueButton: {
         width: '100%',
-        borderRadius: 25,
+        borderRadius: RADII.umd,
         paddingVertical: 16,
         shadowColor: COLORS.primary,
         shadowOffset: {
