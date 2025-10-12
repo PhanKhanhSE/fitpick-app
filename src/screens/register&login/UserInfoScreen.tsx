@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
     },
     continueButton: {
         width: '100%',
-        borderRadius: 25,
+        borderRadius: RADII.umd,
         paddingVertical: 16,
         shadowColor: COLORS.primary,
         shadowOffset: {

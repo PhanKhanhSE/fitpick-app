@@ -19,6 +19,9 @@ import ReviewsScreen from '../screens/detail/review/ReviewsScreen';
 import NotificationsScreen from '../screens/home/NotificationsScreen';
 import PersonalNutritionScreen from '../screens/profile/setting/PersonalNutritionScreen';
 import SettingScreen from '../screens/profile/setting/SettingScreen';
+import ForgotPasswordScreen from '../screens/profile/setting/ForgotPasswordScreen';
+import VerifyCodeScreen from '../screens/profile/setting/VerifyCodeScreen';
+import CreateNewPasswordScreen from '../screens/profile/setting/CreateNewPasswordScreen';
 import PostDetailScreen from '../screens/home/community/PostDetailScreen';
 import CreatePostScreen from '../screens/home/community/CreatePostScreen';
 import EditPostScreen from '../screens/home/community/EditPostScreen';
@@ -102,6 +105,21 @@ export const MainNavigator = () => {
                 <Stack.Screen
                     name="SettingScreen"
                     component={SettingScreen}
+                    options={{ headerShown: false }} 
+                />
+                <Stack.Screen
+                    name="ForgotPasswordScreen"
+                    component={ForgotPasswordScreen}
+                    options={{ headerShown: false }} 
+                />
+                <Stack.Screen
+                    name="VerifyCodeScreen"
+                    component={VerifyCodeScreen}
+                    options={{ headerShown: false }} 
+                />
+                <Stack.Screen
+                    name="CreateNewPasswordScreen"
+                    component={CreateNewPasswordScreen}
                     options={{ headerShown: false }} 
                 />
                 <Stack.Screen

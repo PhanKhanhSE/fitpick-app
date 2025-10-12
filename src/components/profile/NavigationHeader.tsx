@@ -43,13 +43,11 @@ const styles = StyleSheet.create({
   },
   headerButton: {
     padding: SPACING.xs,
-    marginTop: SPACING.sm,
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
     color: COLORS.text,
-    marginTop: SPACING.sm,
   },
 });
 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING } from '../../utils/theme';
 import {
   ProductHeader,
@@ -147,7 +148,7 @@ const ProductScreen: React.FC<{ navigation?: any }> = ({ navigation }) => {
   );
 
   return (
-    <View style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1 }}>
       <ScrollView 
         style={styles.container}
         stickyHeaderIndices={[0]}
@@ -177,7 +178,7 @@ const ProductScreen: React.FC<{ navigation?: any }> = ({ navigation }) => {
         onMarkAllChecked={handleMarkAllCheckedProduct}
         onRemoveProduct={handleRemoveProduct}
       />
-    </View>
+    </SafeAreaView>
   );
 };
 
