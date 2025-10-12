@@ -52,8 +52,19 @@ const CookingLevelScreen: React.FC = () => {
 
   const handleContinue = () => {
     if (selectedLevel) {
-      // Chuyển sang màn hình Home (MainTabs)
-      navigation.navigate('MainTabs');
+      // Kiểm tra nếu đang ở trong flow cài đặt
+      const isSettingsFlow = navigation.getState().routes.some(route => 
+        route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'
+      );
+      
+      if (isSettingsFlow) {
+        // Nếu đang trong settings, lưu kỹ năng nấu ăn và quay lại
+        console.log('Lưu kỹ năng nấu ăn:', { selectedLevel });
+        navigation.goBack();
+      } else {
+        // Nếu đang trong flow đăng ký, chuyển sang màn hình Home
+        navigation.navigate('MainTabs');
+      }
     }
   };
 
@@ -113,7 +124,9 @@ const CookingLevelScreen: React.FC = () => {
       <View style={styles.bottomContainer}>
         <View style={!selectedLevel && styles.disabledButton}>
           <AppButton
-            title="Tiếp tục"
+            title={navigation.getState().routes.some(route => 
+              route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'
+            ) ? "Lưu" : "Tiếp tục"}
             onPress={handleContinue}
             filled
             style={styles.continueButton}

@@ -74,7 +74,10 @@ const SettingsScreen: React.FC = () => {
         <View style={styles.sectionSpacer} />
 
         {/* ===== Thông tin cá nhân ===== */}
-        <TouchableOpacity style={styles.item}>
+        <TouchableOpacity 
+          style={styles.item}
+          onPress={() => navigation.navigate("UserInfo")}
+        >
           <Text style={styles.itemLargeText}>Thông tin cá nhân</Text>
           <Ionicons name="chevron-forward" size={20} color={COLORS.text} style={styles.forwardButton} />
         </TouchableOpacity>
@@ -158,7 +161,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   accountRow: {
-    paddingHorizontal: SPACING.lg,
+    marginLeft: SPACING.sm,
+    paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
   },
   accountLeft: {
@@ -166,6 +170,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   accountLabel: {
+    marginLeft: -SPACING.sm,
     fontSize: 18,
     fontWeight: "500",
     color: COLORS.text,
@@ -195,9 +200,11 @@ const styles = StyleSheet.create({
     color: "#fff",
   },
   item: {
-    paddingHorizontal: SPACING.lg,
+    paddingHorizontal: SPACING.umd,
     paddingVertical: SPACING.umd,
-    marginHorizontal: SPACING.lg,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: COLORS.muted,
+    marginHorizontal: SPACING.sm,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -212,8 +219,8 @@ const styles = StyleSheet.create({
     color: COLORS.text,
   },
   itemLargeText: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 18,
+    fontWeight: "700",
   },
   subText: {
     fontSize: 14,
@@ -225,9 +232,8 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   itemSwitch: {
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.umd,
-    marginHorizontal: SPACING.lg,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
