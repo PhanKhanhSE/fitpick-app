@@ -31,6 +31,11 @@ const GoalsScreen = () => {
     }, [selected, otherText]);
 
     const handleContinue = () => {
+        if (!canContinue) {
+            alert('Vui lòng chọn mục tiêu hoặc điền mục tiêu khác để tiếp tục');
+            return;
+        }
+
         // Kiểm tra nếu đang ở trong flow cài đặt
         const isSettingsFlow = navigation.getState().routes.some(route => 
             route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'
@@ -126,7 +131,7 @@ const GoalsScreen = () => {
                     filled 
                     style={StyleSheet.flatten([
                         styles.continueButton,
-                        !selected && styles.continueButtonDisabled
+                        !canContinue && styles.continueButtonDisabled
                     ])}
                 />
             </View>

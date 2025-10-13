@@ -51,20 +51,23 @@ const CookingLevelScreen: React.FC = () => {
   };
 
   const handleContinue = () => {
-    if (selectedLevel) {
-      // Kiểm tra nếu đang ở trong flow cài đặt
-      const isSettingsFlow = navigation.getState().routes.some(route => 
-        route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'
-      );
-      
-      if (isSettingsFlow) {
-        // Nếu đang trong settings, lưu kỹ năng nấu ăn và quay lại
-        console.log('Lưu kỹ năng nấu ăn:', { selectedLevel });
-        navigation.goBack();
-      } else {
-        // Nếu đang trong flow đăng ký, chuyển sang màn hình Home
-        navigation.navigate('MainTabs');
-      }
+    if (!selectedLevel) {
+      alert('Vui lòng chọn trình độ nấu ăn để tiếp tục');
+      return;
+    }
+
+    // Kiểm tra nếu đang ở trong flow cài đặt
+    const isSettingsFlow = navigation.getState().routes.some(route => 
+      route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'
+    );
+    
+    if (isSettingsFlow) {
+      // Nếu đang trong settings, lưu kỹ năng nấu ăn và quay lại
+      console.log('Lưu kỹ năng nấu ăn:', { selectedLevel });
+      navigation.goBack();
+    } else {
+      // Nếu đang trong flow đăng ký, chuyển sang màn hình Home
+      navigation.navigate('MainTabs');
     }
   };
 

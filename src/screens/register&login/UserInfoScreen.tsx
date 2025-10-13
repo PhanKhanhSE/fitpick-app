@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Image, Dimensions, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
@@ -17,11 +17,16 @@ const UserInfoScreen = () => {
     const navigation = useNavigation<Nav>();
     const [fullName, setFullName] = useState('');
     const [gender, setGender] = useState('');
+    const [showGenderPicker, setShowGenderPicker] = useState(false);
     const [age, setAge] = useState('');
     const [height, setHeight] = useState('');
     const [weight, setWeight] = useState('');
+    const [targetWeight, setTargetWeight] = useState('');
     const [select, setSelected] = useState('');
 
+    // Kiểm tra form hợp lệ
+    const isFormValid = fullName.trim() && gender && age.trim() && height.trim() && weight.trim() && targetWeight.trim();
+    
     const handleContinue = () => {
         // Kiểm tra nếu đang ở trong flow cài đặt (có thể check route params hoặc navigation stack)
         const isSettingsFlow = navigation.getState().routes.some(route => 
@@ -31,12 +36,15 @@ const UserInfoScreen = () => {
         if (isSettingsFlow) {
             // Nếu đang trong settings, lưu thông tin và quay lại
             // TODO: Thêm logic lưu thông tin tại đây
-            console.log('Lưu thông tin cá nhân:', { fullName, gender, age, height, weight });
+            console.log('Lưu thông tin cá nhân:', { fullName, gender, age, height, weight, targetWeight });
             navigation.goBack();
         } else {
-            // Nếu đang trong flow đăng ký, tiếp tục đến màn hình Goals
-            if (select) {
+            // Nếu đang trong flow đăng ký, kiểm tra thông tin cần thiết và tiếp tục
+            if (fullName.trim() && age.trim() && height.trim() && weight.trim()) {
                 navigation.navigate('Goals' as never);
+            } else {
+                // Hiển thị thông báo lỗi nếu thiếu thông tin
+                Alert.alert('Thông báo', 'Vui lòng điền đầy đủ thông tin cá nhân');
             }
         }
     };
@@ -91,17 +99,47 @@ const UserInfoScreen = () => {
                     <View style={styles.row}>
                         <View style={styles.halfInput}>
                             <Text style={styles.label}>Giới tính</Text>
-                            <TouchableOpacity style={styles.dropdownInput}>
-                                <Text style={styles.dropdownPlaceholder}></Text>
+                            <TouchableOpacity 
+                                style={styles.dropdownInput}
+                                onPress={() => setShowGenderPicker(!showGenderPicker)}
+                            >
+                                <Text style={[styles.dropdownPlaceholder, gender && styles.dropdownSelected]}>
+                                    {gender || 'Chọn giới tính'}
+                                </Text>
                                 <Ionicons name="chevron-down" size={20} color="#9CA3AF" />
                             </TouchableOpacity>
+                            {showGenderPicker && (
+                                <View style={styles.pickerContainer}>
+                                    <TouchableOpacity 
+                                        style={styles.pickerItem}
+                                        onPress={() => {
+                                            setGender('Nam');
+                                            setShowGenderPicker(false);
+                                        }}
+                                    >
+                                        <Text style={styles.pickerItemText}>Nam</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity 
+                                        style={styles.pickerItem}
+                                        onPress={() => {
+                                            setGender('Nữ');
+                                            setShowGenderPicker(false);
+                                        }}
+                                    >
+                                        <Text style={styles.pickerItemText}>Nữ</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            )}
                         </View>
 
                         <View style={styles.halfInput}>
                             <Text style={styles.label}>Tuổi</Text>
                             <TextInput
                                 value={age}
-                                onChangeText={setAge}
+                                onChangeText={(text) => {
+                                    const numericValue = text.replace(/[^0-9]/g, '');
+                                    setAge(numericValue);
+                                }}
                                 placeholder="Nhập độ tuổi"
                                 placeholderTextColor="#9CA3AF"
                                 style={styles.input}
@@ -116,7 +154,10 @@ const UserInfoScreen = () => {
                             <Text style={styles.label}>Chiều cao</Text>
                             <TextInput
                                 value={height}
-                                onChangeText={setHeight}
+                                onChangeText={(text) => {
+                                    const numericValue = text.replace(/[^0-9]/g, '');
+                                    setHeight(numericValue);
+                                }}
                                 placeholder="cm"
                                 placeholderTextColor="#9CA3AF"
                                 style={styles.input}
@@ -128,8 +169,29 @@ const UserInfoScreen = () => {
                             <Text style={styles.label}>Cân nặng</Text>
                             <TextInput
                                 value={weight}
-                                onChangeText={setWeight}
+                                onChangeText={(text) => {
+                                    const numericValue = text.replace(/[^0-9]/g, '');
+                                    setWeight(numericValue);
+                                }}
                                 placeholder="kg"
+                                placeholderTextColor="#9CA3AF"
+                                style={styles.input}
+                                keyboardType="number-pad"
+                            />
+                        </View>
+                    </View>
+
+                    {/* Row 3: Cân nặng mục tiêu */}
+                    <View style={styles.row}>
+                        <View style={styles.fullInput}>
+                            <Text style={styles.label}>Cân nặng mục tiêu (kg)</Text>
+                            <TextInput
+                                value={targetWeight}
+                                onChangeText={(text) => {
+                                    const numericValue = text.replace(/[^0-9]/g, '');
+                                    setTargetWeight(numericValue);
+                                }}
+                                placeholder="Nhập cân nặng mục tiêu"
                                 placeholderTextColor="#9CA3AF"
                                 style={styles.input}
                                 keyboardType="number-pad"
@@ -146,7 +208,10 @@ const UserInfoScreen = () => {
                         ) ? "Lưu" : "Tiếp tục"}
                         onPress={handleContinue}
                         filled
-                        style={styles.continueButton}
+                        style={StyleSheet.flatten([
+                            styles.continueButton,
+                            !isFormValid && styles.continueButtonDisabled
+                        ])}
                     />
                 </View>
             </KeyboardAwareScrollView>
@@ -255,6 +320,36 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#9CA3AF',
     },
+    dropdownSelected: {
+        color: COLORS.text,
+    },
+    pickerContainer: {
+        position: 'absolute',
+        top: '100%',
+        left: 0,
+        right: 0,
+        backgroundColor: '#FFFFFF',
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        borderRadius: RADII.sm,
+        borderTopWidth: 0,
+        borderTopLeftRadius: 0,
+        borderTopRightRadius: 0,
+        zIndex: 1000,
+        elevation: 3,
+    },
+    pickerItem: {
+        padding: SPACING.md,
+        borderBottomWidth: 1,
+        borderBottomColor: '#F3F4F6',
+    },
+    pickerItemText: {
+        fontSize: 16,
+        color: COLORS.text,
+    },
+    fullInput: {
+        flex: 1,
+    },
     buttonContainer: {
         paddingTop: SPACING.xl,
     },
@@ -270,5 +365,10 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.25,
         shadowRadius: 6,
         elevation: 6,
+    },
+    continueButtonDisabled: {
+        opacity: 0.5,
+        shadowOpacity: 0,
+        elevation: 0,
     },
 });
