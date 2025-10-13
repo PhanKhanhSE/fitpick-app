@@ -52,6 +52,11 @@ const EatStyleScreen = () => {
     const [selected, setSelected] = useState<DietPlanKey>(null);
 
     const handleContinue = () => {
+        if (!selected) {
+            alert('Vui lòng chọn chế độ ăn để tiếp tục');
+            return;
+        }
+
         // Kiểm tra nếu đang ở trong flow cài đặt
         const isSettingsFlow = navigation.getState().routes.some(route => 
             route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'

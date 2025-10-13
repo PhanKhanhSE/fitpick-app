@@ -25,6 +25,11 @@ const LifestyleScreen = () => {
     const [selected, setSelected] = useState<LifestyleKey>(null);
 
     const handleContinue = () => {
+        if (!selected) {
+            alert('Vui lòng chọn mức độ vận động để tiếp tục');
+            return;
+        }
+
         // Kiểm tra nếu đang ở trong flow cài đặt
         const isSettingsFlow = navigation.getState().routes.some(route => 
             route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'

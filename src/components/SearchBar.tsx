@@ -14,6 +14,7 @@ interface SearchBarProps {
   onChangeText: (text: string) => void;
   placeholder?: string;
   onFilterPress?: () => void;
+  onFocus?: () => void;
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({
@@ -21,6 +22,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   onChangeText,
   placeholder = "Tìm kiếm",
   onFilterPress,
+  onFocus,
 }) => {
   return (
     <View style={styles.searchContainer}>
@@ -32,10 +34,11 @@ const SearchBar: React.FC<SearchBarProps> = ({
           placeholderTextColor={COLORS.muted}
           value={value}
           onChangeText={onChangeText}
+          onFocus={onFocus}
         />
       </View>
       <TouchableOpacity style={styles.filterButton} onPress={onFilterPress}>
-        <Ionicons name="menu" size={24} color={COLORS.text} />
+        <Ionicons name="reorder-three-outline" size={24} color={COLORS.text} />
       </TouchableOpacity>
     </View>
   );
@@ -45,42 +48,34 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     paddingHorizontal: SPACING.md,
-    marginBottom: SPACING.md,
+    paddingVertical: SPACING.sm,
     alignItems: 'center',
-    paddingTop: SPACING.sm,
     backgroundColor: COLORS.background,
+    gap: SPACING.md,
   },
   searchBar: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
-    borderRadius: RADII.xxl,
+    backgroundColor: '#F9FAFB',
+    borderRadius: RADII.md,
     paddingHorizontal: SPACING.md,
-    marginRight: SPACING.sm,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    paddingVertical: SPACING.sm,
+    minHeight: 48,
   },
   searchInput: {
     flex: 1,
     marginLeft: SPACING.sm,
     fontSize: 16,
     color: COLORS.text,
+    paddingVertical: 0,
   },
   filterButton: {
-    backgroundColor: COLORS.background,
     width: 48,
     height: 48,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: COLORS.background,
   },
 });
 
