@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Dimensions, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AppButton from '../../components/AppButton';
@@ -7,12 +7,27 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/navigation';
 import { COLORS, SPACING, RADII } from '../../utils/theme';
+import { profileAPI } from '../../services/profileAPI';
 
 const { width } = Dimensions.get('window');
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'EatStyle'>;
 
 type DietPlanKey = 'balanced' | 'low_carb' | 'keto' | 'gluten_free' | 'dairy_free' | null;
+
+// Mapping từ frontend keys sang database names
+const DIET_PLAN_MAPPING: Record<string, string> = {
+    'balanced': 'Balanced',
+    'low_carb': 'Low Carb',
+    'keto': 'Keto',
+    'gluten_free': 'Gluten Free',
+    'dairy_free': 'Dairy Free',
+    'paleo': 'Paleo',
+    'vegetarian': 'Vegetarian',
+    'vegan': 'Vegan',
+    'mediterranean': 'Mediterranean',
+    'intermittent_fasting': 'Intermittent Fasting'
+};
 
 const DIET_PLANS = [
     {
@@ -50,10 +65,11 @@ const DIET_PLANS = [
 const EatStyleScreen = () => {
     const navigation = useNavigation<Nav>();
     const [selected, setSelected] = useState<DietPlanKey>(null);
+    const [isLoading, setIsLoading] = useState(false);
 
-    const handleContinue = () => {
+    const handleContinue = async () => {
         if (!selected) {
-            alert('Vui lòng chọn chế độ ăn để tiếp tục');
+            Alert.alert('Thông báo', 'Vui lòng chọn chế độ ăn để tiếp tục');
             return;
         }
 
@@ -64,11 +80,33 @@ const EatStyleScreen = () => {
         
         if (isSettingsFlow) {
             // Nếu đang trong settings, lưu chế độ ăn và quay lại
-            console.log('Lưu chế độ ăn:', { selected });
-            navigation.goBack();
+            setIsLoading(true);
+            try {
+                const dietPlanName = DIET_PLAN_MAPPING[selected] || 'Balanced';
+                await profileAPI.saveUserDietPlan({ dietPlan: dietPlanName });
+                Alert.alert('Thành công', 'Chế độ ăn đã được cập nhật');
+                navigation.goBack();
+            } catch (error: any) {
+                console.error('Save diet plan error:', error);
+                const errorMessage = error?.message || 'Cập nhật chế độ ăn thất bại. Vui lòng thử lại.';
+                Alert.alert('Lỗi', errorMessage);
+            } finally {
+                setIsLoading(false);
+            }
         } else {
-            // Nếu đang trong flow đăng ký, tiếp tục đến màn hình CookingLevel
-            navigation.navigate('CookingLevel');
+            // Nếu đang trong flow đăng ký, lưu chế độ ăn và tiếp tục đến màn hình CookingLevel
+            setIsLoading(true);
+            try {
+                const dietPlanName = DIET_PLAN_MAPPING[selected] || 'Balanced';
+                await profileAPI.saveUserDietPlan({ dietPlan: dietPlanName });
+                navigation.navigate('CookingLevel');
+            } catch (error: any) {
+                console.error('Save diet plan error:', error);
+                const errorMessage = error?.message || 'Lưu chế độ ăn thất bại. Vui lòng thử lại.';
+                Alert.alert('Lỗi', errorMessage);
+            } finally {
+                setIsLoading(false);
+            }
         }
     };
 
@@ -137,12 +175,21 @@ const EatStyleScreen = () => {
 
             <View style={styles.buttonContainer}>
                 <AppButton 
-                    title={navigation.getState().routes.some(route => 
-                        route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'
-                    ) ? "Lưu" : "Tiếp tục"}
+                    title={isLoading 
+                        ? (navigation.getState().routes.some(route => 
+                            route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'
+                        ) ? "Đang lưu..." : "Đang tiếp tục...")
+                        : (navigation.getState().routes.some(route => 
+                            route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'
+                        ) ? "Lưu" : "Tiếp tục")
+                    }
                     onPress={handleContinue} 
-                    filled 
-                    style={styles.continueButton}
+                    filled
+                    disabled={isLoading}
+                    style={StyleSheet.flatten([
+                        styles.continueButton,
+                        isLoading && styles.continueButtonDisabled
+                    ])}
                 />
             </View>
         </SafeAreaView>
@@ -266,5 +313,10 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.25,
         shadowRadius: 6,
         elevation: 6,
+    },
+    continueButtonDisabled: {
+        opacity: 0.6,
+        shadowOpacity: 0.1,
+        elevation: 2,
     },
 });

@@ -25,6 +25,7 @@ import CreateNewPasswordScreen from '../screens/profile/setting/CreateNewPasswor
 import PostDetailScreen from '../screens/home/community/PostDetailScreen';
 import CreatePostScreen from '../screens/home/community/CreatePostScreen';
 import EditPostScreen from '../screens/home/community/EditPostScreen';
+import APITestScreen from '../screens/APITestScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -136,6 +137,16 @@ export const MainNavigator = () => {
                     name="CreatePostScreen"
                     component={CreatePostScreen}
                     options={{ headerShown: false }} 
+                />
+                <Stack.Screen
+                    name="APITestScreen"
+                    component={APITestScreen}
+                    options={{ 
+                        headerShown: true,
+                        title: 'API Test',
+                        headerStyle: { backgroundColor: '#F63E7C' },
+                        headerTintColor: 'white',
+                    }} 
                 />
             </Stack.Navigator>
         </NavigationContainer>

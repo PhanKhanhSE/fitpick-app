@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   ScrollView,
   Image,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AppButton from "../../components/AppButton";
@@ -16,6 +18,7 @@ import { RootStackParamList } from "../../types/navigation";
 import { COLORS, SPACING, RADII, FONTS } from "../../utils/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { authAPI } from "../../services/api";
 
 type Nav = NativeStackNavigationProp<RootStackParamList, "Login">;
 
@@ -27,11 +30,43 @@ const LoginScreen = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const onLogin = () => {
-    // TODO: call API login
-    console.log({ email, password, remember });
-    navigation.replace("MainTabs");
+  const onLogin = async () => {
+    if (!email || !password) {
+      Alert.alert("Lỗi", "Vui lòng nhập đầy đủ email và mật khẩu");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await authAPI.login(email, password);
+      
+      if (response.success) {
+        Alert.alert("Thành công", "Đăng nhập thành công!", [
+          {
+            text: "OK",
+            onPress: () => navigation.replace("MainTabs"),
+          },
+        ]);
+      }
+    } catch (error: any) {
+      console.error("Login error:", error);
+      
+      let errorMessage = "Đăng nhập thất bại. Vui lòng thử lại.";
+      
+      if (error?.type === 'network') {
+        errorMessage = "Lỗi kết nối mạng. Kiểm tra:\n• Backend có đang chạy không\n• Ngrok có hoạt động không\n• Kết nối internet";
+      } else if (error?.message) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      
+      Alert.alert("Lỗi đăng nhập", errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -124,12 +159,23 @@ const LoginScreen = () => {
               </TouchableOpacity>
             </View>
 
+            {/* API Test Button - Chỉ hiển thị trong development */}
+            {__DEV__ && (
+              <TouchableOpacity
+                style={styles.apiTestButton}
+                onPress={() => navigation.navigate('APITestScreen')}
+              >
+                <Text style={styles.apiTestButtonText}>🧪 Test API</Text>
+              </TouchableOpacity>
+            )}
+
             {/* Login Button */}
             <AppButton
-              title="Đăng nhập"
+              title={isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
               onPress={onLogin}
               filled
               style={styles.loginButton}
+              disabled={isLoading}
             />
 
             {/* Sign up link */}
@@ -296,5 +342,18 @@ const styles = StyleSheet.create({
   signupLink: {
     color: COLORS.primary,
     fontWeight: "600",
+  },
+  apiTestButton: {
+    backgroundColor: '#FF6B35',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginBottom: SPACING.md,
+    alignItems: 'center',
+  },
+  apiTestButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

@@ -7,6 +7,7 @@ import { useNavigation } from '@react-navigation/native';
 import { COLORS, SPACING, RADII } from '../../utils/theme';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/navigation';
+import { profileAPI } from '../../services/profileAPI';
 
 const { width } = Dimensions.get('window');
 
@@ -24,13 +25,14 @@ const GoalsScreen = () => {
     const navigation = useNavigation<Nav>(); 
     const [selected, setSelected] = useState<GoalKey>(null);
     const [otherText, setOtherText] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     const canContinue = useMemo(() => {
         if (selected && selected !== 'target') return true;
         return otherText.trim().length > 0;
     }, [selected, otherText]);
 
-    const handleContinue = () => {
+    const handleContinue = async () => {
         if (!canContinue) {
             alert('Vui lòng chọn mục tiêu hoặc điền mục tiêu khác để tiếp tục');
             return;
@@ -43,11 +45,39 @@ const GoalsScreen = () => {
         
         if (isSettingsFlow) {
             // Nếu đang trong settings, lưu mục tiêu và quay lại
-            console.log('Lưu mục tiêu:', { selected, otherText });
-            navigation.goBack();
+            setIsLoading(true);
+            try {
+                await profileAPI.saveUserGoals({
+                    goal: selected || 'other',
+                    otherGoal: selected === 'target' ? otherText : undefined,
+                });
+                
+                Alert.alert('Thành công', 'Mục tiêu đã được cập nhật');
+                navigation.goBack();
+            } catch (error: any) {
+                console.error('Save goals error:', error);
+                const errorMessage = error?.message || 'Cập nhật mục tiêu thất bại. Vui lòng thử lại.';
+                Alert.alert('Lỗi', errorMessage);
+            } finally {
+                setIsLoading(false);
+            }
         } else {
             // Nếu đang trong flow đăng ký, tiếp tục đến màn hình Lifestyle
-            navigation.navigate('Lifestyle');
+            setIsLoading(true);
+            try {
+                await profileAPI.saveUserGoals({
+                    goal: selected || 'other',
+                    otherGoal: selected === 'target' ? otherText : undefined,
+                });
+                
+                navigation.navigate('Lifestyle');
+            } catch (error: any) {
+                console.error('Save goals error:', error);
+                const errorMessage = error?.message || 'Lưu mục tiêu thất bại. Vui lòng thử lại.';
+                Alert.alert('Lỗi', errorMessage);
+            } finally {
+                setIsLoading(false);
+            }
         }
     };
 
@@ -124,14 +154,20 @@ const GoalsScreen = () => {
 
                 <View style={styles.buttonContainer}>
                 <AppButton 
-                    title={navigation.getState().routes.some(route => 
-                        route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'
-                    ) ? "Lưu" : "Tiếp tục"}
+                    title={isLoading 
+                        ? (navigation.getState().routes.some(route => 
+                            route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'
+                        ) ? "Đang lưu..." : "Đang tiếp tục...")
+                        : (navigation.getState().routes.some(route => 
+                            route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'
+                        ) ? "Lưu" : "Tiếp tục")
+                    }
                     onPress={handleContinue} 
                     filled 
+                    disabled={isLoading || !canContinue}
                     style={StyleSheet.flatten([
                         styles.continueButton,
-                        !canContinue && styles.continueButtonDisabled
+                        (!canContinue || isLoading) && styles.continueButtonDisabled
                     ])}
                 />
             </View>

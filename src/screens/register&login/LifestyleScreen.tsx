@@ -7,6 +7,7 @@ import { useNavigation } from '@react-navigation/native';
 import { COLORS, SPACING, RADII } from '../../utils/theme';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/navigation';
+import { profileAPI } from '../../services/profileAPI';
 
 const { width } = Dimensions.get('window');
 
@@ -23,8 +24,9 @@ const LIFESTYLE_OPTIONS = [
 const LifestyleScreen = () => {
     const navigation = useNavigation<Nav>();
     const [selected, setSelected] = useState<LifestyleKey>(null);
+    const [isLoading, setIsLoading] = useState(false);
 
-    const handleContinue = () => {
+    const handleContinue = async () => {
         if (!selected) {
             alert('Vui lòng chọn mức độ vận động để tiếp tục');
             return;
@@ -37,11 +39,31 @@ const LifestyleScreen = () => {
         
         if (isSettingsFlow) {
             // Nếu đang trong settings, lưu mức độ vận động và quay lại
-            console.log('Lưu mức độ vận động:', { selected });
-            navigation.goBack();
+            setIsLoading(true);
+            try {
+                await profileAPI.saveUserLifestyle({ activityLevel: selected });
+                Alert.alert('Thành công', 'Mức độ vận động đã được cập nhật');
+                navigation.goBack();
+            } catch (error: any) {
+                console.error('Save lifestyle error:', error);
+                const errorMessage = error?.message || 'Cập nhật mức độ vận động thất bại. Vui lòng thử lại.';
+                Alert.alert('Lỗi', errorMessage);
+            } finally {
+                setIsLoading(false);
+            }
         } else {
             // Nếu đang trong flow đăng ký, tiếp tục đến màn hình EatStyle
-            navigation.navigate('EatStyle');
+            setIsLoading(true);
+            try {
+                await profileAPI.saveUserLifestyle({ activityLevel: selected });
+                navigation.navigate('EatStyle');
+            } catch (error: any) {
+                console.error('Save lifestyle error:', error);
+                const errorMessage = error?.message || 'Lưu mức độ vận động thất bại. Vui lòng thử lại.';
+                Alert.alert('Lỗi', errorMessage);
+            } finally {
+                setIsLoading(false);
+            }
         }
     };
 

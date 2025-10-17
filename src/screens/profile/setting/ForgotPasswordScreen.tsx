@@ -56,7 +56,7 @@ const ForgotPasswordScreen: React.FC = () => {
         <Text style={styles.title}>Quên mật khẩu?</Text>
         <Text style={styles.subtitle}>
           Hãy nhập địa chỉ email bạn dùng để đăng ký tài khoản. 
-          Chúng tôi sẽ gửi mã xác minh cho bạn.
+          Chúng tôi sẽ giúp bạn đặt lại mật khẩu.
         </Text>
 
         <View style={styles.form}>
@@ -74,7 +74,7 @@ const ForgotPasswordScreen: React.FC = () => {
         </View>
 
         <AppButton
-          title="Gửi mã"
+          title="Đặt lại mật khẩu"
           onPress={handleSendCode}
           filled
           style={styles.sendButton}

@@ -8,6 +8,7 @@ export type RootStackParamList = {
     EatStyle: undefined;
     CookingLevel: undefined;
     MainTabs: undefined;
+    APITestScreen: undefined; // Thêm screen test API
     MealDetail: {
         meal: {
             id: string;
