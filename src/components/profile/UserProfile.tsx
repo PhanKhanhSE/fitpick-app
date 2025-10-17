@@ -9,23 +9,26 @@ interface UserProfileProps {
 }
 
 const UserProfile: React.FC<UserProfileProps> = ({
+  name,
+  accountType,
+  avatar,
 }) => {
   return (
     <View style={styles.profileSection}>
       <View style={styles.avatarContainer}>
         <Image
           source={{
-          uri : 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR7XDKSjjkyUPBWh7lrsh4BrKCkyuNC2v7UfA&s',
-}}
+            uri: avatar,
+          }}
           style={styles.avatar}
         />
       </View>
       <View style={styles.userInfo}>
-        <Text style={styles.userName}>Meo Meo Đã Căng</Text>
+        <Text style={styles.userName}>{name}</Text>
         <View style={styles.accountTypeContainer}>
           <Text style={styles.accountTypeLabel}>Tài khoản </Text>
           <View style={styles.accountTypeBadge}>
-            <Text style={styles.accountTypeText}>FREE</Text>
+            <Text style={styles.accountTypeText}>{accountType}</Text>
           </View>
         </View>
       </View>

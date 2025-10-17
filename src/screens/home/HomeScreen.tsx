@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +18,7 @@ import CommunityScreen from './community/CommunityScreen';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/navigation';
+import { userProfileAPI } from '../../services/userProfileAPI';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -25,93 +27,78 @@ const HomeScreen: React.FC = () => {
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const navigation = useNavigation<NavigationProp>();
 
-  // Sample meal data for "Thực đơn của tôi"
-  const myMealData = [
-    {
-      id: '1',
-      title: 'Cá hồi sốt tiêu kèm bơ xanh',
-      calories: '0 kcal',
-      time: '0 phút',
-      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
-      tag: 'Bữa sáng',
-      isLocked: false,
-    },
-    {
-      id: '2',
-      title: 'Cá hồi sốt tiêu kèm bơ xanh (Premium)',
-      calories: '0 kcal',
-      time: '0 phút',
-      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
-      tag: 'Bữa trưa',
-      isLocked: true,
-    },
-    {
-      id: '3',
-      title: 'Cá hồi sốt tiêu kèm bơ xanh',
-      calories: '0 kcal',
-      time: '0 phút',
-      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
-      tag: 'Bữa trưa',
-      isLocked: false,
-    },
-    {
-      id: '4',
-      title: 'Thực đơn cao cấp (Premium)',
-      calories: '0 kcal',
-      time: '0 phút',
-      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
-      tag: 'Bữa trưa',
-      isLocked: true,
-    },
-  ];
+  // State cho dữ liệu từ API
+  const [nutritionData, setNutritionData] = useState({
+    targetCalories: 0,
+    consumedCalories: 0,
+    starch: { current: 0, target: 0 },
+    protein: { current: 0, target: 0 },
+    fat: { current: 0, target: 0 },
+  });
 
-  // Sample meal data for "Gợi ý cho bạn"
-  const suggestedMeals = [
-    {
-      id: '1',
-      title: 'Cá hồi sốt tiêu kèm bơ xanh',
-      calories: '0 kcal',
-      time: '0 phút',
-      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
-      tag: 'Cân bằng',
-      isLocked: false,
-    },
-    {
-      id: '2',
-      title: 'Món ăn Premium đặc biệt',
-      calories: '0 kcal',
-      time: '0 phút',
-      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
-      tag: 'Cân bằng',
-      isLocked: true,
-    },
-    {
-      id: '3',
-      title: 'Cá hồi sốt tiêu kèm bơ xanh',
-      calories: '0 kcal',
-      time: '0 phút',
-      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
-      tag: 'Cân bằng',
-      isLocked: false,
-    },
-    {
-      id: '4',
-      title: 'Thực đơn VIP (Premium)',
-      calories: '0 kcal',
-      time: '0 phút',
-      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
-      tag: 'Cân bằng',
-      isLocked: true,
-    },
-  ];
+  const [myMealData, setMyMealData] = useState([]);
+  const [suggestedMeals, setSuggestedMeals] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Nutrition data
-  const nutritionData = {
-    targetCalories: 1000,
-    consumedCalories: 1000,
-    starch: { current: 90, target: 100 },
-    protein: { current: 110, target: 100 },
-    fat: { current: 90, target: 100 },
+  // Load dữ liệu từ API
+  useEffect(() => {
+    if (selectedTab === 'personal') {
+      loadPersonalData();
+    }
+  }, [selectedTab]);
+
+  const loadPersonalData = async () => {
+    try {
+      setIsLoading(true);
+      
+      const [nutritionResponse, mealsResponse] = await Promise.all([
+        userProfileAPI.getNutritionStats(),
+        userProfileAPI.getUserMeals()
+      ]);
+
+      if (nutritionResponse.success && nutritionResponse.data) {
+        setNutritionData(nutritionResponse.data);
+      }
+
+      if (mealsResponse.success && mealsResponse.data) {
+        setMyMealData(mealsResponse.data);
+      }
+
+      // Suggested meals có thể lấy từ API khác hoặc giữ dữ liệu mẫu
+      setSuggestedMeals([
+        {
+          id: '1',
+          title: 'Salad bơ cá hồi',
+          calories: '350 kcal',
+          time: '15 phút',
+          image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
+          tag: 'Gợi ý',
+          isLocked: false,
+        },
+        {
+          id: '2',
+          title: 'Cơm gà nướng',
+          calories: '450 kcal',
+          time: '25 phút',
+          image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
+          tag: 'Gợi ý',
+          isLocked: false,
+        },
+      ]);
+    } catch (error) {
+      console.error('Error loading personal data:', error);
+      // Fallback to default data
+      setNutritionData({
+        targetCalories: 2000,
+        consumedCalories: 0,
+        starch: { current: 0, target: 100 },
+        protein: { current: 0, target: 100 },
+        fat: { current: 0, target: 100 },
+      });
+      setMyMealData([]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleTabPress = (tab: string) => {
@@ -196,42 +183,49 @@ const HomeScreen: React.FC = () => {
       </View>
 
       {selectedTab === 'personal' ? (
-        <ScrollView 
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ flexGrow: 1 }}
-        >
-        {/* Nutrition Stats */}
-        <NutritionStats
-          targetCalories={nutritionData.targetCalories}
-          consumedCalories={nutritionData.consumedCalories}
-          starch={nutritionData.starch}
-          protein={nutritionData.protein}
-          fat={nutritionData.fat}
-          onPress={handlePersonalNutritionPress}
-        />
-        
-          {/* My Menu Section */}
-          <MyMenuSection 
-            mealData={myMealData}
-            onMealPress={handleMealPress}
-            onSeeMore={handleSeeMoreMenu}
-          />
-
-          {/* Premium Upgrade */}
-          <View style={styles.premiumSection}>
-            <Text style={styles.premiumText}>Có ngày thực đơn mới, gợi ý riêng cho bạn mỗi tuần.</Text>
-            <TouchableOpacity style={styles.premiumButton} onPress={handlePremiumPress}>
-              <Text style={styles.premiumButtonText}>Nâng cấp lên Premium</Text>
-            </TouchableOpacity>
+        isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={COLORS.primary} />
+            <Text style={styles.loadingText}>Đang tải dữ liệu...</Text>
           </View>
+        ) : (
+          <ScrollView 
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ flexGrow: 1 }}
+          >
+            {/* Nutrition Stats */}
+            <NutritionStats
+              targetCalories={nutritionData.targetCalories}
+              consumedCalories={nutritionData.consumedCalories}
+              starch={nutritionData.starch}
+              protein={nutritionData.protein}
+              fat={nutritionData.fat}
+              onPress={handlePersonalNutritionPress}
+            />
+            
+            {/* My Menu Section */}
+            <MyMenuSection 
+              mealData={myMealData}
+              onMealPress={handleMealPress}
+              onSeeMore={handleSeeMoreMenu}
+            />
 
-          {/* Suggested Dishes Section */}
-          <SuggestedSection 
-            mealData={suggestedMeals}
-            onMealPress={handleMealPress}
-            onSeeMore={handleSeeMore}
-          />
-        </ScrollView>
+            {/* Premium Upgrade */}
+            <View style={styles.premiumSection}>
+              <Text style={styles.premiumText}>Có ngày thực đơn mới, gợi ý riêng cho bạn mỗi tuần.</Text>
+              <TouchableOpacity style={styles.premiumButton} onPress={handlePremiumPress}>
+                <Text style={styles.premiumButtonText}>Nâng cấp lên Premium</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Suggested Dishes Section */}
+            <SuggestedSection 
+              mealData={suggestedMeals}
+              onMealPress={handleMealPress}
+              onSeeMore={handleSeeMore}
+            />
+          </ScrollView>
+        )
       ) : (
         <View style={styles.communityContainer}>
           <CommunityScreen />
@@ -330,6 +324,17 @@ const styles = StyleSheet.create({
   },
   communityContainer: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: SPACING.xxl,
+  },
+  loadingText: {
+    marginTop: SPACING.md,
+    fontSize: 16,
+    color: COLORS.textDim,
   },
 });
 
