@@ -69,11 +69,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: COLORS.text,
     marginBottom: SPACING.umd,
-    marginTop: SPACING.umd,
+    marginTop: SPACING.md,
     paddingHorizontal: SPACING.md,
   },
   horizontalList: {
-    paddingHorizontal: SPACING.md,
+    paddingHorizontal: 18,
   },
   popularItem: {
     marginRight: SPACING.sm,

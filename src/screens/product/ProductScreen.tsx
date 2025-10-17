@@ -148,7 +148,7 @@ const ProductScreen: React.FC<{ navigation?: any }> = ({ navigation }) => {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1, marginBottom: -SPACING.lg }}>
       <ScrollView 
         style={styles.container}
         stickyHeaderIndices={[0]}

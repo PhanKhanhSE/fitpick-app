@@ -6,7 +6,7 @@ import {
   FlatList,
   TouchableOpacity,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/navigation';
@@ -24,6 +24,7 @@ import {
 
 const FavoritesScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
+  const insets = useSafeAreaInsets();
   const [multiSelect, setMultiSelect] = useState(false);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [actionItem, setActionItem] = useState<FoodItem | null>(null);
@@ -173,7 +174,10 @@ const FavoritesScreen: React.FC = () => {
         renderItem={renderFoodCard}
         keyExtractor={(item) => item.id}
         numColumns={2}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[
+          styles.list,
+          { paddingBottom: insets.bottom + 85 } // 85 là chiều cao bottom tab
+        ]}
         columnWrapperStyle={styles.row}
         ListHeaderComponent={
           <TouchableOpacity onPress={() => setMultiSelect(!multiSelect)}>
@@ -224,7 +228,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
-    paddingBottom: -SPACING.lg,
   },
   header: {
     paddingHorizontal: SPACING.md,
@@ -247,7 +250,6 @@ const styles = StyleSheet.create({
   },
   list: {
     paddingHorizontal: SPACING.md,
-    paddingBottom: 100,
   },
   row: {
     justifyContent: "space-between",

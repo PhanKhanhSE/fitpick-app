@@ -1,7 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Dimensions } from 'react-native';
 import { COLORS, SPACING } from '../../utils/theme';
 import MealCardOverlay from '../MealCardOverlay';
+
+const { width } = Dimensions.get('window');
+const CARD_WIDTH = (width - SPACING.md * 3) / 2;
 
 interface MealData {
   id: string;
@@ -40,6 +43,8 @@ const SuggestedSection: React.FC<SuggestedSectionProps> = ({
         onPress={() => onMealPress(item)}
         onFavoritePress={() => onFavoritePress(item.id)}
         layout="vertical"
+        width={CARD_WIDTH}
+        height={CARD_WIDTH * 1.2}
       />
     </View>
   );
@@ -72,16 +77,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
   },
   gridList: {
-    paddingHorizontal: SPACING.xs,
-    marginLeft: SPACING.sm, // Đảm bảo khoảng cách đều giữa các card
+    paddingHorizontal: SPACING.md,
+    paddingBottom: 100,
   },
   row: {
-    justifyContent: 'space-between',
-    marginBottom: SPACING.xs,
+    justifyContent: "space-between",
+    paddingHorizontal: 0,
   },
   suggestedItem: {
-    flex: 1,
-    justifyContent: 'center',
+    width: CARD_WIDTH,
+    marginBottom: SPACING.xs,
+    marginHorizontal: SPACING.xs,
   },
 });
 

@@ -6,7 +6,7 @@ import {
   TextInput,
   TouchableOpacity,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -28,6 +28,7 @@ interface AppliedFilters {
 
 const SearchScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
+  const insets = useSafeAreaInsets();
   const [searchText, setSearchText] = useState('');
   const [favorites, setFavorites] = useState<string[]>([]);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
@@ -339,7 +340,13 @@ const SearchScreen: React.FC = () => {
       </View>
 
       {/* Scrollable Content */}
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: insets.bottom + 85 } // 85 là chiều cao bottom tab
+        ]}
+      >
         {/* Popular Section */}
         <PopularSection
           data={popularDishes}
@@ -397,6 +404,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     zIndex: 1000,
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   // Active Search Styles
   activeSearchHeader: {

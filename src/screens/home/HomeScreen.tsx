@@ -252,6 +252,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+    marginBottom: -SPACING.lg,
   },
   stickyHeader: {
     backgroundColor: COLORS.background,
