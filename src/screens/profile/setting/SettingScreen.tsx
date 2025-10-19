@@ -85,27 +85,27 @@ const SettingsScreen: React.FC = () => {
 
   const handleDeleteAccount = async () => {
     Alert.alert(
-      'Xóa tài khoản', 
-      'Bạn có chắc chắn muốn xóa tài khoản? Hành động này không thể hoàn tác.',
+      'Vô hiệu hóa tài khoản', 
+      'Bạn có chắc chắn muốn vô hiệu hóa tài khoản? Tài khoản sẽ không thể đăng nhập được nữa.',
       [
         { 
-          text: 'Xóa tài khoản', 
+          text: 'Vô hiệu hóa', 
           style: 'destructive',
           onPress: async () => {
             // Simplified confirmation - just double confirm
             Alert.alert(
               'Xác nhận cuối cùng',
-              'Bạn có chắc chắn muốn xóa tài khoản? Nhấn "Xóa" để xác nhận.',
+              'Bạn có chắc chắn muốn vô hiệu hóa tài khoản? Nhấn "Vô hiệu hóa" để xác nhận.',
               [
                 { text: 'Hủy', style: 'cancel' },
                 {
-                  text: 'Xóa',
+                  text: 'Vô hiệu hóa',
                   style: 'destructive',
                   onPress: async () => {
                     try {
                       setLoading(true);
                       
-                      // Call delete account API
+                      // Call deactivate account API
                       await userProfileAPI.deleteAccount();
                       
                       // Clear all stored data (logout automatically)
@@ -125,11 +125,11 @@ const SettingsScreen: React.FC = () => {
                       
                       // Show success message after logout
                       setTimeout(() => {
-                        Alert.alert('Thành công', 'Tài khoản đã được xóa thành công!');
+                        Alert.alert('Thành công', 'Tài khoản đã được vô hiệu hóa thành công!');
                       }, 500);
                     } catch (error) {
                       console.error('Error deleting account:', error);
-                      Alert.alert('Lỗi', 'Không thể xóa tài khoản. Vui lòng thử lại.');
+                      Alert.alert('Lỗi', 'Không thể vô hiệu hóa tài khoản. Vui lòng thử lại.');
                     } finally {
                       setLoading(false);
                     }
@@ -242,7 +242,7 @@ const SettingsScreen: React.FC = () => {
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.item} onPress={handleDeleteAccount}>
-          <Text style={[styles.itemText, { color: "red" }]}>Xóa tài khoản</Text>
+          <Text style={[styles.itemText, { color: "red" }]}>Vô hiệu hóa tài khoản</Text>
           <Ionicons name="chevron-forward" size={18} color="red" style={styles.forwardButton} />
         </TouchableOpacity>
 

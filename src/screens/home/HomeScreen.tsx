@@ -19,6 +19,8 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/navigation';
 import { userProfileAPI } from '../../services/userProfileAPI';
+import { searchAPI } from '../../services/searchAPI';
+import { convertCategoryToVietnamese } from '../../utils/categoryMapping';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -47,24 +49,52 @@ const HomeScreen: React.FC = () => {
     }
   }, [selectedTab]);
 
-  const loadPersonalData = async () => {
+  const loadSuggestedMeals = async () => {
     try {
-      setIsLoading(true);
+      const response = await searchAPI.searchMeals({ 
+        dietType: 'light',
+        maxCalories: 500,
+        minCalories: 200
+      });
       
-      const [nutritionResponse, mealsResponse] = await Promise.all([
-        userProfileAPI.getNutritionStats(),
-        userProfileAPI.getUserMeals()
-      ]);
-
-      if (nutritionResponse.success && nutritionResponse.data) {
-        setNutritionData(nutritionResponse.data);
+      if (response.success && response.data && Array.isArray(response.data)) {
+        // Convert API data to component format
+        const suggestedData = response.data.slice(0, 6).map((meal: any) => ({
+          id: meal.mealid?.toString() || meal.id?.toString() || Math.random().toString(),
+          title: meal.name || meal.title || 'Món ăn',
+          calories: `${meal.calories || 0} kcal`,
+          time: `${meal.cookingTime || 15} phút`,
+          image: { uri: meal.imageUrl || meal.image || 'https://via.placeholder.com/200x150' },
+          tag: convertCategoryToVietnamese(meal.categoryName || 'Gợi ý'),
+          isLocked: false,
+        }));
+        setSuggestedMeals(suggestedData);
+      } else {
+        // Fallback to default data
+        setSuggestedMeals([
+          {
+            id: '1',
+            title: 'Salad bơ cá hồi',
+            calories: '350 kcal',
+            time: '15 phút',
+            image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
+            tag: 'Gợi ý',
+            isLocked: false,
+          },
+          {
+            id: '2',
+            title: 'Cơm gà nướng',
+            calories: '450 kcal',
+            time: '25 phút',
+            image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
+            tag: 'Gợi ý',
+            isLocked: false,
+          },
+        ]);
       }
-
-      if (mealsResponse.success && mealsResponse.data) {
-        setMyMealData(mealsResponse.data);
-      }
-
-      // Suggested meals có thể lấy từ API khác hoặc giữ dữ liệu mẫu
+    } catch (error) {
+      console.error('Error loading suggested meals:', error);
+      // Set default data on error
       setSuggestedMeals([
         {
           id: '1',
@@ -85,6 +115,28 @@ const HomeScreen: React.FC = () => {
           isLocked: false,
         },
       ]);
+    }
+  };
+
+  const loadPersonalData = async () => {
+    try {
+      setIsLoading(true);
+      
+      const [nutritionResponse, mealsResponse] = await Promise.all([
+        userProfileAPI.getNutritionStats(),
+        userProfileAPI.getUserMeals()
+      ]);
+
+      if (nutritionResponse.success && nutritionResponse.data) {
+        setNutritionData(nutritionResponse.data);
+      }
+
+      if (mealsResponse.success && mealsResponse.data) {
+        setMyMealData(mealsResponse.data);
+      }
+
+      // Load suggested meals from API
+      await loadSuggestedMeals();
     } catch (error) {
       console.error('Error loading personal data:', error);
       // Fallback to default data
@@ -128,6 +180,12 @@ const HomeScreen: React.FC = () => {
   };
 
   const handleSeeMore = () => {
+    // Navigate to SearchScreen (same as explore more)
+    (navigation as any).jumpTo('Explore');
+  };
+
+  const handleExploreMore = () => {
+    // Navigate to SearchScreen with some default filters
     (navigation as any).jumpTo('Explore');
   };
 
@@ -223,6 +281,7 @@ const HomeScreen: React.FC = () => {
               mealData={suggestedMeals}
               onMealPress={handleMealPress}
               onSeeMore={handleSeeMore}
+              onExploreMore={handleExploreMore}
             />
           </ScrollView>
         )

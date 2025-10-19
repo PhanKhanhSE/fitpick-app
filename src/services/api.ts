@@ -1,5 +1,6 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { MealTypeService } from './mealTypeService';
 
 // Base URL for API
 const API_BASE_URL = 'https://940b2af8a005.ngrok-free.app';
@@ -14,13 +15,19 @@ const apiClient = axios.create({
   },
 });
 
-// Request interceptor to add auth token
+// Request interceptor to add auth token and process meal type mapping
 apiClient.interceptors.request.use(
   async (config) => {
     const token = await AsyncStorage.getItem('accessToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // Process request data to convert meal types from Vietnamese to English
+    if (config.data) {
+      config.data = MealTypeService.processFrontendRequest(config.data);
+    }
+    
     return config;
   },
   (error) => {
@@ -28,9 +35,15 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Response interceptor to handle token refresh
+// Response interceptor to handle token refresh and meal type mapping
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Process response data to convert meal types from English to Vietnamese
+    if (response.data) {
+      response.data = MealTypeService.processBackendResponse(response.data);
+    }
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
 

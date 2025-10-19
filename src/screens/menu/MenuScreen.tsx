@@ -38,7 +38,7 @@ const MenuScreen: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState('');
 
   // Sample data
-  const breakfastMeals = [
+  const buasangMeals = [
     {
       id: '1',
       title: 'Cá hồi sốt tiêu kèm bơ xanh',
@@ -48,7 +48,7 @@ const MenuScreen: React.FC = () => {
     },
   ];
 
-  const lunchMeals = [
+  const buatruaMeals = [
     {
       id: '2',
       title: 'Cá hồi sốt tiêu kèm bơ xanh',
@@ -65,7 +65,7 @@ const MenuScreen: React.FC = () => {
     },
   ];
 
-  const dinnerMeals = [
+  const buatoiMeals = [
     {
       id: '4',
       title: 'Cá hồi sốt tiêu kèm bơ xanh',
@@ -238,7 +238,7 @@ const MenuScreen: React.FC = () => {
         <MealSection
           title="Bữa sáng"
           totalCalories="0 kcal"
-          meals={breakfastMeals}
+          meals={buasangMeals}
           selectedMeals={selectedMeals}
           showDivider={true}
           onMealPress={handleMealPress}
@@ -249,7 +249,7 @@ const MenuScreen: React.FC = () => {
         <MealSection
           title="Bữa trưa"
           totalCalories="0 kcal"
-          meals={lunchMeals}
+          meals={buatruaMeals}
           selectedMeals={selectedMeals}
           showDivider={true}
           onMealPress={handleMealPress}
@@ -260,7 +260,7 @@ const MenuScreen: React.FC = () => {
         <MealSection
           title="Bữa tối"
           totalCalories="0 kcal"
-          meals={dinnerMeals}
+          meals={buatoiMeals}
           selectedMeals={selectedMeals}
           showDivider={true}
           onMealPress={handleMealPress}

@@ -50,7 +50,7 @@ const MealPlannerModal: React.FC<MealPlannerModalProps> = ({
   onSave,
 }) => {
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
-  const mealTypes = ["Bữa sáng", "Bữa trưa", "Bữa tối", "Snack"];
+  const mealTypes = ["Bữa sáng", "Bữa trưa", "Bữa tối", "Bữa phụ"];
   const [mealType, setMealType] = useState(mealTypes[0]);
   const [showMealDropdown, setShowMealDropdown] = useState(false);
 

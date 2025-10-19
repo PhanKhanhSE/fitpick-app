@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
   Animated,
   StatusBar,
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  Text,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../../utils/theme';
@@ -15,6 +19,7 @@ import {
   MealDetailTabs,
   MealDetailActions,
 } from '../../components/details';
+import { searchAPI, MealDetailData } from '../../services/searchAPI';
 
 
 
@@ -45,23 +50,65 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
   const [activeTab, setActiveTab] = useState<'Ingredients' | 'Instructions' | 'Nutrition' | 'Reviews'>('Ingredients');
   const [scrollY] = useState(new Animated.Value(0));
   const [quantity, setQuantity] = useState(1);
+  const [mealDetail, setMealDetail] = useState<MealDetailData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const { meal } = route.params;
 
-  const defaultIngredients = [
-    { name: 'Ức gà', amount: '200 gr' },
-    { name: 'Xà lách', amount: '300 gr' },
-    { name: 'Cà chua bi', amount: '10 trái' },
-  ];
-  const defaultInstructions = [
-    'Rửa sạch và ướp ức gà với muối, tiêu và gia vị. Để thấm trong vài phút.',
-    'Áp chảo ức gà với dầu gạo đến khi chín vàng đều hai mặt.',
-    'Sơ chế rau: rửa sạch và cắt xà lách, cắt múi cau hành tây, bổ đôi cà chua bi, cắt lát trái ô liu.',
-    'Pha nước sốt: 2 muỗng canh nước cốt chanh, 1 muỗng dầu gạo, ½ muỗng muối, 1 muỗng đường. Khuấy đều.',
-    'Trộn đều rau củ với nước sốt, sau đó xếp ức gà đã cắt lát lên trên. Dọn ra đĩa và thưởng thức.',
-  ];
+  // Load meal detail từ API
+  const loadMealDetail = async (mealId: number) => {
+    try {
+      setIsLoading(true);
+      const response = await searchAPI.getMealDetail(mealId);
+      
+      if (response.success && response.data) {
+        setMealDetail(response.data);
+      } else {
+        Alert.alert('Lỗi', 'Không thể tải thông tin món ăn');
+      }
+    } catch (error) {
+      console.error('Error loading meal detail:', error);
+      Alert.alert('Lỗi', 'Không thể tải thông tin món ăn');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const ingredients = meal.ingredients || defaultIngredients;
-  const instructions = meal.instructions || defaultInstructions;
+  useEffect(() => {
+    if (route.params?.meal?.id) {
+      loadMealDetail(parseInt(route.params.meal.id));
+    }
+  }, [route.params?.meal?.id]);
+
+  // Render loading
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container} edges={['left', 'right']}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#F63E7C" />
+          <Text style={styles.loadingText}>Đang tải thông tin món ăn...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Render error
+  if (!mealDetail) {
+    return (
+      <SafeAreaView style={styles.container} edges={['left', 'right']}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Không tìm thấy thông tin món ăn</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Chuyển đổi dữ liệu từ API thành format cho components
+  const ingredients = mealDetail.ingredients?.map(ing => ({
+    name: ing.ingredientName,
+    amount: `${ing.quantity || 0}${ing.unit || 'g'}`
+  })) || [];
+
+  const instructions = mealDetail.instructions?.map(inst => inst.instruction) || [];
 
   const handleGoBack = () => navigation.goBack();
   const handleToggleFavorite = () => setIsFavorite(!isFavorite);
@@ -108,9 +155,9 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
       >
         {/* Header Image */}
         <MealImageOverlay
-          image={meal.image}
-          cookingTime={meal.cookingTime}
-          rating={4}
+          image={{ uri: mealDetail.imageUrl }}
+          cookingTime={`${mealDetail.cookingtime} phút`}
+          rating={4.5}
           reviewCount={12}
         />
 
@@ -118,7 +165,7 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
         <View style={styles.contentContainer}>
           {/* Meal Title + Quantity Row */}
           <MealTitleQuantity
-            title={meal.title}
+            title={mealDetail.name}
             quantity={quantity}
             onIncreaseQuantity={increaseQty}
             onDecreaseQuantity={decreaseQty}
@@ -126,10 +173,10 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
 
           {/* Nutrition Summary */}
           <NutritionSummary
-            calories={meal.calories}
-            carbs={meal.carbs}
-            protein={meal.protein}
-            fat={meal.fat}
+            calories={`${mealDetail.calories} cal`}
+            carbs={`${mealDetail.carbs}g`}
+            protein={`${mealDetail.protein}g`}
+            fat={`${mealDetail.fat}g`}
           />
 
           {/* Tabs */}
@@ -138,11 +185,11 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
             onTabChange={setActiveTab}
             ingredients={ingredients}
             instructions={instructions}
-            calories={meal.calories}
-            carbs={meal.carbs}
-            protein={meal.protein}
-            fat={meal.fat}
-            rating={4}
+            calories={`${mealDetail.calories} cal`}
+            carbs={`${mealDetail.carbs}g`}
+            protein={`${mealDetail.protein}g`}
+            fat={`${mealDetail.fat}g`}
+            rating={4.5}
             reviewCount={12}
             onViewAllReviews={handleViewAllReviews}
           />
@@ -165,6 +212,26 @@ const styles = StyleSheet.create({
   },
   contentContainer: { 
     padding: 16 
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: COLORS.text,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorText: {
+    fontSize: 16,
+    color: COLORS.text,
+    textAlign: 'center',
   },
 });
 

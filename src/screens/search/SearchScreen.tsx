@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   StyleSheet, 
   ScrollView,
   TextInput,
   TouchableOpacity,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,6 +17,9 @@ import { COLORS, SPACING, RADII } from '../../utils/theme';
 import SearchBar from '../../components/SearchBar';
 import { PopularSection, SuggestedSection, SearchHistory, FilterModal } from '../../components/search';
 import PremiumModal from '../../components/home/PremiumModal';
+import { searchAPI, SearchFilters, MealData } from '../../services/searchAPI';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { convertCategoryToVietnamese } from '../../utils/categoryMapping';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -35,9 +40,12 @@ const SearchScreen: React.FC = () => {
   
   // Search states
   const [isSearchActive, setIsSearchActive] = useState(false);
-  const [searchHistory, setSearchHistory] = useState<string[]>([
-    'Gà hấp', 'Nước ép cam', 'Cá hồi nướng', 'Sinh tố', 'Cơm tấm', 'Salad trái cây'
-  ]);
+  const [searchHistory, setSearchHistory] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [searchResults, setSearchResults] = useState<MealData[]>([]);
+  const [popularMeals, setPopularMeals] = useState<MealData[]>([]);
+  const [suggestedMeals, setSuggestedMeals] = useState<MealData[]>([]);
+  const [defaultSuggestedMeals, setDefaultSuggestedMeals] = useState<MealData[]>([]);
   
   // Filter states
   const [showFilterModal, setShowFilterModal] = useState(false);
@@ -49,103 +57,186 @@ const SearchScreen: React.FC = () => {
     cookingTime: [],
   });
 
-  // Sample data for popular dishes
-  const popularDishes = [
-    {
-      id: '1',
-      title: 'Cá hồi sốt tiêu kèm bơ xanh',
-      calories: '0 kcal',
-      time: '0 phút',
-      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
-      tag: 'Bữa sáng',
-      isLocked: false,
-    },
-    {
-      id: '2',
-      title: 'Thực đơn Premium đặc biệt',
-      calories: '0 kcal',
-      time: '0 phút',
-      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
-      tag: 'Bữa sáng',
-      isLocked: true,
-    },
-    {
-      id: '3',
-      title: 'Cá hồi sốt tiêu kèm bơ xanh',
-      calories: '0 kcal',
-      time: '0 phút',
-      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
-      tag: 'Bữa sáng',
-      isLocked: false,
-    },
-    {
-      id: '4',
-      title: 'Món ăn VIP (Premium)',
-      calories: '0 kcal',
-      time: '0 phút',
-      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
-      tag: 'Bữa sáng',
-      isLocked: true,
-    },
-  ];
+  // Load initial data and search history
+  useEffect(() => {
+    loadInitialData();
+    loadSearchHistory();
+  }, []);
 
-  // Sample data for suggested dishes
-  const suggestedDishes = [
-    {
-      id: '3',
-      title: 'Cá hồi sốt tiêu kèm bơ xanh',
-      calories: '0 kcal',
-      time: '0 phút',
-      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
-      tag: 'Cân bằng',
-      isLocked: false,
-    },
-    {
-      id: '4',
-      title: 'Cá hồi sốt tiêu kèm bơ xanh',
-      calories: '0 kcal',
-      time: '0 phút',
-      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
-      tag: 'Cân bằng',
-      isLocked: false,
-    },
-    {
-      id: '5',
-      title: 'Thực đơn Premium đặc biệt',
-      calories: '0 kcal',
-      time: '0 phút',
-      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
-      tag: 'Cân bằng',
-      isLocked: true,
-    },
-    {
-      id: '6',
-      title: 'Món ăn VIP (Premium)',
-      calories: '0 kcal',
-      time: '0 phút',
-      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
-      tag: 'Cân bằng',
-      isLocked: true,
-    },
-    {
-      id: '7',
-      title: 'Thực đơn thời thượng (Premium)',
-      calories: '0 kcal',
-      time: '0 phút',
-      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
-      tag: 'Bữa sáng',
-      isLocked: true,
-    },
-    {
-      id: '8',
-      title: 'Cá hồi sốt tiêu kèm bơ xanh',
-      calories: '0 kcal',
-      time: '0 phút',
-      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
-      tag: 'Bữa sáng',
-      isLocked: false,
-    },
-  ];
+  // Load initial data (popular and suggested meals)
+  const loadInitialData = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Load popular meals - get all meals and take first 10
+      const popularResponse = await searchAPI.getPopularMeals();
+      let popularData: MealData[] = [];
+      if (popularResponse.success && popularResponse.data) {
+        popularData = Array.isArray(popularResponse.data) ? popularResponse.data.slice(0, 10) : [];
+        setPopularMeals(popularData);
+      }
+
+      // Load suggested meals - get meals with different criteria to avoid overlap
+      const suggestedResponse = await searchAPI.searchMeals({ 
+        dietType: 'light',
+        maxCalories: 400,
+        minCalories: 200 // Add minimum calories to differentiate from popular
+      });
+      if (suggestedResponse.success && suggestedResponse.data) {
+        const suggestedData = Array.isArray(suggestedResponse.data) ? suggestedResponse.data.slice(0, 8) : [];
+        
+        // Filter out meals that are already in popular to avoid duplication
+        const popularMealIds = popularData.map((meal: MealData) => meal.mealid);
+        const filteredSuggestedData = suggestedData.filter((meal: MealData) => 
+          !popularMealIds.includes(meal.mealid)
+        );
+        
+        setSuggestedMeals(filteredSuggestedData);
+        setDefaultSuggestedMeals(filteredSuggestedData); // Store default suggested meals
+      }
+    } catch (error) {
+      console.error('Error loading initial data:', error);
+      Alert.alert('Lỗi', 'Không thể tải dữ liệu. Vui lòng thử lại.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Load search history from AsyncStorage
+  const loadSearchHistory = async () => {
+    try {
+      const history = await AsyncStorage.getItem('searchHistory');
+      if (history) {
+        setSearchHistory(JSON.parse(history));
+      }
+    } catch (error) {
+      console.error('Error loading search history:', error);
+    }
+  };
+
+  // Save search history to AsyncStorage
+  const saveSearchHistory = async (history: string[]) => {
+    try {
+      await AsyncStorage.setItem('searchHistory', JSON.stringify(history));
+    } catch (error) {
+      console.error('Error saving search history:', error);
+    }
+  };
+
+  // Convert backend meal data to frontend format
+  const convertMealData = (meal: MealData) => ({
+    id: meal.mealid.toString(),
+    title: meal.name,
+    calories: meal.calories ? `${meal.calories} kcal` : '0 kcal',
+    time: meal.cookingtime ? `${meal.cookingtime} phút` : '0 phút',
+    image: { uri: meal.imageUrl || 'https://via.placeholder.com/150' },
+    tag: convertCategoryToVietnamese(meal.categoryName || 'Món ăn'),
+    isLocked: meal.isPremium || false,
+    description: meal.description || '',
+    price: meal.price || 0,
+    dietType: meal.diettype || '',
+    protein: meal.protein || 0,
+    carbs: meal.carbs || 0,
+    fat: meal.fat || 0,
+    instructions: meal.instructions || [],
+  });
+
+  // Handle search with text
+  const handleSearch = async (text: string) => {
+    if (!text.trim()) return;
+
+    try {
+      setIsLoading(true);
+      
+      // Load popular search results (first 10 results)
+      const popularResponse = await searchAPI.searchByText(text.trim());
+      let popularData: MealData[] = [];
+      if (popularResponse.success && popularResponse.data) {
+        popularData = Array.isArray(popularResponse.data) ? popularResponse.data.slice(0, 10) : [];
+        setSearchResults(popularData);
+      }
+
+      // Load suggested search results (different criteria for variety)
+      const suggestedResponse = await searchAPI.searchMeals({ 
+        name: text.trim(), // Search by name
+        dietType: 'vegetarian', // Different diet type for variety
+        maxCalories: 600,
+        minCalories: 100
+      });
+      if (suggestedResponse.success && suggestedResponse.data) {
+        const suggestedData = Array.isArray(suggestedResponse.data) ? suggestedResponse.data.slice(0, 8) : [];
+        setSuggestedMeals(suggestedData);
+      } else {
+        // Fallback: try with different criteria if first attempt fails
+        try {
+          const fallbackResponse = await searchAPI.searchMeals({ 
+            name: text.trim(),
+            maxCalories: 400,
+            minCalories: 200
+          });
+          if (fallbackResponse.success && fallbackResponse.data) {
+            const fallbackData = Array.isArray(fallbackResponse.data) ? fallbackResponse.data.slice(0, 8) : [];
+            setSuggestedMeals(fallbackData);
+          }
+        } catch (fallbackError) {
+          console.log('Fallback suggestion search failed:', fallbackError);
+          setSuggestedMeals([]);
+        }
+      }
+      
+      // Add to search history
+      if (!searchHistory.includes(text.trim())) {
+        const newHistory = [text.trim(), ...searchHistory.slice(0, 9)]; // Keep max 10 items
+        setSearchHistory(newHistory);
+        await saveSearchHistory(newHistory);
+      }
+    } catch (error) {
+      console.error('Error searching:', error);
+      Alert.alert('Lỗi', 'Không thể tìm kiếm. Vui lòng thử lại.');
+      setSearchResults([]);
+      setSuggestedMeals([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle search with filters
+  const handleSearchWithFilters = async () => {
+    try {
+      setIsLoading(true);
+      
+      const filters: SearchFilters = {};
+      
+      // Convert frontend filters to backend format
+      if (appliedFilters.dietType.length > 0) {
+        filters.dietType = appliedFilters.dietType[0]; // Backend expects single diet type
+      }
+      
+      // Add cooking time filters
+      if (appliedFilters.cookingTime.includes('≤ 15 phút')) {
+        filters.maxCookingTime = 15;
+      } else if (appliedFilters.cookingTime.includes('≤ 30 phút')) {
+        filters.maxCookingTime = 30;
+      } else if (appliedFilters.cookingTime.includes('≤ 60 phút')) {
+        filters.maxCookingTime = 60;
+      }
+
+      const response = await searchAPI.searchMeals(filters);
+      
+      if (response.success && response.data) {
+        const searchData = Array.isArray(response.data) ? response.data : [];
+        setSearchResults(searchData);
+      } else {
+        setSearchResults([]);
+      }
+    } catch (error) {
+      console.error('Error searching with filters:', error);
+      Alert.alert('Lỗi', 'Không thể áp dụng bộ lọc. Vui lòng thử lại.');
+      setSearchResults([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleFavoritePress = (id: string) => {
     setFavorites(prev => 
@@ -180,28 +271,38 @@ const SearchScreen: React.FC = () => {
     setIsSearchActive(true);
   };
 
-  const handleSearchCancel = () => {
-    setIsSearchActive(false);
-    setSearchText('');
-  };
-
-  const handleSearchHistoryPress = (text: string) => {
+  const handleSearchTextChange = (text: string) => {
     setSearchText(text);
-  };
-
-  const handleSearch = (text: string) => {
-    if (text.trim() && !searchHistory.includes(text.trim())) {
-      setSearchHistory(prev => [text.trim(), ...prev.slice(0, 9)]); // Giữ tối đa 10 items
+    
+    // Auto reset when search text is empty
+    if (text.trim() === '') {
+      setSearchResults([]);
+      setSuggestedMeals(defaultSuggestedMeals); // Restore default suggested meals
+      setIsSearchActive(false);
     }
   };
 
-  const removeHistoryItem = (index: number) => {
-    setSearchHistory(prev => prev.filter((_, i) => i !== index));
+  const handleSearchCancel = () => {
+    setIsSearchActive(false);
+    setSearchText('');
+    setSearchResults([]);
+    setSuggestedMeals(defaultSuggestedMeals); // Restore default suggested meals
+  };
+
+  const handleSearchHistoryPress = (text: string) => {
+    handleSearchTextChange(text);
+    handleSearch(text);
+  };
+
+  const handleSearchSubmit = () => {
+    if (searchText.trim()) {
+      handleSearch(searchText.trim());
+    }
   };
 
   const handleApplyFilters = () => {
     setShowFilterModal(false);
-    console.log('Applied filters:', appliedFilters);
+    handleSearchWithFilters();
   };
 
   const handleClearFilters = () => {
@@ -212,6 +313,12 @@ const SearchScreen: React.FC = () => {
       dietType: [],
       cookingTime: [],
     });
+  };
+
+  const removeHistoryItem = async (index: number) => {
+    const newHistory = searchHistory.filter((_, i) => i !== index);
+    setSearchHistory(newHistory);
+    await saveSearchHistory(newHistory);
   };
 
   const toggleMealType = (type: string) => {
@@ -250,92 +357,17 @@ const SearchScreen: React.FC = () => {
     }));
   };
 
-  if (isSearchActive) {
-    return (
-      <SafeAreaView style={styles.container}>
-        {/* Active Search Header */}
-        <View style={styles.activeSearchHeader}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={handleSearchCancel}
-          >
-            <Ionicons name="chevron-back" size={24} color={COLORS.textStrong} />
-          </TouchableOpacity>
-          
-          <View style={styles.activeSearchInputContainer}>
-            <Ionicons name="search" size={20} color="#9CA3AF" style={styles.searchIcon} />
-            <TextInput
-              style={styles.activeSearchInput}
-              value={searchText}
-              onChangeText={(text) => {
-                console.log('Search text changed:', text);
-                setSearchText(text);
-              }}
-              onSubmitEditing={() => handleSearch(searchText)}
-              placeholder="Tìm kiếm"
-              placeholderTextColor="#9CA3AF"
-              autoFocus
-              returnKeyType="search"
-              clearButtonMode="while-editing"
-              selectTextOnFocus
-              editable={true}
-            />
-            {searchText ? (
-              <TouchableOpacity onPress={() => setSearchText('')}>
-                <Ionicons name="close" size={20} color="#9CA3AF" />
-              </TouchableOpacity>
-            ) : null}
-          </View>
-          
-          <TouchableOpacity 
-            style={styles.filterButton}
-            onPress={handleFilterPress}
-          >
-            <Ionicons name="reorder-three-outline" size={24} color={COLORS.textStrong} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Search History */}
-        <SearchHistory
-          searchHistory={searchHistory}
-          onHistoryPress={handleSearchHistoryPress}
-          onRemoveItem={removeHistoryItem}
-        />
-
-        {/* Filter Modal */}
-        <FilterModal
-          visible={showFilterModal}
-          onClose={() => setShowFilterModal(false)}
-          appliedFilters={appliedFilters}
-          onApplyFilters={handleApplyFilters}
-          onClearFilters={handleClearFilters}
-          toggleMealType={toggleMealType}
-          toggleIngredient={toggleIngredient}
-          toggleDietType={toggleDietType}
-          toggleCookingTime={toggleCookingTime}
-          setAppliedFilters={setAppliedFilters}
-        />
-
-        {/* Premium Modal */}
-        <PremiumModal
-          visible={showPremiumModal}
-          onClose={handleClosePremiumModal}
-          onUpgrade={handleUpgrade}
-        />
-      </SafeAreaView>
-    );
-  }
-
   return (
     <SafeAreaView style={styles.container}>
       {/* Sticky Search Bar */}
       <View style={styles.stickyHeader}>
         <SearchBar
           value={searchText}
-          onChangeText={setSearchText}
+          onChangeText={handleSearchTextChange}
           placeholder="Tìm kiếm"
           onFilterPress={handleFilterPress}
           onFocus={handleSearchFocus}
+          onSubmitEditing={handleSearchSubmit}
         />
       </View>
 
@@ -347,21 +379,52 @@ const SearchScreen: React.FC = () => {
           { paddingBottom: insets.bottom + 85 } // 85 là chiều cao bottom tab
         ]}
       >
-        {/* Popular Section */}
-        <PopularSection
-          data={popularDishes}
-          favorites={favorites}
-          onMealPress={handleMealPress}
-          onFavoritePress={handleFavoritePress}
-        />
+        {/* Loading Indicator */}
+        {isLoading && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={COLORS.primary} />
+          </View>
+        )}
 
-        {/* Suggested Section */}
-        <SuggestedSection
-          data={suggestedDishes}
-          favorites={favorites}
-          onMealPress={handleMealPress}
-          onFavoritePress={handleFavoritePress}
-        />
+        {/* Search Results - Popular Section */}
+        {searchResults.length > 0 && (
+          <PopularSection
+            data={searchResults.map(convertMealData)}
+            favorites={favorites}
+            onMealPress={handleMealPress}
+            onFavoritePress={handleFavoritePress}
+          />
+        )}
+
+        {/* Search Results - Suggested Section */}
+        {searchResults.length > 0 && suggestedMeals.length > 0 && (
+          <SuggestedSection
+            data={suggestedMeals.map(convertMealData)}
+            favorites={favorites}
+            onMealPress={handleMealPress}
+            onFavoritePress={handleFavoritePress}
+          />
+        )}
+
+        {/* Default Popular Section - Only show when no search results */}
+        {searchResults.length === 0 && !isLoading && (
+          <PopularSection
+            data={popularMeals.map(convertMealData)}
+            favorites={favorites}
+            onMealPress={handleMealPress}
+            onFavoritePress={handleFavoritePress}
+          />
+        )}
+
+        {/* Default Suggested Section - Only show when no search results */}
+        {searchResults.length === 0 && !isLoading && (
+          <SuggestedSection
+            data={defaultSuggestedMeals.map(convertMealData)}
+            favorites={favorites}
+            onMealPress={handleMealPress}
+            onFavoritePress={handleFavoritePress}
+          />
+        )}
       </ScrollView>
 
       {/* Filter Modal */}
@@ -408,43 +471,11 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
   },
-  // Active Search Styles
-  activeSearchHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    backgroundColor: COLORS.background,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5E5',
-  },
-  backButton: {
-    padding: SPACING.sm,
-    marginRight: SPACING.sm,
-  },
-  activeSearchInputContainer: {
+  loadingContainer: {
     flex: 1,
-    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
-    borderRadius: RADII.sm,
-    paddingHorizontal: SPACING.md,
-    marginRight: SPACING.sm,
-    minHeight: 40,
-  },
-  searchIcon: {
-    marginRight: SPACING.sm,
-  },
-  activeSearchInput: {
-    flex: 1,
-    height: 40,
-    fontSize: 16,
-    color: COLORS.text,
-    backgroundColor: 'transparent',
-    paddingVertical: 0,
-  },
-  filterButton: {
-    padding: SPACING.sm,
+    paddingVertical: SPACING.xl,
   },
 });
 

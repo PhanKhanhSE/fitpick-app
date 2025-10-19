@@ -17,9 +17,10 @@ interface SuggestedSectionProps {
   mealData: MealData[];
   onMealPress: (meal: MealData) => void;
   onSeeMore?: () => void;
+  onExploreMore?: () => void;
 }
 
-const SuggestedSection: React.FC<SuggestedSectionProps> = ({ mealData, onMealPress, onSeeMore }) => {
+const SuggestedSection: React.FC<SuggestedSectionProps> = ({ mealData, onMealPress, onSeeMore, onExploreMore }) => {
   const [favorites, setFavorites] = useState<string[]>([]);
 
   const handleFavoritePress = (id: string) => {
@@ -67,7 +68,7 @@ const SuggestedSection: React.FC<SuggestedSectionProps> = ({ mealData, onMealPre
 
       <View style={styles.noMoreSuggestions}>
         <Text style={styles.noMoreText}>Chưa thấy món ưng ý? </Text>
-        <TouchableOpacity onPress={onSeeMore}>
+        <TouchableOpacity onPress={onExploreMore || onSeeMore}>
           <Text style={styles.exploreMore}>Khám phá thêm</Text>
         </TouchableOpacity>
       </View>

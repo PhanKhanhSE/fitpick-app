@@ -14,7 +14,7 @@ const { width } = Dimensions.get('window');
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'EatStyle'>;
 
-type DietPlanKey = 'balanced' | 'low_carb' | 'keto' | 'gluten_free' | 'dairy_free' | null;
+type DietPlanKey = 'balanced' | 'low_carb' | 'keto' | 'gluten_free' | 'dairy_free' | 'paleo' | 'vegetarian' | 'vegan' | 'mediterranean' | 'intermittent_fasting' | null;
 
 // Mapping từ frontend keys sang database names
 const DIET_PLAN_MAPPING: Record<string, string> = {
@@ -192,8 +192,15 @@ const EatStyleScreen = () => {
 
             <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
                 <Text style={styles.description}>
-                    Chọn tối đa 2 chế độ ăn phù hợp với bạn, hoặc chọn Tiếp tục để bỏ qua.
+                    Chọn 1 chế độ ăn phù hợp với bạn, hoặc chọn Tiếp tục để bỏ qua.
                 </Text>
+                
+                {/* Selection Counter */}
+                <View style={styles.selectionCounter}>
+                    <Text style={styles.selectionCounterText}>
+                        Đã chọn: {selected ? '1' : '0'} / 1 chế độ ăn
+                    </Text>
+                </View>
 
                 {/* Current Diet Plan Display */}
                 {currentDietPlan && (
@@ -212,7 +219,16 @@ const EatStyleScreen = () => {
                                 selected === plan.key && styles.dietPlanCardSelected
                             ]}
                             activeOpacity={0.7}
-                            onPress={() => setSelected(plan.key)}
+                            onPress={() => {
+                                // Ensure only one diet plan can be selected
+                                if (selected === plan.key) {
+                                    // If clicking the same item, deselect it
+                                    setSelected(null);
+                                } else {
+                                    // Select the new item (automatically deselects previous)
+                                    setSelected(plan.key);
+                                }
+                            }}
                         >
                             <View style={styles.dietPlanContent}>
                                 <Text style={[
@@ -260,7 +276,6 @@ const EatStyleScreen = () => {
                     }
                     onPress={handleContinue} 
                     filled
-                    disabled={isLoading}
                     style={StyleSheet.flatten([
                         styles.continueButton,
                         isLoading && styles.continueButtonDisabled
@@ -299,6 +314,19 @@ const styles = StyleSheet.create({
         paddingHorizontal: SPACING.xl,
         paddingTop: SPACING.lg,
         paddingBottom: SPACING.xl,
+    },
+    selectionCounter: {
+        backgroundColor: '#F3F4F6',
+        paddingHorizontal: SPACING.md,
+        paddingVertical: SPACING.sm,
+        borderRadius: RADII.sm,
+        marginBottom: SPACING.md,
+        alignSelf: 'flex-start',
+    },
+    selectionCounterText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: COLORS.textStrong,
     },
     description: {
         fontSize: 16,

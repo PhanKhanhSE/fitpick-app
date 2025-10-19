@@ -246,13 +246,13 @@ export const userProfileAPI = {
     }
   },
 
-  // Delete account using /api/users/me endpoint
+  // Deactivate account (soft delete) using /api/users/me endpoint
   deleteAccount: async () => {
     try {
       const response = await apiClient.delete('/api/users/me');
       return response.data;
     } catch (error: any) {
-      console.error('Error deleting account:', error);
+      console.error('Error deactivating account:', error);
       throw error;
     }
   }

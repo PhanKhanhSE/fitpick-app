@@ -15,6 +15,7 @@ interface SearchBarProps {
   placeholder?: string;
   onFilterPress?: () => void;
   onFocus?: () => void;
+  onSubmitEditing?: () => void;
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({
@@ -23,6 +24,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   placeholder = "Tìm kiếm",
   onFilterPress,
   onFocus,
+  onSubmitEditing,
 }) => {
   return (
     <View style={styles.searchContainer}>
@@ -35,6 +37,10 @@ const SearchBar: React.FC<SearchBarProps> = ({
           value={value}
           onChangeText={onChangeText}
           onFocus={onFocus}
+          onSubmitEditing={onSubmitEditing}
+          returnKeyType="search"
+          autoCapitalize="none"
+          autoCorrect={false}
         />
       </View>
       <TouchableOpacity style={styles.filterButton} onPress={onFilterPress}>
