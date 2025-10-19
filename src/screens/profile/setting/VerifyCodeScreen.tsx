@@ -12,6 +12,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADII } from '../../../utils/theme';
 import AppButton from '../../../components/AppButton';
+import { userProfileAPI } from '../../../services/userProfileAPI';
 
 type NavigationProp = any;
 type RouteProp = any;
@@ -23,6 +24,7 @@ const VerifyCodeScreen: React.FC = () => {
 
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [timer, setTimer] = useState(60);
+  const [loading, setLoading] = useState(false);
   const inputs = useRef<TextInput[]>([]);
 
   useEffect(() => {
@@ -56,7 +58,7 @@ const VerifyCodeScreen: React.FC = () => {
     }
   };
 
-  const handleVerify = () => {
+  const handleVerify = async () => {
     const verificationCode = code.join('');
     
     if (verificationCode.length !== 6) {
@@ -64,21 +66,35 @@ const VerifyCodeScreen: React.FC = () => {
       return;
     }
 
-    // TODO: Call API to verify code
-    console.log('Verifying code:', verificationCode);
-    
-    // Navigate to create new password screen
-    navigation.navigate('CreateNewPasswordScreen', { email, code: verificationCode });
+    try {
+      setLoading(true);
+      await userProfileAPI.verifyForgotPasswordCode(email, verificationCode);
+      Alert.alert('Thành công', 'Mã xác minh hợp lệ');
+      // Navigate to create new password screen
+      navigation.navigate('CreateNewPasswordScreen', { email, code: verificationCode });
+    } catch (error: any) {
+      console.error('Error verifying code:', error);
+      Alert.alert('Lỗi', 'Mã xác minh không đúng. Vui lòng thử lại.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleResendCode = () => {
+  const handleResendCode = async () => {
     if (timer > 0) return;
 
-    // TODO: Call API to resend code
-    console.log('Resending code to:', email);
-    setTimer(60);
-    setCode(['', '', '', '', '', '']);
-    Alert.alert('Thành công', 'Mã xác minh đã được gửi lại');
+    try {
+      setLoading(true);
+      await userProfileAPI.sendForgotPasswordCode(email);
+      setTimer(60);
+      setCode(['', '', '', '', '', '']);
+      Alert.alert('Thành công', 'Mã xác minh đã được gửi lại');
+    } catch (error: any) {
+      console.error('Error resending code:', error);
+      Alert.alert('Lỗi', 'Không thể gửi lại mã xác minh. Vui lòng thử lại.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -121,18 +137,19 @@ const VerifyCodeScreen: React.FC = () => {
         </View>
 
         <AppButton
-          title="Xác nhận"
+          title={loading ? "Đang xác nhận..." : "Xác nhận"}
           onPress={handleVerify}
           filled
           style={styles.verifyButton}
-           textStyle={{ fontWeight: '600', fontSize: 14 }}
+          textStyle={{ fontWeight: '600', fontSize: 14 }}
+          disabled={loading}
         />
 
         {/* Resend Code */}
         <TouchableOpacity
           style={styles.resendButton}
           onPress={handleResendCode}
-          disabled={timer > 0}
+          disabled={timer > 0 || loading}
         >
           <Text style={[
             styles.resendText,

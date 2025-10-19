@@ -59,7 +59,7 @@ const MealDetailTabs: React.FC<MealDetailTabsProps> = ({
   ];
 
   const nutritionData = [
-    { label: 'Calories', value: calories },
+    { label: 'Calo', value: calories },
     { label: 'Tinh bột', value: carbs },
     { label: 'Protein', value: protein },
     { label: 'Chất béo', value: fat },

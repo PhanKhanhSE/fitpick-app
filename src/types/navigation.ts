@@ -8,7 +8,6 @@ export type RootStackParamList = {
     EatStyle: undefined;
     CookingLevel: undefined;
     MainTabs: undefined;
-    APITestScreen: undefined; // Thêm screen test API
     MealDetail: {
         meal: {
             id: string;
@@ -56,5 +55,9 @@ export type RootStackParamList = {
     CommunityScreen: undefined;
     EditPostScreen: { post: any };
     CreatePostScreen: undefined;
-
+    
+    // Settings screens
+    TermsOfService: undefined;
+    PrivacyPolicy: undefined;
+    EditProfile: undefined;
 };

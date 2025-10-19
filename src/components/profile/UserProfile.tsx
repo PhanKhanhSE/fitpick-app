@@ -1,28 +1,30 @@
 import React from "react";
-import { View, Text, StyleSheet, Image } from "react-native";
+import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
 import { COLORS, SPACING } from "../../utils/theme";
 
 interface UserProfileProps {
   name: string;
   accountType: string;
   avatar: string;
+  onAvatarPress?: () => void;
 }
 
 const UserProfile: React.FC<UserProfileProps> = ({
   name,
   accountType,
   avatar,
+  onAvatarPress,
 }) => {
   return (
     <View style={styles.profileSection}>
-      <View style={styles.avatarContainer}>
+      <TouchableOpacity style={styles.avatarContainer} onPress={onAvatarPress}>
         <Image
           source={{
             uri: avatar,
           }}
           style={styles.avatar}
         />
-      </View>
+      </TouchableOpacity>
       <View style={styles.userInfo}>
         <Text style={styles.userName}>{name}</Text>
         <View style={styles.accountTypeContainer}>

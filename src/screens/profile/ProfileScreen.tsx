@@ -27,6 +27,7 @@ import {
 } from "../../components/profile";
 import { CreatePost, PostItem } from "../../components/home/community";
 import { userProfileAPI } from "../../services/userProfileAPI";
+import { useAvatarPicker } from "../../hooks/useAvatarPicker";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -35,6 +36,7 @@ const ProfileScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const [activeTab, setActiveTab] = useState<"nutrition" | "posts">("nutrition");
   const { height } = useWindowDimensions();
+  const { handleChangeAvatar, isUploading } = useAvatarPicker();
 
   // State cho post & modal menu
   const [selectedPost, setSelectedPost] = useState<any | null>(null);
@@ -64,6 +66,16 @@ const ProfileScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
+  // Handle avatar change
+  const handleAvatarChange = () => {
+    handleChangeAvatar((newAvatarUrl) => {
+      setUserData(prev => ({
+        ...prev,
+        avatar: newAvatarUrl
+      }));
+    });
+  };
+
   // Load dữ liệu từ API
   useEffect(() => {
     loadUserData();
@@ -81,15 +93,11 @@ const ProfileScreen: React.FC = () => {
     try {
       setIsLoading(true);
       
-      console.log('🔍 Loading user data...');
-      
       // Load profile từ API trước (ưu tiên API)
       const profileResponse = await userProfileAPI.getUserProfile();
-      console.log('🔍 Profile API response:', profileResponse);
       
       if (profileResponse.success && profileResponse.data) {
         const profile = profileResponse.data;
-        console.log('✅ Profile data from API:', profile);
         
         setUserData({
           name: profile.fullName || profile.email?.split('@')[0] || "Người dùng",
@@ -99,16 +107,13 @@ const ProfileScreen: React.FC = () => {
           accountType: profile.accountType || "FREE",
         });
         
-        console.log('✅ User data updated from API');
         return; // Thoát sớm nếu API thành công
       }
       
       // Fallback: Lấy thông tin user từ AsyncStorage nếu API thất bại
-      console.log('⚠️ API failed, using AsyncStorage fallback');
       const storedUser = await AsyncStorage.getItem('user');
       if (storedUser) {
         const user = JSON.parse(storedUser);
-        console.log('🔍 Stored user data:', user);
         
         setUserData({
           name: user.fullName || user.email?.split('@')[0] || "Người dùng",
@@ -117,11 +122,9 @@ const ProfileScreen: React.FC = () => {
           email: user.email || "",
           fullName: user.fullName || "",
         });
-        
-        console.log('✅ User data updated from AsyncStorage');
       }
     } catch (error) {
-      console.error('❌ Error loading user data:', error);
+      console.error('Error loading user data:', error);
       
       // Fallback to stored data
       const storedUser = await AsyncStorage.getItem('user');
@@ -325,6 +328,7 @@ const ProfileScreen: React.FC = () => {
           name={userData.name}
           accountType={userData.accountType}
           avatar={userData.avatar}
+          onAvatarPress={handleAvatarChange}
         />
 
         <StickyTabsWithDate

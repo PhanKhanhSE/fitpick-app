@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Dimensions, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +8,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/navigation';
 import { COLORS, SPACING, RADII } from '../../utils/theme';
 import { profileAPI } from '../../services/profileAPI';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
 
@@ -66,6 +67,64 @@ const EatStyleScreen = () => {
     const navigation = useNavigation<Nav>();
     const [selected, setSelected] = useState<DietPlanKey>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [currentDietPlan, setCurrentDietPlan] = useState<string>('');
+
+    // Load current diet plan when component mounts
+    useEffect(() => {
+        loadCurrentDietPlan();
+    }, []);
+
+    const loadCurrentDietPlan = async () => {
+        try {
+            // Check if this is settings flow
+            const isSettingsFlow = navigation.getState().routes.some(route => 
+                route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'
+            );
+
+            if (isSettingsFlow) {
+                // Try to get from API first
+                try {
+                    const profileResponse = await profileAPI.getUserProfile();
+                    if (profileResponse.data?.dietPlan) {
+                        setCurrentDietPlan(profileResponse.data.dietPlan);
+                        // Map diet plan to selected state
+                        const dietPlanKey = mapDietPlanToKey(profileResponse.data.dietPlan);
+                        if (dietPlanKey) {
+                            setSelected(dietPlanKey);
+                        }
+                    }
+                } catch (error) {
+                    console.log('API failed, trying AsyncStorage...');
+                    // Fallback to AsyncStorage
+                    const storedDietPlan = await AsyncStorage.getItem('userDietPlan');
+                    if (storedDietPlan) {
+                        setCurrentDietPlan(storedDietPlan);
+                        const dietPlanKey = mapDietPlanToKey(storedDietPlan);
+                        if (dietPlanKey) {
+                            setSelected(dietPlanKey);
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error loading current diet plan:', error);
+        }
+    };
+
+    const mapDietPlanToKey = (dietPlan: string): DietPlanKey | null => {
+        const lowerDietPlan = dietPlan.toLowerCase();
+        if (lowerDietPlan.includes('balanced') || lowerDietPlan.includes('cân bằng')) return 'balanced';
+        if (lowerDietPlan.includes('low carb') || lowerDietPlan.includes('ít tinh bột')) return 'low_carb';
+        if (lowerDietPlan.includes('keto')) return 'keto';
+        if (lowerDietPlan.includes('gluten free') || lowerDietPlan.includes('không gluten')) return 'gluten_free';
+        if (lowerDietPlan.includes('dairy free') || lowerDietPlan.includes('không sữa')) return 'dairy_free';
+        if (lowerDietPlan.includes('paleo')) return 'paleo';
+        if (lowerDietPlan.includes('vegetarian')) return 'vegetarian';
+        if (lowerDietPlan.includes('vegan')) return 'vegan';
+        if (lowerDietPlan.includes('mediterranean')) return 'mediterranean';
+        if (lowerDietPlan.includes('intermittent fasting')) return 'intermittent_fasting';
+        return null;
+    };
 
     const handleContinue = async () => {
         if (!selected) {
@@ -84,6 +143,10 @@ const EatStyleScreen = () => {
             try {
                 const dietPlanName = DIET_PLAN_MAPPING[selected] || 'Balanced';
                 await profileAPI.saveUserDietPlan({ dietPlan: dietPlanName });
+                
+                // Also save to AsyncStorage for fallback
+                await AsyncStorage.setItem('userDietPlan', dietPlanName);
+                
                 Alert.alert('Thành công', 'Chế độ ăn đã được cập nhật');
                 navigation.goBack();
             } catch (error: any) {
@@ -99,6 +162,10 @@ const EatStyleScreen = () => {
             try {
                 const dietPlanName = DIET_PLAN_MAPPING[selected] || 'Balanced';
                 await profileAPI.saveUserDietPlan({ dietPlan: dietPlanName });
+                
+                // Also save to AsyncStorage for fallback
+                await AsyncStorage.setItem('userDietPlan', dietPlanName);
+                
                 navigation.navigate('CookingLevel');
             } catch (error: any) {
                 console.error('Save diet plan error:', error);
@@ -127,6 +194,14 @@ const EatStyleScreen = () => {
                 <Text style={styles.description}>
                     Chọn tối đa 2 chế độ ăn phù hợp với bạn, hoặc chọn Tiếp tục để bỏ qua.
                 </Text>
+
+                {/* Current Diet Plan Display */}
+                {currentDietPlan && (
+                    <View style={styles.currentDietPlanContainer}>
+                        <Text style={styles.currentDietPlanLabel}>Chế độ ăn hiện tại:</Text>
+                        <Text style={styles.currentDietPlanText}>{currentDietPlan}</Text>
+                    </View>
+                )}
 
                 <View style={styles.dietPlansContainer}>
                     {DIET_PLANS.map(plan => (
@@ -231,6 +306,25 @@ const styles = StyleSheet.create({
         marginBottom: SPACING.xl,
         fontWeight: '400',
         lineHeight: 24,
+    },
+    currentDietPlanContainer: {
+        backgroundColor: '#F0F9FF',
+        borderWidth: 1,
+        borderColor: '#0EA5E9',
+        borderRadius: RADII.md,
+        padding: SPACING.md,
+        marginBottom: SPACING.lg,
+    },
+    currentDietPlanLabel: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#0369A1',
+        marginBottom: SPACING.xs,
+    },
+    currentDietPlanText: {
+        fontSize: 16,
+        fontWeight: '500',
+        color: '#0C4A6E',
     },
     dietPlansContainer: {
         flex: 1,

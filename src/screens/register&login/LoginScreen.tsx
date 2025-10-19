@@ -51,8 +51,6 @@ const LoginScreen = () => {
         ]);
       }
     } catch (error: any) {
-      console.error("Login error:", error);
-      
       let errorMessage = "Đăng nhập thất bại. Vui lòng thử lại.";
       
       if (error?.type === 'network') {
@@ -159,15 +157,6 @@ const LoginScreen = () => {
               </TouchableOpacity>
             </View>
 
-            {/* API Test Button - Chỉ hiển thị trong development */}
-            {__DEV__ && (
-              <TouchableOpacity
-                style={styles.apiTestButton}
-                onPress={() => navigation.navigate('APITestScreen')}
-              >
-                <Text style={styles.apiTestButtonText}>🧪 Test API</Text>
-              </TouchableOpacity>
-            )}
 
             {/* Login Button */}
             <AppButton
@@ -342,18 +331,5 @@ const styles = StyleSheet.create({
   signupLink: {
     color: COLORS.primary,
     fontWeight: "600",
-  },
-  apiTestButton: {
-    backgroundColor: '#FF6B35',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    marginBottom: SPACING.md,
-    alignItems: 'center',
-  },
-  apiTestButtonText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '600',
   },
 });

@@ -62,14 +62,12 @@ const RegisterScreen = () => {
       const registerResponse = await authAPI.register(email, password, confirmPassword);
       
       if (registerResponse.success) {
-        console.log('✅ Register successful, now auto-login...');
         
         // Tự động đăng nhập sau khi đăng ký thành công
         try {
           const loginResponse = await authAPI.login(email, password);
           
           if (loginResponse.success) {
-            console.log('✅ Auto-login successful, token stored');
             
             Alert.alert(
               "Đăng ký thành công", 

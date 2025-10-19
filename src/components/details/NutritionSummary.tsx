@@ -25,7 +25,7 @@ const NutritionSummary: React.FC<NutritionSummaryProps> = ({
   fat = '000 g',
 }) => {
   const nutritionData: NutritionItem[] = [
-    { label: 'Calories', value: calories },
+    { label: 'Calo', value: calories },
     { label: 'Tinh bột', value: carbs },
     { label: 'Protein', value: protein },
     { label: 'Chất béo', value: fat },

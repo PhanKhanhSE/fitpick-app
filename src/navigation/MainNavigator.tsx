@@ -25,7 +25,9 @@ import CreateNewPasswordScreen from '../screens/profile/setting/CreateNewPasswor
 import PostDetailScreen from '../screens/home/community/PostDetailScreen';
 import CreatePostScreen from '../screens/home/community/CreatePostScreen';
 import EditPostScreen from '../screens/home/community/EditPostScreen';
-import APITestScreen from '../screens/APITestScreen';
+import TermsOfServiceScreen from '../screens/profile/setting/TermsOfServiceScreen';
+import PrivacyPolicyScreen from '../screens/profile/setting/PrivacyPolicyScreen';
+import EditProfileScreen from '../screens/profile/setting/EditProfileScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -139,14 +141,19 @@ export const MainNavigator = () => {
                     options={{ headerShown: false }} 
                 />
                 <Stack.Screen
-                    name="APITestScreen"
-                    component={APITestScreen}
-                    options={{ 
-                        headerShown: true,
-                        title: 'API Test',
-                        headerStyle: { backgroundColor: '#F63E7C' },
-                        headerTintColor: 'white',
-                    }} 
+                    name="TermsOfService"
+                    component={TermsOfServiceScreen}
+                    options={{ headerShown: false }} 
+                />
+                <Stack.Screen
+                    name="PrivacyPolicy"
+                    component={PrivacyPolicyScreen}
+                    options={{ headerShown: false }} 
+                />
+                <Stack.Screen
+                    name="EditProfile"
+                    component={EditProfileScreen}
+                    options={{ headerShown: false }} 
                 />
             </Stack.Navigator>
         </NavigationContainer>

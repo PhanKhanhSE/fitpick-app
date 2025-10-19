@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -14,15 +14,54 @@ import { Ionicons } from "@expo/vector-icons";
 import { COLORS, RADII, SPACING } from "../../../utils/theme";
 import PremiumModal from "../../../components/home/PremiumModal";
 import ChangePasswordModal from "./ChangePasswordModal";
+import { userProfileAPI, settingsAPI } from "../../../services/userProfileAPI";
+import { authAPI } from "../../../services/api";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-type NavigationProp = any;
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../../types/navigation';
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const SettingsScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const [notify, setNotify] = useState(true);
-  const accountType: string = "FREE"; // hoặc 'PRO' để test
+  const [userEmail, setUserEmail] = useState<string>('');
+  const [accountType, setAccountType] = useState<string>('FREE');
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  const loadUserData = async () => {
+    try {
+      setLoading(true);
+      const userProfile = await userProfileAPI.getCurrentUserProfile();
+      setUserEmail(userProfile.data.email || '');
+      setAccountType(userProfile.data.accountType || 'FREE');
+    } catch (error) {
+      console.error('Error loading user data:', error);
+      // Fallback to stored data
+      try {
+        const storedProfile = await AsyncStorage.getItem('userProfile');
+        if (storedProfile) {
+          const parsedProfile = JSON.parse(storedProfile);
+          setUserEmail(parsedProfile.email || '');
+          setAccountType(parsedProfile.accountType || parsedProfile.subscriptionType || 'FREE');
+        } else {
+          const storedEmail = await AsyncStorage.getItem('userEmail');
+          if (storedEmail) setUserEmail(storedEmail);
+        }
+      } catch (storageError) {
+        console.error('Error loading stored data:', storageError);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleUpgradeToPro = () => {
     // Logic nâng cấp lên PRO
@@ -31,13 +70,81 @@ const SettingsScreen: React.FC = () => {
     setShowPremiumModal(false);
   };
 
-  const handleChangePassword = (oldPassword: string, newPassword: string) => {
-    // Logic đổi mật khẩu
-    console.log('Changing password...', { oldPassword, newPassword });
-    Alert.alert('Thành công', 'Mật khẩu đã được thay đổi thành công!');
+  const handleChangePassword = async (oldPassword: string, newPassword: string) => {
+    try {
+      setLoading(true);
+      await settingsAPI.changePassword(oldPassword, newPassword);
+      Alert.alert('Thành công', 'Mật khẩu đã được thay đổi thành công!');
+    } catch (error) {
+      console.error('Error changing password:', error);
+      Alert.alert('Lỗi', 'Không thể thay đổi mật khẩu. Vui lòng thử lại.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleLogout = () => {
+  const handleDeleteAccount = async () => {
+    Alert.alert(
+      'Xóa tài khoản', 
+      'Bạn có chắc chắn muốn xóa tài khoản? Hành động này không thể hoàn tác.',
+      [
+        { 
+          text: 'Xóa tài khoản', 
+          style: 'destructive',
+          onPress: async () => {
+            // Simplified confirmation - just double confirm
+            Alert.alert(
+              'Xác nhận cuối cùng',
+              'Bạn có chắc chắn muốn xóa tài khoản? Nhấn "Xóa" để xác nhận.',
+              [
+                { text: 'Hủy', style: 'cancel' },
+                {
+                  text: 'Xóa',
+                  style: 'destructive',
+                  onPress: async () => {
+                    try {
+                      setLoading(true);
+                      
+                      // Call delete account API
+                      await userProfileAPI.deleteAccount();
+                      
+                      // Clear all stored data (logout automatically)
+                      await AsyncStorage.multiRemove([
+                        'accessToken', 
+                        'refreshToken', 
+                        'user', 
+                        'userProfile',
+                        'userEmail'
+                      ]);
+                      
+                      // Navigate to AuthLanding screen (logout automatically)
+                      navigation.reset({
+                        index: 0,
+                        routes: [{ name: 'AuthLanding' }],
+                      });
+                      
+                      // Show success message after logout
+                      setTimeout(() => {
+                        Alert.alert('Thành công', 'Tài khoản đã được xóa thành công!');
+                      }, 500);
+                    } catch (error) {
+                      console.error('Error deleting account:', error);
+                      Alert.alert('Lỗi', 'Không thể xóa tài khoản. Vui lòng thử lại.');
+                    } finally {
+                      setLoading(false);
+                    }
+                  }
+                }
+              ]
+            );
+          }
+        },
+        { text: 'Hủy', style: 'cancel' }
+      ]
+    );
+  };
+
+  const handleLogout = async () => {
     Alert.alert(
       'Đăng xuất', 
       'Bạn có chắc chắn muốn đăng xuất?',
@@ -46,14 +153,34 @@ const SettingsScreen: React.FC = () => {
         { 
           text: 'Đăng xuất', 
           style: 'destructive',
-          onPress: () => {
-            // TODO: Clear user data/token
-            console.log('Logging out user...');
-            // Navigate to AuthLanding screen
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'AuthLanding' }],
-            });
+          onPress: async () => {
+            try {
+              setLoading(true);
+              await authAPI.logout();
+              // Clear all stored data
+              await AsyncStorage.multiRemove([
+                'accessToken', 
+                'refreshToken', 
+                'user', 
+                'userProfile',
+                'userEmail'
+              ]);
+              console.log('User logged out successfully');
+              // Navigate to AuthLanding screen
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'AuthLanding' }],
+              });
+            } catch (error) {
+              console.error('Error during logout:', error);
+              // Still navigate even if clearing storage fails
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'AuthLanding' }],
+              });
+            } finally {
+              setLoading(false);
+            }
           }
         }
       ]
@@ -103,7 +230,7 @@ const SettingsScreen: React.FC = () => {
 
         <TouchableOpacity style={styles.item}>
           <Text style={styles.itemNormal}>Email</Text>
-          <Text style={styles.subText}>a@gmail.com</Text>
+          <Text style={styles.subText}>{userEmail || 'Chưa cập nhật'}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
@@ -114,7 +241,7 @@ const SettingsScreen: React.FC = () => {
           <Ionicons name="chevron-forward" size={18} color={COLORS.text} style={styles.forwardButton} />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.item}>
+        <TouchableOpacity style={styles.item} onPress={handleDeleteAccount}>
           <Text style={[styles.itemText, { color: "red" }]}>Xóa tài khoản</Text>
           <Ionicons name="chevron-forward" size={18} color="red" style={styles.forwardButton} />
         </TouchableOpacity>
@@ -124,7 +251,7 @@ const SettingsScreen: React.FC = () => {
         {/* ===== Thông tin cá nhân ===== */}
         <TouchableOpacity 
           style={styles.item}
-          onPress={() => navigation.navigate("UserInfo")}
+          onPress={() => navigation.navigate("EditProfile")}
         >
           <Text style={styles.itemLargeText}>Thông tin cá nhân</Text>
           <Ionicons name="chevron-forward" size={20} color={COLORS.text} style={styles.forwardButton} />
@@ -157,12 +284,18 @@ const SettingsScreen: React.FC = () => {
           <Text style={styles.sectionLabel}>Hỗ trợ</Text>
         </View>
 
-        <TouchableOpacity style={styles.item}>
+        <TouchableOpacity 
+          style={styles.item}
+          onPress={() => navigation.navigate("TermsOfService")}
+        >
           <Text style={styles.itemNormal}>Điều khoản dịch vụ</Text>
           <Ionicons name="chevron-forward" size={18} color={COLORS.muted} style={styles.forwardButton} />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.item}>
+        <TouchableOpacity 
+          style={styles.item}
+          onPress={() => navigation.navigate("PrivacyPolicy")}
+        >
           <Text style={styles.itemNormal}>Chính sách bảo mật</Text>
           <Ionicons name="chevron-forward" size={18} color={COLORS.muted} style={styles.forwardButton} />
         </TouchableOpacity>
