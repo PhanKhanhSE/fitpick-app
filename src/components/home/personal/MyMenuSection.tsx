@@ -19,18 +19,17 @@ interface MyMenuSectionProps {
   mealData: MealData[];
   onMealPress: (meal: MealData) => void;
   onSeeMore?: () => void;
+  isFavorite?: (mealId: number) => boolean;
+  onFavoritePress?: (mealId: number) => void;
 }
 
-const MyMenuSection: React.FC<MyMenuSectionProps> = ({ mealData, onMealPress, onSeeMore }) => {
-  const [favorites, setFavorites] = useState<string[]>([]);
-
-  const handleFavoritePress = (id: string) => {
-    setFavorites(prev => 
-      prev.includes(id) 
-        ? prev.filter(fav => fav !== id)
-        : [...prev, id]
-    );
-  };
+const MyMenuSection: React.FC<MyMenuSectionProps> = ({ 
+  mealData, 
+  onMealPress, 
+  onSeeMore, 
+  isFavorite, 
+  onFavoritePress 
+}) => {
 
   return (
     <View style={styles.myMenuSection}>
@@ -57,8 +56,8 @@ const MyMenuSection: React.FC<MyMenuSectionProps> = ({ mealData, onMealPress, on
               image={meal.image}
               tag={meal.tag}
               isLocked={meal.isLocked}
-              isFavorite={favorites.includes(meal.id)}
-              onFavoritePress={() => handleFavoritePress(meal.id)}
+              isFavorite={isFavorite ? isFavorite(parseInt(meal.id)) : false}
+              onFavoritePress={() => onFavoritePress ? onFavoritePress(parseInt(meal.id)) : undefined}
               onPress={() => onMealPress(meal)}
               width={158}
               height={175}

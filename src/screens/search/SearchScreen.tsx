@@ -20,6 +20,7 @@ import PremiumModal from '../../components/home/PremiumModal';
 import { searchAPI, SearchFilters, MealData } from '../../services/searchAPI';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { convertCategoryToVietnamese } from '../../utils/categoryMapping';
+import { useFavorites } from '../../hooks/useFavorites';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -35,8 +36,10 @@ const SearchScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const insets = useSafeAreaInsets();
   const [searchText, setSearchText] = useState('');
-  const [favorites, setFavorites] = useState<string[]>([]);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  
+  // Favorites hook
+  const { favorites, toggleFavorite, isFavorite } = useFavorites(); // TypeScript: favorites is string[]
   
   // Search states
   const [isSearchActive, setIsSearchActive] = useState(false);
@@ -132,6 +135,7 @@ const SearchScreen: React.FC = () => {
     image: { uri: meal.imageUrl || 'https://via.placeholder.com/150' },
     tag: convertCategoryToVietnamese(meal.categoryName || 'Món ăn'),
     isLocked: meal.isPremium || false,
+    isFavorite: isFavorite(meal.mealid),
     description: meal.description || '',
     price: meal.price || 0,
     dietType: meal.diettype || '',
@@ -238,12 +242,17 @@ const SearchScreen: React.FC = () => {
     }
   };
 
-  const handleFavoritePress = (id: string) => {
-    setFavorites(prev => 
-      prev.includes(id) 
-        ? prev.filter(fav => fav !== id)
-        : [...prev, id]
-    );
+  const handleFavoritePress = async (id: string) => {
+    const mealId = parseInt(id);
+    if (!isNaN(mealId)) {
+      const success = await toggleFavorite(mealId);
+      if (success) {
+        // Update local state if needed
+        console.log(`Meal ${mealId} favorite status updated`);
+      } else {
+        Alert.alert('Lỗi', 'Không thể cập nhật trạng thái yêu thích. Vui lòng thử lại.');
+      }
+    }
   };
 
   const handleMealPress = (meal: any) => {

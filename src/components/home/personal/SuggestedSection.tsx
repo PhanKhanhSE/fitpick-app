@@ -18,18 +18,18 @@ interface SuggestedSectionProps {
   onMealPress: (meal: MealData) => void;
   onSeeMore?: () => void;
   onExploreMore?: () => void;
+  isFavorite?: (mealId: number) => boolean;
+  onFavoritePress?: (mealId: number) => void;
 }
 
-const SuggestedSection: React.FC<SuggestedSectionProps> = ({ mealData, onMealPress, onSeeMore, onExploreMore }) => {
-  const [favorites, setFavorites] = useState<string[]>([]);
-
-  const handleFavoritePress = (id: string) => {
-    setFavorites(prev => 
-      prev.includes(id) 
-        ? prev.filter(fav => fav !== id)
-        : [...prev, id]
-    );
-  };
+const SuggestedSection: React.FC<SuggestedSectionProps> = ({ 
+  mealData, 
+  onMealPress, 
+  onSeeMore, 
+  onExploreMore,
+  isFavorite,
+  onFavoritePress
+}) => {
 
   return (
     <>
@@ -56,8 +56,8 @@ const SuggestedSection: React.FC<SuggestedSectionProps> = ({ mealData, onMealPre
               image={meal.image}
               tag={meal.tag}
               isLocked={meal.isLocked}
-              isFavorite={favorites.includes(meal.id)}
-              onFavoritePress={() => handleFavoritePress(meal.id)}
+              isFavorite={isFavorite ? isFavorite(parseInt(meal.id)) : false}
+              onFavoritePress={() => onFavoritePress ? onFavoritePress(parseInt(meal.id)) : undefined}
               onPress={() => onMealPress(meal)}
               width={180}
               height={220}

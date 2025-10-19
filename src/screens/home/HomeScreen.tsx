@@ -21,6 +21,7 @@ import { RootStackParamList } from '../../types/navigation';
 import { userProfileAPI } from '../../services/userProfileAPI';
 import { searchAPI } from '../../services/searchAPI';
 import { convertCategoryToVietnamese } from '../../utils/categoryMapping';
+import { useFavorites } from '../../hooks/useFavorites';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -28,6 +29,9 @@ const HomeScreen: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState('personal'); // 'personal' or 'community'
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const navigation = useNavigation<NavigationProp>();
+  
+  // Use favorites hook for global state management
+  const { isFavorite, toggleFavorite } = useFavorites();
 
   // State cho dữ liệu từ API
   const [nutritionData, setNutritionData] = useState({
@@ -266,6 +270,8 @@ const HomeScreen: React.FC = () => {
               mealData={myMealData}
               onMealPress={handleMealPress}
               onSeeMore={handleSeeMoreMenu}
+              isFavorite={isFavorite}
+              onFavoritePress={toggleFavorite}
             />
 
             {/* Premium Upgrade */}
@@ -282,6 +288,8 @@ const HomeScreen: React.FC = () => {
               onMealPress={handleMealPress}
               onSeeMore={handleSeeMore}
               onExploreMore={handleExploreMore}
+              isFavorite={isFavorite}
+              onFavoritePress={toggleFavorite}
             />
           </ScrollView>
         )
