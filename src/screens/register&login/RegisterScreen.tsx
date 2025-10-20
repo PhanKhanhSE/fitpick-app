@@ -278,13 +278,6 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     paddingVertical: 18,
     marginBottom: SPACING.lg,
-    shadowColor: COLORS.primary,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
     elevation: 8,
   },
   loginLinkContainer: {

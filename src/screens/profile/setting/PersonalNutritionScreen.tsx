@@ -17,7 +17,7 @@ const PersonalNutritionScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
 
   return (
-    <View style={styles.safe}>
+    <SafeAreaView style={styles.safe}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -66,7 +66,7 @@ const PersonalNutritionScreen: React.FC = () => {
           <Ionicons name="chevron-forward" size={20} color={COLORS.text} />
         </TouchableOpacity>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -80,8 +80,8 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.md,
-    marginTop: SPACING.xs,
     flexDirection: "row",
+    alignItems: "center",
   },
   backButton: {
     marginRight: 8,

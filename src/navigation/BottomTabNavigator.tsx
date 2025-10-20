@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Platform } from 'react-native';
+import { View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -54,13 +54,6 @@ const BottomTabNavigator: React.FC = () => {
           backgroundColor: COLORS.background,
           borderTopWidth: 1,
           borderTopColor: '#E5E5EA',
-          shadowColor: '#000',
-          shadowOffset: {
-            width: 0,
-            height: -4,
-          },
-          shadowOpacity: 0.2,
-          shadowRadius: 12,
           elevation: 12,
         },
         headerShown: false,

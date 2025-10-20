@@ -258,11 +258,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E5E5',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    elevation: 3,
     zIndex: 1000,
   },
   header: {
