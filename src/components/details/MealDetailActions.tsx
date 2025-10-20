@@ -8,12 +8,14 @@ import AppButton from '../AppButton';
 
 interface MealDetailActionsProps {
   onAddToPlan: () => void;
-  onAddToFavorites: () => void;
+  onAddToProductList?: () => void;
+  isInProductList?: boolean;
 }
 
 const MealDetailActions: React.FC<MealDetailActionsProps> = ({
   onAddToPlan,
-  onAddToFavorites,
+  onAddToProductList,
+  isInProductList = false,
 }) => {
   return (
     <View style={styles.bottomButtons}>
@@ -24,13 +26,15 @@ const MealDetailActions: React.FC<MealDetailActionsProps> = ({
         style={styles.primaryButton}
         textStyle={styles.buttonText}
       />
-      <AppButton
-        title="Thêm vào danh sách sản phẩm"
-        onPress={onAddToFavorites}
-        filled={false}
-        style={styles.secondaryButton}
-        textStyle={styles.buttonText}
-      />
+      {onAddToProductList && !isInProductList && (
+        <AppButton
+          title="Thêm vào danh sách sản phẩm"
+          onPress={onAddToProductList}
+          filled={false}
+          style={styles.secondaryButton}
+          textStyle={styles.buttonText}
+        />
+      )}
     </View>
   );
 };

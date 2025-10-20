@@ -21,6 +21,7 @@ interface SuggestedSectionProps {
   favorites: string[];
   onMealPress: (meal: MealData) => void;
   onFavoritePress: (id: string) => void;
+  isFavorite?: (mealId: number) => boolean;
 }
 
 const SuggestedSection: React.FC<SuggestedSectionProps> = ({
@@ -28,6 +29,7 @@ const SuggestedSection: React.FC<SuggestedSectionProps> = ({
   favorites,
   onMealPress,
   onFavoritePress,
+  isFavorite,
 }) => {
   const renderSuggestedItem = ({ item }: { item: MealData }) => (
     <View style={styles.suggestedItem}>
@@ -39,7 +41,7 @@ const SuggestedSection: React.FC<SuggestedSectionProps> = ({
         image={item.image}
         tag={item.tag}
         isLocked={item.isLocked}
-        isFavorite={favorites.includes(item.id)}
+        isFavorite={isFavorite ? isFavorite(parseInt(item.id)) : favorites.includes(item.id)}
         onPress={() => onMealPress(item)}
         onFavoritePress={() => onFavoritePress(item.id)}
         layout="vertical"

@@ -17,6 +17,7 @@ import { COLORS, SPACING, RADII } from '../../utils/theme';
 import { favoritesAPI, FavoriteMealWithDetails } from '../../services/favoritesAPI';
 import { convertCategoryToVietnamese } from '../../utils/categoryMapping';
 import { useFavorites } from '../../hooks/useFavorites';
+import { useIngredients } from '../../hooks/useIngredients';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 import {
@@ -30,9 +31,9 @@ import {
 const FavoritesScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const insets = useSafeAreaInsets();
-  
-  // Use favorites hook for global state management
   const { removeFavorite, removeMultipleFavorites } = useFavorites();
+  const { addMealToProducts } = useIngredients();
+  
   const [multiSelect, setMultiSelect] = useState(false);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [actionItem, setActionItem] = useState<FoodItem | null>(null);
@@ -249,7 +250,7 @@ const FavoritesScreen: React.FC = () => {
             </View>
           ) : (
             <View style={styles.emptyContainer}>
-              <Ionicons name="heart-outline" size={64} color={COLORS.textSecondary} />
+              <Ionicons name="heart-outline" size={64} color={COLORS.muted} />
               <Text style={styles.emptyTitle}>Chưa có món yêu thích</Text>
               <Text style={styles.emptySubtitle}>
                 Hãy thêm những món ăn bạn yêu thích vào danh sách này
@@ -272,7 +273,32 @@ const FavoritesScreen: React.FC = () => {
       <FavoriteBottomBar
         visible={multiSelect}
         selectedCount={selectedItems.length}
-        onAddToProductList={() => console.log("Add to product list")}
+        onAddToProductList={async () => {
+          // Add all selected items to product list
+          const promises = selectedItems.map(itemId => {
+            const item = favoriteItems.find(fav => fav.id === itemId);
+            if (item) {
+              const mealId = parseInt(item.id);
+              return addMealToProducts(mealId, item.name);
+            }
+            return Promise.resolve(false);
+          });
+          
+          const results = await Promise.all(promises);
+          const successCount = results.filter(Boolean).length;
+          
+          if (successCount > 0) {
+            Alert.alert('Thành công', `Đã thêm ${successCount} món vào danh sách sản phẩm`);
+            // Navigate to ProductScreen
+            navigation.navigate('ProductScreen' as any);
+          } else {
+            Alert.alert('Lỗi', 'Không thể thêm vào danh sách sản phẩm');
+          }
+          
+          // Clear selection
+          setSelectedItems([]);
+          setMultiSelect(false);
+        }}
         onDelete={handleDeleteMultiple}
       />
 
@@ -284,8 +310,19 @@ const FavoritesScreen: React.FC = () => {
           setActionItem(null);
           setShowMealPlanner(true);
         }}
-        onAddToProductList={() => {
-          console.log("Add to product list");
+        onAddToProductList={async () => {
+          if (actionItem) {
+            const mealId = parseInt(actionItem.id);
+            const success = await addMealToProducts(mealId, actionItem.name);
+            
+            if (success) {
+              Alert.alert('Thành công', 'Đã thêm vào danh sách sản phẩm');
+              // Navigate to ProductScreen
+              navigation.navigate('ProductScreen' as any);
+            } else {
+              Alert.alert('Lỗi', 'Không thể thêm vào danh sách sản phẩm');
+            }
+          }
           setActionItem(null);
         }}
         onDelete={handleDeleteSingle}
@@ -341,7 +378,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: SPACING.sm,
     fontSize: 16,
-    color: COLORS.textSecondary,
+    color: COLORS.muted,
   },
   emptyContainer: {
     flex: 1,
@@ -359,7 +396,7 @@ const styles = StyleSheet.create({
   },
   emptySubtitle: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: COLORS.muted,
     textAlign: 'center',
     lineHeight: 20,
   },

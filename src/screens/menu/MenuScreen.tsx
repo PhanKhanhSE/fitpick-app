@@ -12,6 +12,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/navigation';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADII } from '../../utils/theme';
+import { useIngredients } from '../../hooks/useIngredients';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 import { 
@@ -25,6 +26,7 @@ import {
 
 const MenuScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
+  const { addMealToProducts } = useIngredients();
   const [selectedMeals, setSelectedMeals] = useState<string[]>([]);
   const [currentDate, setCurrentDate] = useState('Thứ Hai, 8 tháng 9');
   
@@ -138,10 +140,26 @@ const MenuScreen: React.FC = () => {
     setShowSuccessModal(true);
   };
 
-  const handleAddToProductList = () => {
+  const handleAddToProductList = async () => {
+    if (!selectedMeal) return;
+    
     setShowMealActionModal(false);
-    setSuccessMessage('Đã thêm vào danh sách sản phẩm');
-    setShowSuccessModal(true);
+    
+    const mealId = parseInt(selectedMeal.id);
+    const success = await addMealToProducts(mealId, selectedMeal.title);
+    
+    if (success) {
+      setSuccessMessage('Đã thêm vào danh sách sản phẩm');
+      setShowSuccessModal(true);
+      
+      // Navigate to ProductScreen sau khi thêm thành công
+      setTimeout(() => {
+        navigation.navigate('ProductScreen' as any);
+      }, 1500);
+    } else {
+      setSuccessMessage('Không thể thêm vào danh sách sản phẩm');
+      setShowSuccessModal(true);
+    }
   };
 
   const handleShowReplaceModal = () => {

@@ -39,7 +39,7 @@ const SearchScreen: React.FC = () => {
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   
   // Favorites hook
-  const { favorites, toggleFavorite, isFavorite } = useFavorites(); // TypeScript: favorites is string[]
+  const { favorites, toggleFavorite, isFavorite } = useFavorites();
   
   // Search states
   const [isSearchActive, setIsSearchActive] = useState(false);
@@ -402,6 +402,7 @@ const SearchScreen: React.FC = () => {
             favorites={favorites}
             onMealPress={handleMealPress}
             onFavoritePress={handleFavoritePress}
+            isFavorite={isFavorite}
           />
         )}
 
@@ -412,6 +413,7 @@ const SearchScreen: React.FC = () => {
             favorites={favorites}
             onMealPress={handleMealPress}
             onFavoritePress={handleFavoritePress}
+            isFavorite={isFavorite}
           />
         )}
 
@@ -422,6 +424,7 @@ const SearchScreen: React.FC = () => {
             favorites={favorites}
             onMealPress={handleMealPress}
             onFavoritePress={handleFavoritePress}
+            isFavorite={isFavorite}
           />
         )}
 
@@ -432,6 +435,7 @@ const SearchScreen: React.FC = () => {
             favorites={favorites}
             onMealPress={handleMealPress}
             onFavoritePress={handleFavoritePress}
+            isFavorite={isFavorite}
           />
         )}
       </ScrollView>

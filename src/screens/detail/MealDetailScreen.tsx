@@ -10,7 +10,10 @@ import {
   Text,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS } from '../../utils/theme';
+import { COLORS, SPACING } from '../../utils/theme';
+import { useFavorites } from '../../hooks/useFavorites';
+import { useIngredients } from '../../hooks/useIngredients';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   MealDetailHeader,
   MealImageOverlay,
@@ -46,13 +49,29 @@ interface MealDetailScreenProps {
 }
 
 const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }) => {
-  const [isFavorite, setIsFavorite] = useState(false);
+  const { meal } = route.params;
+  const { isFavorite: isMealFavorite, toggleFavorite } = useFavorites();
+  const { addMealToProducts, getMealQuantity, saveMealQuantity } = useIngredients();
+  
   const [activeTab, setActiveTab] = useState<'Ingredients' | 'Instructions' | 'Nutrition' | 'Reviews'>('Ingredients');
   const [scrollY] = useState(new Animated.Value(0));
   const [quantity, setQuantity] = useState(1);
   const [mealDetail, setMealDetail] = useState<MealDetailData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { meal } = route.params;
+  const [isInProductList, setIsInProductList] = useState(false);
+
+  // Kiểm tra xem meal có trong product list không
+  const checkIfInProductList = async (mealId: number) => {
+    try {
+      const savedMealIds = await AsyncStorage.getItem('userProductMealIds');
+      if (savedMealIds) {
+        const mealIds: number[] = JSON.parse(savedMealIds);
+        setIsInProductList(mealIds.includes(mealId));
+      }
+    } catch (error) {
+      console.error('Error checking product list:', error);
+    }
+  };
 
   // Load meal detail từ API
   const loadMealDetail = async (mealId: number) => {
@@ -75,9 +94,33 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
 
   useEffect(() => {
     if (route.params?.meal?.id) {
-      loadMealDetail(parseInt(route.params.meal.id));
+      const mealId = parseInt(route.params.meal.id);
+      loadMealDetail(mealId);
+      checkIfInProductList(mealId);
+      
+      // Load số lượng đã lưu
+      const loadSavedQuantity = async () => {
+        const savedQuantity = await getMealQuantity(mealId);
+        setQuantity(savedQuantity);
+      };
+      loadSavedQuantity();
     }
   }, [route.params?.meal?.id]);
+
+  // Theo dõi thay đổi số lượng từ ProductScreen (đồng bộ 2 chiều)
+  useEffect(() => {
+    if (route.params?.meal?.id) {
+      const mealId = parseInt(route.params.meal.id);
+      const interval = setInterval(async () => {
+        const savedQuantity = await getMealQuantity(mealId);
+        if (savedQuantity !== quantity) {
+          setQuantity(savedQuantity);
+        }
+      }, 1000); // Check mỗi giây
+
+      return () => clearInterval(interval);
+    }
+  }, [route.params?.meal?.id, quantity]);
 
   // Render loading
   if (isLoading) {
@@ -102,20 +145,53 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
     );
   }
 
-  // Chuyển đổi dữ liệu từ API thành format cho components
+  // Chuyển đổi dữ liệu từ API thành format cho components với tính toán theo số lượng
   const ingredients = mealDetail.ingredients?.map(ing => ({
     name: ing.ingredientName,
-    amount: `${ing.quantity || 0}${ing.unit || 'g'}`
+    amount: `${((ing.quantity || 0) * quantity).toFixed(1)}${ing.unit || 'g'}`
   })) || [];
 
   const instructions = mealDetail.instructions?.map(inst => inst.instruction) || [];
 
+  // Tính toán dinh dưỡng theo số lượng
+  const calculatedCalories = mealDetail.calories ? (mealDetail.calories * quantity).toFixed(0) : '0';
+  const calculatedProtein = mealDetail.protein ? (mealDetail.protein * quantity).toFixed(1) : '0';
+  const calculatedCarbs = mealDetail.carbs ? (mealDetail.carbs * quantity).toFixed(1) : '0';
+  const calculatedFat = mealDetail.fat ? (mealDetail.fat * quantity).toFixed(1) : '0';
+
   const handleGoBack = () => navigation.goBack();
-  const handleToggleFavorite = () => setIsFavorite(!isFavorite);
+  const handleToggleFavorite = async () => {
+    const mealId = parseInt(meal.id);
+    await toggleFavorite(mealId);
+  };
   const handleAddToPlan = () => console.log('Add to meal plan');
-  const handleAddToFavorites = () => console.log('Add to favorites');
-  const increaseQty = () => setQuantity(prev => prev + 1);
-  const decreaseQty = () => setQuantity(prev => (prev > 1 ? prev - 1 : 1));
+
+  const handleAddToProductList = async () => {
+    const mealId = parseInt(meal.id);
+    const success = await addMealToProducts(mealId, meal.title);
+    
+    if (success) {
+      setIsInProductList(true); // Cập nhật state
+      Alert.alert('Thành công', 'Đã thêm vào danh sách sản phẩm');
+      // Navigate to ProductScreen tab thay vì stack screen
+      navigation.navigate('MainTabs', { screen: 'Profile' });
+    } else {
+      Alert.alert('Lỗi', 'Không thể thêm vào danh sách sản phẩm');
+    }
+  };
+  const increaseQty = async () => {
+    const mealId = parseInt(meal.id);
+    const newQuantity = quantity + 1;
+    setQuantity(newQuantity);
+    await saveMealQuantity(mealId, newQuantity);
+  };
+  
+  const decreaseQty = async () => {
+    const mealId = parseInt(meal.id);
+    const newQuantity = Math.max(1, quantity - 1);
+    setQuantity(newQuantity);
+    await saveMealQuantity(mealId, newQuantity);
+  };
   const handleViewAllReviews = () => {
     navigation.navigate('ReviewsScreen', { 
       mealId: meal.id,
@@ -142,7 +218,7 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
       <MealDetailHeader
         onGoBack={handleGoBack}
         onToggleFavorite={handleToggleFavorite}
-        isFavorite={isFavorite}
+        isFavorite={isMealFavorite(parseInt(meal.id))}
       />
 
       <Animated.ScrollView
@@ -173,10 +249,10 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
 
           {/* Nutrition Summary */}
           <NutritionSummary
-            calories={`${mealDetail.calories} cal`}
-            carbs={`${mealDetail.carbs}g`}
-            protein={`${mealDetail.protein}g`}
-            fat={`${mealDetail.fat}g`}
+            calories={`${calculatedCalories} cal`}
+            carbs={`${calculatedCarbs}g`}
+            protein={`${calculatedProtein}g`}
+            fat={`${calculatedFat}g`}
           />
 
           {/* Tabs */}
@@ -185,10 +261,10 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
             onTabChange={setActiveTab}
             ingredients={ingredients}
             instructions={instructions}
-            calories={`${mealDetail.calories} cal`}
-            carbs={`${mealDetail.carbs}g`}
-            protein={`${mealDetail.protein}g`}
-            fat={`${mealDetail.fat}g`}
+            calories={`${calculatedCalories} cal`}
+            carbs={`${calculatedCarbs}g`}
+            protein={`${calculatedProtein}g`}
+            fat={`${calculatedFat}g`}
             rating={4.5}
             reviewCount={12}
             onViewAllReviews={handleViewAllReviews}
@@ -199,7 +275,8 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
       {/* Bottom Buttons */}
       <MealDetailActions
         onAddToPlan={handleAddToPlan}
-        onAddToFavorites={handleAddToFavorites}
+        onAddToProductList={handleAddToProductList}
+        isInProductList={isInProductList}
       />
     </SafeAreaView>
   );
