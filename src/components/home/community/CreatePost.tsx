@@ -42,7 +42,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.md,
-    marginVertical: SPACING.xs,
+    marginVertical: SPACING.sm,
+    marginHorizontal: SPACING.md,
+    borderRadius: RADII.sm,
+    elevation: 2,
   },
   avatarContainer: {
     marginRight: SPACING.md,

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, TextInput, ScrollView, KeyboardAvoidingView, Platform, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, TextInput, ScrollView, KeyboardAvoidingView, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AppButton from '../../components/AppButton';
@@ -64,7 +64,7 @@ const GoalsScreen = () => {
                 <Text style={styles.headerTitle}>Mục tiêu</Text>
             </View>
 
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+            <KeyboardAvoidingView style={{ flex: 1 }}>
                 <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
                     <Text style={styles.description}>Chọn mục tiêu bạn mong muốn:</Text>
 

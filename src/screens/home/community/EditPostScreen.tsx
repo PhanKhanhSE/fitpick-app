@@ -9,7 +9,6 @@ import {
   ScrollView,
   StatusBar,
   KeyboardAvoidingView,
-  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS, SPACING, RADII } from "../../../utils/theme";
@@ -30,7 +29,6 @@ const EditPostScreen: React.FC<any> = ({ route, navigation }) => {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
 
