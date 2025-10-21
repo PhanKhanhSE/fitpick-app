@@ -294,7 +294,6 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.md,
-    marginTop: SPACING.xs,
     flexDirection: "row",
     alignItems: "center",
   },

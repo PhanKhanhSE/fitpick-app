@@ -89,17 +89,13 @@ const styles = StyleSheet.create({
   container: {
     marginHorizontal: SPACING.md,
     borderWidth: 1,
-    marginTop: SPACING.md,
+    marginTop: SPACING.lg, // Tăng margin top để tránh sát header
     borderColor: COLORS.under_process,
     marginBottom: SPACING.lg,
     backgroundColor: COLORS.background,
     borderRadius: 16,
     padding: SPACING.md,
     elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
   },
   statsCard: {
     marginTop: -SPACING.md,
