@@ -85,6 +85,7 @@ const CommunityScreen: React.FC = () => {
       <ScrollView 
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollViewContent}
       >
         <CreatePost onPress={handleCreatePost} />
         
@@ -112,8 +113,11 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
+  scrollViewContent: {
+    paddingTop: SPACING.md,
+  },
   bottomSpacing: {
-    height: SPACING.xxl,
+    height: SPACING.xxl + 20, // Thêm khoảng trống cho bottom tab
   },
 });
 

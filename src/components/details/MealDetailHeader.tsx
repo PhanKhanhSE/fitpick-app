@@ -2,7 +2,6 @@ import React from 'react';
 import {
   View,
   TouchableOpacity,
-  Platform,
   StatusBar,
   StyleSheet,
 } from 'react-native';
@@ -39,7 +38,7 @@ const MealDetailHeader: React.FC<MealDetailHeaderProps> = ({
 const styles = StyleSheet.create({
   header: {
     position: 'absolute',
-    top: Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 50,
+    top: StatusBar.currentHeight || 0,
     left: 0,
     right: 0,
     flexDirection: 'row',

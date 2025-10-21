@@ -400,18 +400,10 @@ const styles = StyleSheet.create({
         width: '100%',
         borderRadius: RADII.umd,
         paddingVertical: 16,
-        shadowColor: COLORS.primary,
-        shadowOffset: {
-            width: 0,
-            height: 3,
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 6,
         elevation: 6,
     },
     continueButtonDisabled: {
         opacity: 0.5,
-        shadowOpacity: 0,
         elevation: 0,
     },
 });

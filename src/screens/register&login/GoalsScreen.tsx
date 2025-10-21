@@ -176,7 +176,7 @@ const GoalsScreen = () => {
                 <Text style={styles.headerTitle}>Mục tiêu</Text>
             </View>
 
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+            <KeyboardAvoidingView style={{ flex: 1 }}>
                 <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
                     <Text style={styles.description}>Chọn mục tiêu bạn mong muốn:</Text>
                     

@@ -111,15 +111,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     backgroundColor: COLORS.primary,
     alignSelf: 'center', // Đảm bảo button căn giữa
-    // Shadow effect
-    shadowColor: COLORS.primary,
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 6,
+    elevation: 5,
   },
   loginButton: {
     width: width * 0.6, // 60% width màn hình

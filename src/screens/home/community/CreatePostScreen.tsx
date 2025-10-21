@@ -8,7 +8,6 @@ import {
   Image,
   ScrollView,
   KeyboardAvoidingView,
-  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS, SPACING, RADII } from "../../../utils/theme";
@@ -28,7 +27,6 @@ const CreatePostScreen: React.FC<any> = ({ navigation }) => {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       {/* Header */}
       <View style={styles.header}>
