@@ -1,4 +1,4 @@
-import apiClient from './api';
+import apiClient from './apiClient';
 
 // API service for user profile and nutrition data
 export const userProfileAPI = {

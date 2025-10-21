@@ -1,4 +1,4 @@
-import apiClient from './api';
+import apiClient from './apiClient';
 
 // Interface for search filters
 export interface SearchFilters {

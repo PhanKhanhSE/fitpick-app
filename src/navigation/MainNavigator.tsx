@@ -28,6 +28,7 @@ import EditPostScreen from '../screens/home/community/EditPostScreen';
 import TermsOfServiceScreen from '../screens/profile/setting/TermsOfServiceScreen';
 import PrivacyPolicyScreen from '../screens/profile/setting/PrivacyPolicyScreen';
 import EditProfileScreen from '../screens/profile/setting/EditProfileScreen';
+import FilterResultsScreen from '../screens/search/FilterResultsScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -153,6 +154,11 @@ export const MainNavigator = () => {
                 <Stack.Screen
                     name="EditProfile"
                     component={EditProfileScreen}
+                    options={{ headerShown: false }} 
+                />
+                <Stack.Screen
+                    name="FilterResults"
+                    component={FilterResultsScreen}
                     options={{ headerShown: false }} 
                 />
             </Stack.Navigator>

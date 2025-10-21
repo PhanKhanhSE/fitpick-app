@@ -1,4 +1,4 @@
-import apiClient from './api';
+import apiClient from './apiClient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Interface cho TodayMealPlanDto từ backend

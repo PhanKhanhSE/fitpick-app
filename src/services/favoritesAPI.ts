@@ -1,4 +1,4 @@
-import apiClient from './api';
+import apiClient from './apiClient';
 
 // Interface for favorite meal data
 export interface FavoriteMeal {

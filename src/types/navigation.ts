@@ -60,4 +60,14 @@ export type RootStackParamList = {
     TermsOfService: undefined;
     PrivacyPolicy: undefined;
     EditProfile: undefined;
+    
+    // Search screens
+    FilterResults: {
+        appliedFilters: {
+            nutritionGoal: boolean;
+            mealType: string[];
+            ingredients: string[];
+            cookingTime: string[];
+        };
+    };
 };

@@ -21,6 +21,9 @@ import { searchAPI, SearchFilters, MealData } from '../../services/searchAPI';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { convertCategoryToVietnamese } from '../../utils/categoryMapping';
 import { useFavorites } from '../../hooks/useFavorites';
+import { filterAPI } from '../../services/filterAPI';
+import { userProfileAPI } from '../../services/userProfileAPI';
+import { checkAuthStatus } from '../../services/api';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -28,7 +31,6 @@ interface AppliedFilters {
   nutritionGoal: boolean;
   mealType: string[];
   ingredients: string[];
-  dietType: string[];
   cookingTime: string[];
 }
 
@@ -47,6 +49,7 @@ const SearchScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [searchResults, setSearchResults] = useState<MealData[]>([]);
   const [popularMeals, setPopularMeals] = useState<MealData[]>([]);
+  const [defaultPopularMeals, setDefaultPopularMeals] = useState<MealData[]>([]);
   const [suggestedMeals, setSuggestedMeals] = useState<MealData[]>([]);
   const [defaultSuggestedMeals, setDefaultSuggestedMeals] = useState<MealData[]>([]);
   
@@ -56,46 +59,84 @@ const SearchScreen: React.FC = () => {
     nutritionGoal: false,
     mealType: [],
     ingredients: [],
-    dietType: [],
     cookingTime: [],
   });
 
   // Load initial data and search history
   useEffect(() => {
+    const checkAuth = async () => {
+      const authStatus = await checkAuthStatus();
+      console.log('🔐 SearchScreen - Auth Status:', authStatus);
+      
+      if (!authStatus.isAuthenticated) {
+        console.log('⚠️ User not authenticated, some features may not work');
+      }
+    };
+    
+    checkAuth();
     loadInitialData();
     loadSearchHistory();
   }, []);
+
+  // Get filter parameters for API calls
+  const getFilterParams = () => {
+    const params: any = {};
+    
+    if (appliedFilters.mealType.length > 0) {
+      params.mealTypes = appliedFilters.mealType;
+    }
+    
+    if (appliedFilters.ingredients.length > 0) {
+      params.ingredients = appliedFilters.ingredients;
+    }
+    
+    if (appliedFilters.cookingTime.length > 0) {
+      // Convert cooking time strings to numbers
+      const maxTime = Math.max(...appliedFilters.cookingTime.map(time => {
+        const match = time.match(/(\d+)/);
+        return match ? parseInt(match[1]) : 0;
+      }));
+      params.maxCookingTime = maxTime;
+    }
+    
+    return params;
+  };
 
   // Load initial data (popular and suggested meals)
   const loadInitialData = async () => {
     try {
       setIsLoading(true);
       
-      // Load popular meals - get all meals and take first 10
-      const popularResponse = await searchAPI.getPopularMeals();
-      let popularData: MealData[] = [];
-      if (popularResponse.success && popularResponse.data) {
-        popularData = Array.isArray(popularResponse.data) ? popularResponse.data.slice(0, 10) : [];
+      // Load popular meals with current filters
+      const popularResponse = await searchAPI.searchMeals({
+        page: 1,
+        limit: 10,
+        ...getFilterParams()
+      });
+
+      console.log('🔍 Debug - Popular Response:', popularResponse);
+
+      if (popularResponse.success) {
+        console.log('🔍 Debug - Popular Data:', popularResponse.data);
+        const popularData = popularResponse.data.map((meal: MealData, index: number) => convertMealData(meal, index));
         setPopularMeals(popularData);
+        setDefaultPopularMeals(popularData);
       }
 
-      // Load suggested meals - get meals with different criteria to avoid overlap
-      const suggestedResponse = await searchAPI.searchMeals({ 
-        dietType: 'light',
-        maxCalories: 400,
-        minCalories: 200 // Add minimum calories to differentiate from popular
+      // Load suggested meals with current filters
+      const suggestedResponse = await searchAPI.searchMeals({
+        page: 1,
+        limit: 10,
+        ...getFilterParams()
       });
-      if (suggestedResponse.success && suggestedResponse.data) {
-        const suggestedData = Array.isArray(suggestedResponse.data) ? suggestedResponse.data.slice(0, 8) : [];
-        
-        // Filter out meals that are already in popular to avoid duplication
-        const popularMealIds = popularData.map((meal: MealData) => meal.mealid);
-        const filteredSuggestedData = suggestedData.filter((meal: MealData) => 
-          !popularMealIds.includes(meal.mealid)
-        );
-        
-        setSuggestedMeals(filteredSuggestedData);
-        setDefaultSuggestedMeals(filteredSuggestedData); // Store default suggested meals
+
+      console.log('🔍 Debug - Suggested Response:', suggestedResponse);
+
+      if (suggestedResponse.success) {
+        console.log('🔍 Debug - Suggested Data:', suggestedResponse.data);
+        const suggestedData = suggestedResponse.data.map((meal: MealData, index: number) => convertMealData(meal, index));
+        setSuggestedMeals(suggestedData);
+        setDefaultSuggestedMeals(suggestedData);
       }
     } catch (error) {
       console.error('Error loading initial data:', error);
@@ -127,23 +168,25 @@ const SearchScreen: React.FC = () => {
   };
 
   // Convert backend meal data to frontend format
-  const convertMealData = (meal: MealData) => ({
-    id: meal.mealid.toString(),
-    title: meal.name,
-    calories: meal.calories ? `${meal.calories} kcal` : '0 kcal',
-    time: meal.cookingtime ? `${meal.cookingtime} phút` : '0 phút',
-    image: { uri: meal.imageUrl || 'https://via.placeholder.com/150' },
-    tag: convertCategoryToVietnamese(meal.categoryName || 'Món ăn'),
-    isLocked: meal.isPremium || false,
-    isFavorite: isFavorite(meal.mealid),
-    description: meal.description || '',
-    price: meal.price || 0,
-    dietType: meal.diettype || '',
-    protein: meal.protein || 0,
-    carbs: meal.carbs || 0,
-    fat: meal.fat || 0,
-    instructions: meal.instructions || [],
-  });
+  const convertMealData = (meal: MealData, index?: number) => {
+    return {
+      id: meal.mealid ? meal.mealid.toString() : `temp-${index || Math.random()}`,
+      title: meal.name || 'Unknown Meal',
+      calories: meal.calories ? `${meal.calories} kcal` : '0 kcal',
+      time: meal.cookingtime ? `${meal.cookingtime} phút` : '15 phút',
+      image: { uri: meal.imageUrl || 'https://via.placeholder.com/150' },
+      tag: convertCategoryToVietnamese(meal.categoryName || 'Món ăn'),
+      isLocked: meal.isPremium || false,
+      isFavorite: meal.mealid ? isFavorite(meal.mealid) : false,
+      description: meal.description || '',
+      price: meal.price || 0,
+      dietType: meal.diettype || '',
+      protein: meal.protein || 0,
+      carbs: meal.carbs || 0,
+      fat: meal.fat || 0,
+      instructions: meal.instructions || [],
+    };
+  };
 
   // Handle search with text
   const handleSearch = async (text: string) => {
@@ -207,38 +250,84 @@ const SearchScreen: React.FC = () => {
   // Handle search with filters
   const handleSearchWithFilters = async () => {
     try {
-      setIsLoading(true);
-      
-      const filters: SearchFilters = {};
-      
-      // Convert frontend filters to backend format
-      if (appliedFilters.dietType.length > 0) {
-        filters.dietType = appliedFilters.dietType[0]; // Backend expects single diet type
-      }
-      
-      // Add cooking time filters
-      if (appliedFilters.cookingTime.includes('≤ 15 phút')) {
-        filters.maxCookingTime = 15;
-      } else if (appliedFilters.cookingTime.includes('≤ 30 phút')) {
-        filters.maxCookingTime = 30;
-      } else if (appliedFilters.cookingTime.includes('≤ 60 phút')) {
-        filters.maxCookingTime = 60;
-      }
+      // Use new filter API
+      const filterRequest = {
+        dietType: null,
+        maxCookingTime: appliedFilters.cookingTime.includes('≤ 15 phút') ? 15 :
+                       appliedFilters.cookingTime.includes('≤ 30 phút') ? 30 :
+                       appliedFilters.cookingTime.includes('≤ 60 phút') ? 60 : null,
+        ingredients: appliedFilters.ingredients.length > 0 ? appliedFilters.ingredients : null,
+        mealTypes: appliedFilters.mealType.length > 0 ? appliedFilters.mealType : null,
+        page: 0,
+        pageSize: 20
+      };
 
-      const response = await searchAPI.searchMeals(filters);
+      console.log('🔍 Debug - Filter request:', filterRequest);
+      const response = await filterAPI.searchWithFilters(filterRequest);
+      console.log('🔍 Debug - Filter response:', response);
       
       if (response.success && response.data) {
-        const searchData = Array.isArray(response.data) ? response.data : [];
+        const searchData = Array.isArray(response.data) ? response.data as unknown as MealData[] : [];
         setSearchResults(searchData);
+        
+        // Show success message
+        Alert.alert(
+          'Thành công', 
+          `Đã tìm thấy ${searchData.length} món ăn phù hợp với bộ lọc của bạn!`,
+          [{ text: 'OK' }]
+        );
       } else {
         setSearchResults([]);
+        Alert.alert('Thông báo', 'Không tìm thấy món ăn phù hợp với bộ lọc của bạn.');
       }
     } catch (error) {
       console.error('Error searching with filters:', error);
       Alert.alert('Lỗi', 'Không thể áp dụng bộ lọc. Vui lòng thử lại.');
       setSearchResults([]);
-    } finally {
-      setIsLoading(false);
+    }
+  };
+
+  // Handle search with personal nutrition
+  const handleSearchWithPersonalNutrition = async () => {
+    try {
+      // Get user's nutrition profile first
+      const nutritionResponse = await userProfileAPI.getNutritionStats();
+      
+      if (!nutritionResponse.success) {
+        Alert.alert('Lỗi', 'Không thể lấy thông tin dinh dưỡng cá nhân. Vui lòng kiểm tra lại profile của bạn.');
+        return;
+      }
+
+      // Prepare filters for personal nutrition search
+      const personalFilters = {
+        dietType: null,
+        maxCookingTime: appliedFilters.cookingTime.includes('≤ 15 phút') ? 15 :
+                       appliedFilters.cookingTime.includes('≤ 30 phút') ? 30 :
+                       appliedFilters.cookingTime.includes('≤ 60 phút') ? 60 : null,
+        ingredients: appliedFilters.ingredients,
+        mealTypes: appliedFilters.mealType
+      };
+
+      const response = await filterAPI.searchWithPersonalNutrition(personalFilters);
+      
+      if (response.success && response.data) {
+        const searchData = Array.isArray(response.data) ? response.data as unknown as MealData[] : [];
+        setSearchResults(searchData);
+        
+        // Show success message
+        Alert.alert(
+          'Thành công', 
+          'Đã tìm kiếm món ăn phù hợp với mục tiêu dinh dưỡng cá nhân của bạn!',
+          [{ text: 'OK' }]
+        );
+      } else {
+        setSearchResults([]);
+        Alert.alert('Thông báo', 'Không tìm thấy món ăn phù hợp với dinh dưỡng cá nhân của bạn.');
+      }
+    } catch (error) {
+      console.error('Error searching with personal nutrition:', error);
+      Alert.alert('Lỗi', 'Không thể tìm kiếm với dinh dưỡng cá nhân. Vui lòng thử lại.');
+      setSearchResults([]);
     }
   };
 
@@ -309,9 +398,13 @@ const SearchScreen: React.FC = () => {
     }
   };
 
-  const handleApplyFilters = () => {
+  const handleApplyFilters = async () => {
     setShowFilterModal(false);
-    handleSearchWithFilters();
+    
+    console.log('🔍 Debug - Applied filters:', appliedFilters);
+    
+    // Navigate to FilterResultsScreen
+    navigation.navigate('FilterResults', { appliedFilters });
   };
 
   const handleClearFilters = () => {
@@ -319,7 +412,6 @@ const SearchScreen: React.FC = () => {
       nutritionGoal: false,
       mealType: [],
       ingredients: [],
-      dietType: [],
       cookingTime: [],
     });
   };
@@ -345,15 +437,6 @@ const SearchScreen: React.FC = () => {
       ingredients: prev.ingredients.includes(ingredient) 
         ? prev.ingredients.filter(i => i !== ingredient)
         : [...prev.ingredients, ingredient]
-    }));
-  };
-
-  const toggleDietType = (diet: string) => {
-    setAppliedFilters(prev => ({
-      ...prev,
-      dietType: prev.dietType.includes(diet) 
-        ? prev.dietType.filter(d => d !== diet)
-        : [...prev.dietType, diet]
     }));
   };
 
@@ -398,7 +481,7 @@ const SearchScreen: React.FC = () => {
         {/* Search Results - Popular Section */}
         {searchResults.length > 0 && (
           <PopularSection
-            data={searchResults.map(convertMealData)}
+            data={searchResults as any}
             favorites={favorites}
             onMealPress={handleMealPress}
             onFavoritePress={handleFavoritePress}
@@ -409,7 +492,7 @@ const SearchScreen: React.FC = () => {
         {/* Search Results - Suggested Section */}
         {searchResults.length > 0 && suggestedMeals.length > 0 && (
           <SuggestedSection
-            data={suggestedMeals.map(convertMealData)}
+            data={suggestedMeals as any}
             favorites={favorites}
             onMealPress={handleMealPress}
             onFavoritePress={handleFavoritePress}
@@ -420,7 +503,7 @@ const SearchScreen: React.FC = () => {
         {/* Default Popular Section - Only show when no search results */}
         {searchResults.length === 0 && !isLoading && (
           <PopularSection
-            data={popularMeals.map(convertMealData)}
+            data={popularMeals as any}
             favorites={favorites}
             onMealPress={handleMealPress}
             onFavoritePress={handleFavoritePress}
@@ -431,7 +514,7 @@ const SearchScreen: React.FC = () => {
         {/* Default Suggested Section - Only show when no search results */}
         {searchResults.length === 0 && !isLoading && (
           <SuggestedSection
-            data={defaultSuggestedMeals.map(convertMealData)}
+            data={defaultSuggestedMeals as any}
             favorites={favorites}
             onMealPress={handleMealPress}
             onFavoritePress={handleFavoritePress}
@@ -449,7 +532,6 @@ const SearchScreen: React.FC = () => {
         onClearFilters={handleClearFilters}
         toggleMealType={toggleMealType}
         toggleIngredient={toggleIngredient}
-        toggleDietType={toggleDietType}
         toggleCookingTime={toggleCookingTime}
         setAppliedFilters={setAppliedFilters}
       />

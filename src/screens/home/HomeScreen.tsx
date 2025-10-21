@@ -22,6 +22,7 @@ import { userProfileAPI } from '../../services/userProfileAPI';
 import { searchAPI } from '../../services/searchAPI';
 import { convertCategoryToVietnamese } from '../../utils/categoryMapping';
 import { useFavorites } from '../../hooks/useFavorites';
+import { useMealPlans } from '../../hooks/useMealPlans';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -32,6 +33,9 @@ const HomeScreen: React.FC = () => {
   
   // Use favorites hook for global state management
   const { isFavorite, toggleFavorite } = useFavorites();
+  
+  // Use meal plans hook for today's meals
+  const { todayMealPlans, loadTodayMealPlan } = useMealPlans();
 
   // State cho dữ liệu từ API
   const [nutritionData, setNutritionData] = useState({
@@ -42,7 +46,6 @@ const HomeScreen: React.FC = () => {
     fat: { current: 0, target: 0 },
   });
 
-  const [myMealData, setMyMealData] = useState([]);
   const [suggestedMeals, setSuggestedMeals] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -50,6 +53,8 @@ const HomeScreen: React.FC = () => {
   useEffect(() => {
     if (selectedTab === 'personal') {
       loadPersonalData();
+      // Load today's meal plan
+      loadTodayMealPlan();
     }
   }, [selectedTab]);
 
@@ -126,17 +131,10 @@ const HomeScreen: React.FC = () => {
     try {
       setIsLoading(true);
       
-      const [nutritionResponse, mealsResponse] = await Promise.all([
-        userProfileAPI.getNutritionStats(),
-        userProfileAPI.getUserMeals()
-      ]);
+      const nutritionResponse = await userProfileAPI.getNutritionStats();
 
       if (nutritionResponse.success && nutritionResponse.data) {
         setNutritionData(nutritionResponse.data);
-      }
-
-      if (mealsResponse.success && mealsResponse.data) {
-        setMyMealData(mealsResponse.data);
       }
 
       // Load suggested meals from API
@@ -151,7 +149,6 @@ const HomeScreen: React.FC = () => {
         protein: { current: 0, target: 100 },
         fat: { current: 0, target: 100 },
       });
-      setMyMealData([]);
     } finally {
       setIsLoading(false);
     }
@@ -207,7 +204,24 @@ const HomeScreen: React.FC = () => {
 
   const handlePersonalNutritionPress = () => {
     navigation.navigate('PersonalNutritionScreen');
-  };  
+  };
+
+  // Convert todayMealPlans to MyMenuSection format
+  const convertMealPlansToMenuData = () => {
+    if (!todayMealPlans || todayMealPlans.length === 0) {
+      return [];
+    }
+
+    return todayMealPlans.map((mealPlan) => ({
+      id: mealPlan.meal.mealid.toString(),
+      title: mealPlan.meal.name,
+      calories: `${mealPlan.meal.calories} kcal`,
+      time: `${mealPlan.meal.cookingtime} phút`,
+      image: { uri: mealPlan.meal.imageUrl || 'https://via.placeholder.com/200x150' },
+      tag: mealPlan.meal.categoryName || 'Thực đơn',
+      isLocked: mealPlan.meal.isPremium || false,
+    }));
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -267,7 +281,7 @@ const HomeScreen: React.FC = () => {
             
             {/* My Menu Section */}
             <MyMenuSection 
-              mealData={myMealData}
+              mealData={convertMealPlansToMenuData()}
               onMealPress={handleMealPress}
               onSeeMore={handleSeeMoreMenu}
               isFavorite={isFavorite}
