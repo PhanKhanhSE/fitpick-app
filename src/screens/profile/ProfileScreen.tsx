@@ -25,6 +25,7 @@ import {
   TipSection,
   UsedMeals,
 } from "../../components/profile";
+import UsedMealsList from "../../components/profile/UsedMealsList";
 import { CreatePost, PostItem } from "../../components/home/community";
 import { userProfileAPI } from "../../services/userProfileAPI";
 import { useBase64Upload } from "../../hooks/useBase64Upload";
@@ -351,12 +352,15 @@ const ProfileScreen: React.FC = () => {
         ) : (
           <>
             {activeTab === "nutrition" ? (
-              <>
+              <ScrollView showsVerticalScrollIndicator={false}>
                 <NutritionStats {...nutritionData} />
                 <NutritionBars nutritionBars={nutritionBars} />
                 <TipSection tipText="Hãy duy trì chế độ ăn uống cân bằng và tập thể dục đều đặn để có sức khỏe tốt!" />
-                <UsedMeals meals={usedMeals} onMealPress={handleMealPress} />
-              </>
+                <UsedMealsList 
+                  selectedDate={selectedDate} 
+                  onMealPress={handleMealPress} 
+                />
+              </ScrollView>
             ) : (
               <View style={styles.postsContainer}>
                 <ScrollView showsVerticalScrollIndicator={false}>

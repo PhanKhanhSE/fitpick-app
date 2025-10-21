@@ -14,6 +14,7 @@ import { COLORS, SPACING } from '../../utils/theme';
 import { useFavorites } from '../../hooks/useFavorites';
 import { useIngredients } from '../../hooks/useIngredients';
 import { useMealPlans } from '../../hooks/useMealPlans';
+import { useMealHistory } from '../../hooks/useMealHistory';
 import { getMealTimeFromTag, getMealTimeDisplayName } from '../../utils/mealTimeUtils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
@@ -56,6 +57,7 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
   const { isFavorite: isMealFavorite, toggleFavorite } = useFavorites();
   const { addMealToProducts, getMealQuantity, saveMealQuantity } = useIngredients();
   const { addMealToMenu, isMealInPlan } = useMealPlans();
+  const { isMealEatenToday, markMealAsEaten, loading: mealHistoryLoading } = useMealHistory();
   
   const [activeTab, setActiveTab] = useState<'Ingredients' | 'Instructions' | 'Nutrition' | 'Reviews'>('Ingredients');
   const [scrollY] = useState(new Animated.Value(0));
@@ -370,6 +372,36 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
       Alert.alert('Lỗi', 'Không thể thêm vào danh sách sản phẩm');
     }
   };
+
+  // Handler để đánh dấu đã ăn
+  const handleMarkAsEaten = async () => {
+    try {
+      const mealId = parseInt(meal.id);
+      const calories = parseInt(meal.calories || '0');
+      
+      const success = await markMealAsEaten(mealId, calories, quantity);
+      if (success) {
+        // Có thể thêm logic khác ở đây nếu cần
+        console.log('Meal marked as eaten successfully');
+      }
+    } catch (error) {
+      console.error('Error marking meal as eaten:', error);
+    }
+  };
+
+  // Handler để bỏ đánh dấu đã ăn
+  const handleUnmarkAsEaten = async () => {
+    try {
+      const mealId = parseInt(meal.id);
+      
+      const success = await unmarkMealAsEaten(mealId);
+      if (success) {
+        console.log('Meal unmarked as eaten successfully');
+      }
+    } catch (error) {
+      console.error('Error unmarking meal as eaten:', error);
+    }
+  };
   const increaseQty = async () => {
     const mealId = parseInt(meal.id);
     const newQuantity = quantity + 1;
@@ -480,8 +512,11 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
       <MealDetailActions
         onAddToPlan={handleAddToPlan}
         onAddToProductList={handleAddToProductList}
+        onMarkAsEaten={handleMarkAsEaten}
+        onUnmarkAsEaten={handleUnmarkAsEaten}
         isInProductList={isInProductList}
         isInMealPlan={isMealInPlan(parseInt(meal.id))}
+        isEaten={isMealEatenToday(parseInt(meal.id))}
       />
     </SafeAreaView>
   );
