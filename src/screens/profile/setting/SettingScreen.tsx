@@ -16,6 +16,8 @@ import PremiumModal from "../../../components/home/PremiumModal";
 import ChangePasswordModal from "./ChangePasswordModal";
 import { userProfileAPI, settingsAPI } from "../../../services/userProfileAPI";
 import { authAPI } from "../../../services/api";
+import { notificationAPI } from "../../../services/notificationAPI";
+import { notificationSettingsAPI } from "../../../services/notificationSettingsAPI";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -42,6 +44,18 @@ const SettingsScreen: React.FC = () => {
       const userProfile = await userProfileAPI.getCurrentUserProfile();
       setUserEmail(userProfile.data.email || '');
       setAccountType(userProfile.data.accountType || 'FREE');
+      
+      // Load notification settings
+      try {
+        const notificationSettings = await notificationSettingsAPI.getNotificationSettings();
+        if (notificationSettings.success && notificationSettings.data) {
+          setNotify(notificationSettings.data.notificationsEnabled);
+        }
+      } catch (error) {
+        console.error('Error loading notification settings:', error);
+        // Fallback to default value
+        setNotify(true);
+      }
     } catch (error) {
       console.error('Error loading user data:', error);
       // Fallback to stored data
@@ -55,11 +69,45 @@ const SettingsScreen: React.FC = () => {
           const storedEmail = await AsyncStorage.getItem('userEmail');
           if (storedEmail) setUserEmail(storedEmail);
         }
+        
+        // Try to get notification settings from local storage
+        const storedNotificationSettings = await AsyncStorage.getItem('notificationSettings');
+        if (storedNotificationSettings) {
+          const settings = JSON.parse(storedNotificationSettings);
+          setNotify(settings.notificationsEnabled ?? true);
+        }
       } catch (storageError) {
         console.error('Error loading stored data:', storageError);
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleNotificationToggle = async (value: boolean) => {
+    try {
+      setNotify(value);
+      
+      // Cập nhật lên server
+      await notificationSettingsAPI.updateNotificationSettings({
+        notificationsEnabled: value
+      });
+      
+      // Lưu vào local storage để backup
+      await AsyncStorage.setItem('notificationSettings', JSON.stringify({
+        notificationsEnabled: value
+      }));
+      
+      console.log(`Notification settings updated: ${value ? 'enabled' : 'disabled'}`);
+    } catch (error) {
+      console.error('Error updating notification settings:', error);
+      // Revert the change if API call failed
+      setNotify(!value);
+      Alert.alert(
+        'Lỗi',
+        'Không thể cập nhật cài đặt thông báo. Vui lòng thử lại.',
+        [{ text: 'OK' }]
+      );
     }
   };
 
@@ -142,6 +190,71 @@ const SettingsScreen: React.FC = () => {
         { text: 'Hủy', style: 'cancel' }
       ]
     );
+  };
+
+  const handleTestNotification = async () => {
+    try {
+      setLoading(true);
+      
+      // Test các loại thông báo khác nhau
+      const testNotifications = [
+        {
+          title: "Test Thông báo Hệ thống",
+          message: "Đây là thông báo test hệ thống để kiểm tra chức năng thông báo hoạt động.",
+          typeId: undefined
+        },
+        {
+          title: "Test Thông báo Món ăn yêu thích",
+          message: "Bạn đã thêm 'Cơm tấm sườn nướng' vào danh sách yêu thích!",
+          typeId: undefined
+        },
+        {
+          title: "Test Thông báo Thực đơn",
+          message: "Thực đơn cho ngày hôm nay đã được tạo thành công!",
+          typeId: undefined
+        },
+        {
+          title: "Test Thông báo Nhắc nhở",
+          message: "Đã đến giờ ăn trưa! Hãy thưởng thức bữa ăn của bạn.",
+          typeId: undefined
+        },
+        {
+          title: "Test Thông báo Khuyến mãi",
+          message: "🎉 Ưu đãi đặc biệt! Giảm 50% cho gói Premium trong tháng này!",
+          typeId: undefined
+        }
+      ];
+
+      // Gửi từng thông báo với delay nhỏ
+      for (let i = 0; i < testNotifications.length; i++) {
+        const notification = testNotifications[i];
+        await notificationAPI.sendNotification(
+          notification.title,
+          notification.message,
+          notification.typeId
+        );
+        
+        // Delay 500ms giữa các thông báo
+        if (i < testNotifications.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      }
+
+      Alert.alert(
+        'Test Thông báo',
+        'Đã gửi 5 thông báo test thành công! Kiểm tra màn hình thông báo để xem kết quả.',
+        [{ text: 'OK' }]
+      );
+    } catch (error: any) {
+      console.error('Error testing notifications:', error);
+      Alert.alert(
+        'Lỗi',
+        `Không thể gửi thông báo test: ${error.message || 'Có lỗi xảy ra'}`,
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -270,7 +383,7 @@ const SettingsScreen: React.FC = () => {
           <Text style={styles.itemLargeText}>Thông báo</Text>
           <Switch
             value={notify}
-            onValueChange={setNotify}
+            onValueChange={handleNotificationToggle}
             trackColor={{ false: COLORS.under_process, true: COLORS.primary }}
             thumbColor={"#fff"}
             style={{ transform: [{ scaleX: 1.2 }, { scaleY: 1.2 }] }}
@@ -299,6 +412,22 @@ const SettingsScreen: React.FC = () => {
           <Text style={styles.itemNormal}>Chính sách bảo mật</Text>
           <Ionicons name="chevron-forward" size={18} color={COLORS.muted} style={styles.forwardButton} />
         </TouchableOpacity>
+
+        {/* Test Notification Button - Chỉ hiển thị trong development */}
+        {__DEV__ && (
+          <View style={styles.testWrapper}>
+            <TouchableOpacity 
+              style={[styles.testButton, loading && styles.testButtonDisabled]} 
+              onPress={handleTestNotification}
+              disabled={loading}
+            >
+              <Ionicons name="notifications" size={20} color="#fff" style={styles.testButtonIcon} />
+              <Text style={styles.testButtonText}>
+                {loading ? 'Đang gửi...' : 'Test Thông báo'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         <View style={styles.logoutWrapper}>
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
@@ -436,6 +565,36 @@ const styles = StyleSheet.create({
   sectionSpacer: {
     height: 12,
     backgroundColor: COLORS.background,
+  },
+  testWrapper: {
+    marginHorizontal: 20,
+    marginBottom: 16,
+  },
+  testButton: {
+    backgroundColor: '#FF6B6B',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: RADII.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  testButtonDisabled: {
+    backgroundColor: '#ccc',
+    opacity: 0.7,
+  },
+  testButtonIcon: {
+    marginRight: 8,
+  },
+  testButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   logoutWrapper: {
     paddingHorizontal: SPACING.lg,

@@ -23,6 +23,8 @@ import { searchAPI } from '../../services/searchAPI';
 import { convertCategoryToVietnamese } from '../../utils/categoryMapping';
 import { useFavorites } from '../../hooks/useFavorites';
 import { useMealPlans } from '../../hooks/useMealPlans';
+import { useNotifications } from '../../hooks/useNotifications';
+import NotificationBadge from '../../components/NotificationBadge';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -36,6 +38,9 @@ const HomeScreen: React.FC = () => {
   
   // Use meal plans hook for today's meals
   const { todayMealPlans, loadTodayMealPlan } = useMealPlans();
+
+  // Use notifications hook for unread count
+  const { unreadCount } = useNotifications();
 
   // State cho dữ liệu từ API
   const [nutritionData, setNutritionData] = useState({
@@ -250,6 +255,7 @@ const HomeScreen: React.FC = () => {
           <View style={styles.headerIcons}>
             <TouchableOpacity style={styles.iconButton} onPress={handleNotificationsPress}>
               <Ionicons name="notifications-outline" size={22} color={COLORS.text} />
+              <NotificationBadge count={unreadCount} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.iconButton} onPress={handleProfilePress}>
               <Ionicons name="person-circle-outline" size={32} color={COLORS.text} />
