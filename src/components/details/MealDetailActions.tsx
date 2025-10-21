@@ -10,22 +10,27 @@ interface MealDetailActionsProps {
   onAddToPlan: () => void;
   onAddToProductList?: () => void;
   isInProductList?: boolean;
+  isInMealPlan?: boolean; // Thêm prop để kiểm tra đã có trong meal plan chưa
 }
 
 const MealDetailActions: React.FC<MealDetailActionsProps> = ({
   onAddToPlan,
   onAddToProductList,
   isInProductList = false,
+  isInMealPlan = false,
 }) => {
   return (
     <View style={styles.bottomButtons}>
-      <AppButton
-        title="Thêm vào Kế hoạch ăn uống"
-        onPress={onAddToPlan}
-        filled={true}
-        style={styles.primaryButton}
-        textStyle={styles.buttonText}
-      />
+      {/* Chỉ hiện button "Thêm vào Kế hoạch ăn uống" khi chưa có trong meal plan */}
+      {!isInMealPlan && (
+        <AppButton
+          title="Thêm vào Kế hoạch ăn uống"
+          onPress={onAddToPlan}
+          filled={true}
+          style={styles.primaryButton}
+          textStyle={styles.buttonText}
+        />
+      )}
       {onAddToProductList && !isInProductList && (
         <AppButton
           title="Thêm vào danh sách sản phẩm"

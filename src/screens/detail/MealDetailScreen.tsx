@@ -13,6 +13,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING } from '../../utils/theme';
 import { useFavorites } from '../../hooks/useFavorites';
 import { useIngredients } from '../../hooks/useIngredients';
+import { useMealPlans } from '../../hooks/useMealPlans';
+import { getMealTimeFromTag, getMealTimeDisplayName } from '../../utils/mealTimeUtils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   MealDetailHeader,
@@ -52,6 +54,7 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
   const { meal } = route.params;
   const { isFavorite: isMealFavorite, toggleFavorite } = useFavorites();
   const { addMealToProducts, getMealQuantity, saveMealQuantity } = useIngredients();
+  const { addMealToMenu, isMealInPlan } = useMealPlans();
   
   const [activeTab, setActiveTab] = useState<'Ingredients' | 'Instructions' | 'Nutrition' | 'Reviews'>('Ingredients');
   const [scrollY] = useState(new Animated.Value(0));
@@ -164,7 +167,67 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
     const mealId = parseInt(meal.id);
     await toggleFavorite(mealId);
   };
-  const handleAddToPlan = () => console.log('Add to meal plan');
+  const handleAddToPlan = async () => {
+    if (!mealDetail) {
+      Alert.alert('Lỗi', 'Không thể lấy thông tin món ăn');
+      return;
+    }
+
+    try {
+      // Xác định bữa ăn dựa vào tag/category
+      const mealTime = getMealTimeFromTag(
+        mealDetail.tags?.join(' ') || '', 
+        mealDetail.categoryName
+      );
+      
+      const mealTimeDisplay = getMealTimeDisplayName(mealTime);
+      
+      // Hiển thị confirmation dialog
+      Alert.alert(
+        'Thêm vào thực đơn',
+        `Món ăn "${meal.title}" sẽ được thêm vào ${mealTimeDisplay}. Bạn có muốn tiếp tục?`,
+        [
+          {
+            text: 'Hủy',
+            style: 'cancel',
+          },
+          {
+            text: 'Thêm',
+            onPress: async () => {
+              const mealId = parseInt(meal.id);
+              const today = new Date();
+              
+              const success = await addMealToMenu(mealId, today, mealTime);
+              
+              if (success) {
+                Alert.alert(
+                  'Thành công', 
+                  `Đã thêm "${meal.title}" vào ${mealTimeDisplay}`,
+                  [
+                    {
+                      text: 'Xem thực đơn',
+                      onPress: () => {
+                        navigation.navigate('MainTabs' as any, { screen: 'Menu' });
+                      }
+                    },
+                    {
+                      text: 'OK',
+                      style: 'default'
+                    }
+                  ]
+                );
+              } else {
+                Alert.alert('Lỗi', 'Không thể thêm món ăn vào thực đơn');
+              }
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      console.error('Error adding to plan:', error);
+      Alert.alert('Lỗi', 'Không thể thêm món ăn vào thực đơn');
+    }
+  };
 
   const handleAddToProductList = async () => {
     const mealId = parseInt(meal.id);
@@ -277,6 +340,7 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
         onAddToPlan={handleAddToPlan}
         onAddToProductList={handleAddToProductList}
         isInProductList={isInProductList}
+        isInMealPlan={isMealInPlan(parseInt(meal.id))}
       />
     </SafeAreaView>
   );

@@ -22,6 +22,8 @@ interface MealPlannerModalProps {
   item: FoodItem | null;
   onClose: () => void;
   onSave: (selectedDays: string[], mealType: string) => void;
+  isProUser?: boolean;
+  onGenerateWeeklyPlan?: () => void;
 }
 
 // Helper: generate 7 ngày bắt đầu từ startDate (thứ 2)
@@ -48,6 +50,8 @@ const MealPlannerModal: React.FC<MealPlannerModalProps> = ({
   item,
   onClose,
   onSave,
+  isProUser = false,
+  onGenerateWeeklyPlan
 }) => {
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const mealTypes = ["Bữa sáng", "Bữa trưa", "Bữa tối", "Bữa phụ"];
@@ -165,28 +169,62 @@ const MealPlannerModal: React.FC<MealPlannerModalProps> = ({
         </View>
 
         {/* Danh sách ngày */}
-        <Text style={styles.sectionTitle}>Chọn ngày:</Text>
+        <Text style={styles.sectionTitle}>
+          {isProUser ? 'Chọn ngày trong tuần:' : 'Chọn ngày (chỉ ngày hiện tại):'}
+        </Text>
         <ScrollView style={styles.daysList}>
-          {weekDays.map((day) => (
-            <TouchableOpacity
-              key={day.key}
-              style={styles.dayRow}
-              onPress={() => toggleDay(day.key)}
-            >
-              <Text style={styles.dayLabel}>{day.label}</Text>
-              <View
+          {weekDays.map((day) => {
+            const today = new Date();
+            const isToday = day.date.toDateString() === today.toDateString();
+            const isPast = day.date < today;
+            const canSelect = isProUser || isToday;
+            
+            return (
+              <TouchableOpacity
+                key={day.key}
                 style={[
-                  styles.checkbox,
-                  selectedDays.includes(day.key) && styles.checkedBox,
+                  styles.dayRow,
+                  !canSelect && styles.disabledDayRow
                 ]}
+                onPress={() => canSelect && toggleDay(day.key)}
+                disabled={!canSelect}
               >
-                {selectedDays.includes(day.key) && (
-                  <Ionicons name="checkmark" size={16} color="white" />
-                )}
-              </View>
-            </TouchableOpacity>
-          ))}
+                <Text style={[
+                  styles.dayLabel,
+                  !canSelect && styles.disabledText
+                ]}>
+                  {day.label}
+                  {isToday && ' (Hôm nay)'}
+                  {!isProUser && isPast && ' (Quá khứ)'}
+                </Text>
+                <View
+                  style={[
+                    styles.checkbox,
+                    selectedDays.includes(day.key) && styles.checkedBox,
+                    !canSelect && styles.disabledCheckbox,
+                  ]}
+                >
+                  {selectedDays.includes(day.key) && (
+                    <Ionicons name="checkmark" size={16} color="white" />
+                  )}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
+
+        {/* PRO Features */}
+        {isProUser && onGenerateWeeklyPlan && (
+          <View style={styles.proFeatures}>
+            <TouchableOpacity 
+              style={styles.aiWeeklyButton}
+              onPress={onGenerateWeeklyPlan}
+            >
+              <Ionicons name="sparkles" size={20} color="white" />
+              <Text style={styles.aiWeeklyButtonText}>AI Sinh thực đơn cả tuần</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Lưu */}
         <TouchableOpacity
@@ -351,6 +389,34 @@ const styles = StyleSheet.create({
   checkedBox: {
     backgroundColor: COLORS.primary,
     borderColor: COLORS.primary,
+  },
+  disabledDayRow: {
+    opacity: 0.5,
+  },
+  disabledText: {
+    color: COLORS.muted,
+  },
+  disabledCheckbox: {
+    borderColor: COLORS.muted,
+    backgroundColor: COLORS.muted,
+  },
+  proFeatures: {
+    marginBottom: SPACING.lg,
+  },
+  aiWeeklyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFD700',
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    borderRadius: RADII.md,
+    gap: SPACING.sm,
+  },
+  aiWeeklyButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#000',
   },
   saveButton: {
     backgroundColor: COLORS.primary,

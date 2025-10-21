@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MealTypeService } from './mealTypeService';
 
 // Base URL for API
-const API_BASE_URL = 'https://c7fd7ee7bde7.ngrok-free.app';
+const API_BASE_URL = 'https://bb0bbb5e3fe1.ngrok-free.app';
 
 // Create axios instance
 const apiClient = axios.create({
@@ -21,6 +21,9 @@ apiClient.interceptors.request.use(
     const token = await AsyncStorage.getItem('accessToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log('🔑 Debug - Adding token to request:', config.url);
+    } else {
+      console.log('⚠️ Debug - No token found for request:', config.url);
     }
     
     // Process request data to convert meal types from Vietnamese to English
@@ -47,25 +50,29 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Handle 401 (Unauthorized) and 403 (Forbidden) errors
+    if ((error.response?.status === 401 || error.response?.status === 403) && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
         const refreshToken = await AsyncStorage.getItem('refreshToken');
         if (refreshToken) {
+          console.log('🔄 Debug - Attempting token refresh...');
           const response = await axios.post(`${API_BASE_URL}/api/auth/refresh`, {
             refreshToken,
           });
 
           const { token } = response.data.data;
           await AsyncStorage.setItem('accessToken', token);
+          console.log('✅ Debug - Token refreshed successfully');
 
           originalRequest.headers.Authorization = `Bearer ${token}`;
           return apiClient(originalRequest);
         }
       } catch (refreshError) {
-        // Refresh failed, redirect to login
-        await AsyncStorage.multiRemove(['accessToken', 'refreshToken', 'user']);
+        console.error('❌ Debug - Token refresh failed:', refreshError);
+        // Refresh failed, clear all auth data
+        await AsyncStorage.multiRemove(['accessToken', 'refreshToken', 'user', 'userInfo']);
         return Promise.reject(refreshError);
       }
     }
@@ -73,6 +80,36 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// Check authentication status
+export const checkAuthStatus = async () => {
+  try {
+    const token = await AsyncStorage.getItem('accessToken');
+    const refreshToken = await AsyncStorage.getItem('refreshToken');
+    
+    console.log('🔍 Debug - Auth status check:');
+    console.log('  - Access token exists:', !!token);
+    console.log('  - Refresh token exists:', !!refreshToken);
+    
+    if (!token || !refreshToken) {
+      console.log('❌ Debug - No tokens found, user needs to login');
+      return false;
+    }
+    
+    // Test token validity by making a simple API call
+    try {
+      const response = await apiClient.get('/api/users/me');
+      console.log('✅ Debug - Token is valid');
+      return true;
+    } catch (error: any) {
+      console.log('❌ Debug - Token validation failed:', error.response?.status);
+      return false;
+    }
+  } catch (error) {
+    console.error('Error checking auth status:', error);
+    return false;
+  }
+};
 
 // Auth API functions
 export const authAPI = {
