@@ -27,7 +27,7 @@ import {
 } from "../../components/profile";
 import { CreatePost, PostItem } from "../../components/home/community";
 import { userProfileAPI } from "../../services/userProfileAPI";
-import { useAvatarPicker } from "../../hooks/useAvatarPicker";
+import { useBase64Upload } from "../../hooks/useBase64Upload";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -36,7 +36,7 @@ const ProfileScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const [activeTab, setActiveTab] = useState<"nutrition" | "posts">("nutrition");
   const { height } = useWindowDimensions();
-  const { handleChangeAvatar, isUploading } = useAvatarPicker();
+  const { handleChangeAvatar, isUploading } = useBase64Upload();
 
   // State cho post & modal menu
   const [selectedPost, setSelectedPost] = useState<any | null>(null);

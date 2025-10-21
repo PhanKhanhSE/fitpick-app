@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,19 +11,43 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING } from '../../../utils/theme';
 
+interface Review {
+  id: string;
+  user: string;
+  date: string;
+  rating: number;
+  content: string;
+  avatar: string;
+}
+
 interface AddReviewModalProps {
   visible: boolean;
   onClose: () => void;
   onSubmit: (rating: number, reviewText: string) => void;
+  isEditMode?: boolean;
+  editingReview?: Review | null;
 }
 
 const AddReviewModal: React.FC<AddReviewModalProps> = ({
   visible,
   onClose,
   onSubmit,
+  isEditMode = false,
+  editingReview = null,
 }) => {
   const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
+
+  // Load data khi edit mode
+  useEffect(() => {
+    if (isEditMode && editingReview) {
+      setRating(editingReview.rating);
+      setReviewText(editingReview.content);
+    } else {
+      setRating(0);
+      setReviewText('');
+    }
+  }, [isEditMode, editingReview, visible]);
 
   const handleStarPress = (starIndex: number) => {
     setRating(starIndex + 1);
@@ -91,7 +115,9 @@ const AddReviewModal: React.FC<AddReviewModalProps> = ({
             >
               <Ionicons name="close" size={24} color={COLORS.text} />
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>Thêm nhận xét</Text>
+            <Text style={styles.modalTitle}>
+              {isEditMode ? 'Chỉnh sửa nhận xét' : 'Thêm nhận xét'}
+            </Text>
             <View style={styles.modalPlaceholder} />
           </View>
 
@@ -121,7 +147,9 @@ const AddReviewModal: React.FC<AddReviewModalProps> = ({
             onPress={handleSubmit}
             disabled={rating === 0 || reviewText.trim().length === 0}
           >
-            <Text style={styles.modalSubmitButtonText}>Gửi nhận xét</Text>
+            <Text style={styles.modalSubmitButtonText}>
+              {isEditMode ? 'Cập nhật nhận xét' : 'Gửi nhận xét'}
+            </Text>
           </TouchableOpacity>
         </TouchableOpacity>
       </TouchableOpacity>

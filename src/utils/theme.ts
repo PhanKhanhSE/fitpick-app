@@ -1,5 +1,5 @@
 export const COLORS = {
-    primary: '#F73E6C',
+    primary: '#F63E7C',
     text: '#191919',
     muted: '#999',
     background: '#F5F5F5',
@@ -10,7 +10,7 @@ export const COLORS = {
     process: '#4CAF50',
     under_process: '#CCD6DD',
     white: '#FFFFFF',
-} as const;
+};
 
 export const SPACING = {
     xs: 4,
@@ -34,4 +34,11 @@ export const RADII = {
 
 export const FONTS = {
     base: 16,
+};
+
+export default {
+    COLORS,
+    SPACING,
+    RADII,
+    FONTS,
 };

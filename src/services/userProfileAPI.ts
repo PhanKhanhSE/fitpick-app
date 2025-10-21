@@ -1,4 +1,7 @@
 import apiClient from './apiClient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as FileSystem from 'expo-file-system';
+
 
 // API service for user profile and nutrition data
 export const userProfileAPI = {
@@ -228,20 +231,114 @@ export const userProfileAPI = {
     }
   },
 
-  // Change avatar using /api/users/me/avatar endpoint
-  changeUserAvatar: async (avatarFile: any) => {
+  // Test avatar upload function using axios with different config
+  testAvatarUpload: async (avatarFile: any) => {
     try {
-      const formData = new FormData();
-      formData.append('avatar', avatarFile);
-      
-      const response = await apiClient.put('/api/users/me/avatar', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+      console.log('🔍 Test Avatar file info:', {
+        uri: avatarFile.uri,
+        type: avatarFile.type,
+        name: avatarFile.name
       });
+      
+      // Create FormData for React Native
+      const formData = new FormData();
+      
+      // Handle iOS file URI (remove file:// prefix)
+      const fileUri = avatarFile.uri.startsWith('file://') 
+        ? avatarFile.uri.replace('file://', '') 
+        : avatarFile.uri;
+      
+      console.log('🔍 File URI:', fileUri);
+      console.log('🔍 File type:', avatarFile.type);
+      console.log('🔍 File name:', avatarFile.name);
+      
+      // Append file with proper format for React Native
+      formData.append('Avatar', {
+        uri: fileUri,
+        type: avatarFile.type || 'image/jpeg',
+        name: avatarFile.name || 'avatar.jpg',
+      } as any);
+      
+      console.log('🔍 FormData created, sending test request with axios...');
+      
+      // Use axios with different config
+      const response = await apiClient.post('/api/users/me/avatar-test', formData, {
+        headers: {
+          // Don't set Content-Type, let axios handle it
+        },
+        timeout: 30000,
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity,
+      });
+      
+      console.log('✅ Test upload response:', response.data);
       return response.data;
     } catch (error: any) {
-      console.error('Error changing avatar:', error);
+      console.error('❌ Error in test upload:', error);
+      console.error('❌ Error response:', error.response?.data);
+      console.error('❌ Error status:', error.response?.status);
+      throw error;
+    }
+  },
+
+  // Simple avatar upload function using fetch
+  changeUserAvatar: async (avatarFile: any) => {
+    try {
+      console.log('🔍 Avatar file info:', {
+        uri: avatarFile.uri,
+        type: avatarFile.type,
+        name: avatarFile.name
+      });
+      
+      // Get token
+      const token = await AsyncStorage.getItem('accessToken');
+      console.log('🔑 Token found:', token ? 'Yes' : 'No');
+      if (!token) {
+        throw new Error('No token found');
+      }
+      
+      // Create FormData for React Native
+      const formData = new FormData();
+      
+      // Handle iOS file URI (remove file:// prefix)
+      const fileUri = avatarFile.uri.startsWith('file://') 
+        ? avatarFile.uri.replace('file://', '') 
+        : avatarFile.uri;
+      
+      console.log('🔍 File URI:', fileUri);
+      console.log('🔍 File type:', avatarFile.type);
+      console.log('🔍 File name:', avatarFile.name);
+      
+      // Append file with proper format for React Native
+      formData.append('Avatar', {
+        uri: fileUri,
+        type: avatarFile.type || 'image/jpeg',
+        name: avatarFile.name || 'avatar.jpg',
+      } as any);
+      
+      console.log('🔍 FormData created, sending request with fetch...');
+      
+      // Use fetch instead of axios
+      const response = await fetch('https://67342df5afbc.ngrok-free.app/api/users/me/avatar-simple', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          // Don't set Content-Type, let fetch handle it
+        },
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('❌ Fetch error response:', errorData);
+        throw new Error(`HTTP ${response.status}: ${errorData}`);
+      }
+      
+      const data = await response.json();
+      console.log('✅ Avatar upload response:', data);
+      return data;
+    } catch (error: any) {
+      console.error('❌ Error changing avatar:', error);
       throw error;
     }
   },

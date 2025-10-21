@@ -25,6 +25,7 @@ import {
   MealDetailActions,
 } from '../../components/details';
 import { searchAPI, MealDetailData } from '../../services/searchAPI';
+import { mealReviewAPI, MealReview } from '../../services/mealReviewAPI';
 
 
 
@@ -62,6 +63,13 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
   const [mealDetail, setMealDetail] = useState<MealDetailData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isInProductList, setIsInProductList] = useState(false);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [userReview, setUserReview] = useState<any>(null);
+  const [ratingStats, setRatingStats] = useState({
+    averageRating: 0,
+    totalReviews: 0
+  });
 
   // Kiểm tra xem meal có trong product list không
   const checkIfInProductList = async (mealId: number) => {
@@ -95,11 +103,131 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
     }
   };
 
+  // Load reviews từ API
+  const loadReviews = async (mealId: number) => {
+    try {
+      setReviewsLoading(true);
+      console.log('🔄 Loading reviews for meal:', mealId);
+      
+      // Load tất cả reviews, user review và rating stats song song
+      const [reviewsResponse, userReviewResponse, ratingStatsResponse] = await Promise.all([
+        mealReviewAPI.getMealReviews(mealId),
+        mealReviewAPI.getUserReview(mealId),
+        mealReviewAPI.getMealRatingStats(mealId)
+      ]);
+      
+      console.log('📝 Reviews response:', reviewsResponse);
+      console.log('👤 User review response:', userReviewResponse);
+      console.log('📊 Rating stats response:', ratingStatsResponse);
+      
+      // Debug avatar data
+      if (reviewsResponse.success && reviewsResponse.data) {
+        console.log('🔍 Raw reviews from API:', reviewsResponse.data);
+        reviewsResponse.data.forEach((review: MealReview, index: number) => {
+          console.log(`🔍 Review ${index}:`, {
+            reviewId: review.reviewId,
+            userName: review.userName,
+            userAvatar: review.userAvatar,
+            hasAvatar: !!review.userAvatar
+          });
+        });
+      }
+      
+      // Xử lý reviews
+      if (reviewsResponse.success) {
+        const convertedReviews = reviewsResponse.data.map((review: MealReview) => {
+          // Ưu tiên avatar từ API, nếu không có thì dùng fallback
+          let avatarUrl = review.userAvatar;
+          if (!avatarUrl || avatarUrl.trim() === '') {
+            // Tạo avatar dựa trên userName thay vì reviewId
+            const userNameHash = review.userName.split('').reduce((a, b) => {
+              a = ((a << 5) - a) + b.charCodeAt(0);
+              return a & a;
+            }, 0);
+            avatarUrl = `https://i.pravatar.cc/100?img=${Math.abs(userNameHash) % 70 + 1}`;
+          }
+          
+          return {
+            id: review.reviewId.toString(),
+            user: review.userName,
+            date: formatDate(review.createdAt),
+            rating: review.rating,
+            content: review.comment,
+            avatar: avatarUrl
+          };
+        });
+        
+        console.log('✅ Converted reviews:', convertedReviews);
+        setReviews(convertedReviews);
+      } else {
+        setReviews([]);
+      }
+      
+      // Xử lý user review
+      if (userReviewResponse.success && userReviewResponse.data) {
+        // Xử lý avatar cho user review
+        let userAvatarUrl = userReviewResponse.data.userAvatar;
+        if (!userAvatarUrl || userAvatarUrl.trim() === '') {
+          // Tạo avatar dựa trên userName
+          const userNameHash = userReviewResponse.data.userName.split('').reduce((a, b) => {
+            a = ((a << 5) - a) + b.charCodeAt(0);
+            return a & a;
+          }, 0);
+          userAvatarUrl = `https://i.pravatar.cc/100?img=${Math.abs(userNameHash) % 70 + 1}`;
+        }
+        
+        const convertedUserReview = {
+          id: userReviewResponse.data.reviewId.toString(),
+          user: userReviewResponse.data.userName,
+          date: formatDate(userReviewResponse.data.createdAt),
+          rating: userReviewResponse.data.rating,
+          content: userReviewResponse.data.comment,
+          avatar: userAvatarUrl
+        };
+        setUserReview(convertedUserReview);
+      } else {
+        setUserReview(null);
+      }
+      
+      // Xử lý rating stats
+      if (ratingStatsResponse.success) {
+        setRatingStats({
+          averageRating: ratingStatsResponse.data.averageRating,
+          totalReviews: ratingStatsResponse.data.totalReviews
+        });
+      }
+      
+    } catch (error: any) {
+      console.error('❌ Error loading reviews:', error);
+      console.error('❌ Error details:', error.message);
+      setReviews([]);
+      setUserReview(null);
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
+  // Format date helper
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return 'Vừa xong';
+    if (diffInHours < 24) return `${diffInHours} giờ`;
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return `${diffInDays} ngày`;
+    
+    return date.toLocaleDateString('vi-VN');
+  };
+
   useEffect(() => {
     if (route.params?.meal?.id) {
       const mealId = parseInt(route.params.meal.id);
       loadMealDetail(mealId);
       checkIfInProductList(mealId);
+      loadReviews(mealId);
       
       // Load số lượng đã lưu
       const loadSavedQuantity = async () => {
@@ -130,7 +258,7 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
     return (
       <SafeAreaView style={styles.container} edges={['left', 'right']}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#F63E7C" />
+          <ActivityIndicator size="large" color={COLORS.primary} />
           <Text style={styles.loadingText}>Đang tải thông tin món ăn...</Text>
         </View>
       </SafeAreaView>
@@ -296,8 +424,8 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
         <MealImageOverlay
           image={{ uri: mealDetail.imageUrl }}
           cookingTime={`${mealDetail.cookingtime} phút`}
-          rating={4.5}
-          reviewCount={12}
+          rating={ratingStats.averageRating}
+          reviewCount={ratingStats.totalReviews}
         />
 
         {/* Title + Quantity + Nutrition */}
@@ -328,9 +456,22 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
             carbs={`${calculatedCarbs}g`}
             protein={`${calculatedProtein}g`}
             fat={`${calculatedFat}g`}
-            rating={4.5}
-            reviewCount={12}
+            rating={ratingStats.averageRating}
+            reviewCount={ratingStats.totalReviews}
             onViewAllReviews={handleViewAllReviews}
+            reviews={reviews}
+            userReview={userReview}
+            onEditReview={() => handleViewAllReviews()}
+            onDeleteReview={async () => {
+              const mealId = parseInt(route.params.meal.id);
+              try {
+                await mealReviewAPI.deleteReview(mealId);
+                await loadReviews(mealId); // Reload reviews
+                Alert.alert('Thành công', 'Đã xóa nhận xét');
+              } catch (error) {
+                Alert.alert('Lỗi', 'Không thể xóa nhận xét');
+              }
+            }}
           />
         </View>
       </Animated.ScrollView>

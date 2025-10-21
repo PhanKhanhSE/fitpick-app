@@ -185,18 +185,26 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xs,
     marginLeft: -SPACING.sm,
     textAlign: 'left',
-    textShadowColor: 'rgba(0, 0, 0, 0.5)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    ...(Platform.OS === 'web' ? {
+      textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)',
+    } : {
+      textShadowColor: 'rgba(0, 0, 0, 0.5)',
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 2,
+    }),
   },
   info: {
     fontSize: 10,
     color: 'rgba(255, 255, 255, 0.9)',
     textAlign: 'right',
     marginLeft: -SPACING.sm,
-    textShadowColor: 'rgba(0, 0, 0, 0.5)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    ...(Platform.OS === 'web' ? {
+      textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)',
+    } : {
+      textShadowColor: 'rgba(0, 0, 0, 0.5)',
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 2,
+    }),
   },
   lockContainer: {
     position: 'absolute',

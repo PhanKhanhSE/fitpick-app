@@ -50,13 +50,28 @@ export const useAvatarPicker = () => {
         return null;
       }
 
-      // Create file object for upload
+      // Create file object for upload với proper format cho React Native
+      const fileExtension = imageUri.split('.').pop()?.toLowerCase() || 'jpg';
+      const mimeType = fileExtension === 'png' ? 'image/png' : 
+                     fileExtension === 'gif' ? 'image/gif' : 
+                     'image/jpeg';
+      
       const avatarFile = {
         uri: imageUri,
-        type: 'image/jpeg',
-        name: 'avatar.jpg',
+        type: mimeType,
+        name: `avatar.${fileExtension}`,
       } as any;
 
+      // Test with test endpoint first
+      console.log('🧪 Testing avatar upload...');
+      try {
+        await userProfileAPI.testAvatarUpload(avatarFile);
+        console.log('✅ Test upload successful, now trying real upload...');
+      } catch (testError) {
+        console.error('❌ Test upload failed:', testError);
+        throw testError;
+      }
+      
       const response = await userProfileAPI.changeUserAvatar(avatarFile);
       
       if (response.success) {

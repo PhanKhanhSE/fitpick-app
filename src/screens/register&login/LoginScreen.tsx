@@ -9,6 +9,7 @@ import {
   Image,
   Alert,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AppButton from "../../components/AppButton";
@@ -22,7 +23,7 @@ import { authAPI } from "../../services/api";
 
 type Nav = NativeStackNavigationProp<RootStackParamList, "Login">;
 
-const PINK = COLORS?.primary ?? "#F63E7C";
+const PINK = COLORS.primary;
 
 const LoginScreen = () => {
   const navigation = useNavigation<Nav>();
@@ -309,14 +310,18 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     paddingVertical: 18,
     marginBottom: SPACING.lg,
-    shadowColor: COLORS.primary,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    ...(Platform.OS === 'web' ? {
+      boxShadow: `0 4px 8px rgba(246, 62, 124, 0.3)`,
+    } : {
+      shadowColor: COLORS.primary,
+      shadowOffset: {
+        width: 0,
+        height: 4,
+      },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 8,
+    }),
   },
   signupContainer: {
     flexDirection: "row",

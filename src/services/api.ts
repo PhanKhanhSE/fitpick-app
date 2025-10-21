@@ -4,7 +4,7 @@ import { MealTypeService } from './mealTypeService';
 import apiClient from './apiClient';
 
 // Base URL for API
-const API_BASE_URL = 'https://bb0bbb5e3fe1.ngrok-free.app';
+const API_BASE_URL = 'https://67342df5afbc.ngrok-free.app';
 
 // Auth API functions
 export const authAPI = {

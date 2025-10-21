@@ -16,7 +16,7 @@ import { COLORS, SPACING, RADII } from '../../../utils/theme';
 import { userProfileAPI, settingsAPI } from '../../../services/userProfileAPI';
 import AppButton from '../../../components/AppButton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAvatarPicker } from '../../../hooks/useAvatarPicker';
+import { useDocumentPicker } from '../../../hooks/useDocumentPicker';
 
 type NavigationProp = any;
 
@@ -36,7 +36,7 @@ interface UserProfile {
 const EditProfileScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const [loading, setLoading] = useState(false);
-  const { handleChangeAvatar, isUploading } = useAvatarPicker();
+  const { handleChangeAvatar, isUploading } = useDocumentPicker();
   const [userProfile, setUserProfile] = useState<UserProfile>({
     fullName: '',
     email: '',

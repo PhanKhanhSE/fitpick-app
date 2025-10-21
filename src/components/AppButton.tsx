@@ -1,5 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import { COLORS } from '../utils/theme';
 
 interface AppButtonProps {
     title: string;
@@ -38,14 +39,14 @@ export default AppButton;
 
 const styles = StyleSheet.create({
     filledButton: {
-        backgroundColor: '#F63E7C',
+        backgroundColor: COLORS.primary,
         paddingVertical: 16,
         paddingHorizontal: 60,
         borderRadius: 40,
         alignItems: 'center',
     },
     outlinedButton: {
-        borderColor: '#F63E7C',
+        borderColor: COLORS.primary,
         borderWidth: 2,
         paddingVertical: 16,
         paddingHorizontal: 60,
@@ -58,7 +59,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
     outlinedText: {
-        color: '#F63E7C',
+        color: COLORS.primary,
         fontWeight: 'bold',
         fontSize: 16,
     },
