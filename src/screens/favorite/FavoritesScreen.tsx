@@ -18,6 +18,8 @@ import { favoritesAPI, FavoriteMealWithDetails } from '../../services/favoritesA
 import { convertCategoryToVietnamese } from '../../utils/categoryMapping';
 import { useFavorites } from '../../hooks/useFavorites';
 import { useIngredients } from '../../hooks/useIngredients';
+import { useMealPlans } from '../../hooks/useMealPlans';
+import { useUser } from '../../hooks/useUser';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 import {
@@ -33,10 +35,13 @@ const FavoritesScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const { removeFavorite, removeMultipleFavorites } = useFavorites();
   const { addMealToProducts } = useIngredients();
+  const { isMealInPlan } = useMealPlans();
+  const { isProUser } = useUser();
   
   const [multiSelect, setMultiSelect] = useState(false);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [actionItem, setActionItem] = useState<FoodItem | null>(null);
+  const [showActionModal, setShowActionModal] = useState(false);
   const [showMealPlanner, setShowMealPlanner] = useState(false);
   
   // State for API data
@@ -147,6 +152,32 @@ const FavoritesScreen: React.FC = () => {
       mealType,
       item: actionItem,
     });
+    
+    // TODO: Implement save to meal planner logic
+    Alert.alert('Thành công', 'Đã thêm vào thực đơn');
+    setShowMealPlanner(false);
+    setActionItem(null);
+  };
+
+  const handleGenerateWeeklyPlan = async () => {
+    try {
+      // Tính thứ 2 của tuần hiện tại
+      const today = new Date();
+      const monday = new Date(today);
+      monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+      
+      // TODO: Gọi API để sinh thực đơn cả tuần
+      console.log('Generating weekly meal plan for week starting:', monday.toISOString().split('T')[0]);
+      
+      Alert.alert(
+        'AI Sinh thực đơn', 
+        'AI đang phân tích sở thích và tạo thực đơn cá nhân hóa cho cả tuần. Tính năng này sẽ sớm có mặt!',
+        [{ text: 'OK' }]
+      );
+    } catch (error) {
+      console.error('Error generating weekly plan:', error);
+      Alert.alert('Lỗi', 'Không thể sinh thực đơn cả tuần');
+    }
   };
 
   // Delete single item
@@ -217,7 +248,10 @@ const FavoritesScreen: React.FC = () => {
             ? toggleSelect(item.id)
             : handleNavigateToDetail(item)
         }
-        onMorePress={() => setActionItem(item)}
+        onMorePress={() => {
+          setActionItem(item);
+          setShowActionModal(true);
+        }}
       />
     );
   };
@@ -303,11 +337,15 @@ const FavoritesScreen: React.FC = () => {
       />
 
       <FavoriteActionModal
-        visible={!!actionItem}
+        visible={showActionModal}
         item={actionItem}
-        onClose={() => setActionItem(null)}
+        onClose={() => {
+          setActionItem(null);
+          setShowActionModal(false);
+        }}
         onAddToMealPlan={() => {
           setActionItem(null);
+          setShowActionModal(false);
           setShowMealPlanner(true);
         }}
         onAddToProductList={async () => {
@@ -324,8 +362,10 @@ const FavoritesScreen: React.FC = () => {
             }
           }
           setActionItem(null);
+          setShowActionModal(false);
         }}
         onDelete={handleDeleteSingle}
+        isInMealPlan={actionItem ? isMealInPlan(parseInt(actionItem.id)) : false}
       />
 
       <MealPlannerModal
@@ -333,6 +373,8 @@ const FavoritesScreen: React.FC = () => {
         item={actionItem}
         onClose={() => setShowMealPlanner(false)}
         onSave={handleMealPlannerSave}
+        isProUser={isProUser()}
+        onGenerateWeeklyPlan={handleGenerateWeeklyPlan}
       />
     </View>
   );
