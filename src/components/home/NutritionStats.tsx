@@ -20,7 +20,10 @@ const NutritionStats: React.FC<NutritionStatsProps> = ({
   fat,
   onPress,
 }) => {
-  const progress = Math.min(consumedCalories / targetCalories, 1);
+  // Safeguards against division by zero/negative values
+  const safeTarget = typeof targetCalories === 'number' && targetCalories > 0 ? targetCalories : 0;
+  const progress = safeTarget > 0 ? Math.min(Math.max(consumedCalories / safeTarget, 0), 1) : 0;
+  const remaining = Math.max((safeTarget || 0) - (consumedCalories || 0), 0);
   const circumference = 2 * Math.PI * 60; // radius = 60
   const strokeDashoffset = circumference - progress * circumference;
 
@@ -29,10 +32,10 @@ const NutritionStats: React.FC<NutritionStatsProps> = ({
       <View style={styles.statsCard}>
         <View style={styles.caloriesSection}>
           <Text style={styles.targetLabel}>Mục tiêu:</Text>
-          <Text style={styles.targetValue}>{targetCalories} kcal</Text>
+          <Text style={styles.targetValue}>{safeTarget} kcal</Text>
           
           <Text style={styles.consumedLabel}>Còn lại:</Text>
-          <Text style={styles.consumedValue}>{targetCalories - consumedCalories} kcal</Text>
+          <Text style={styles.consumedValue}>{remaining} kcal</Text>
         </View>
         
         <View style={styles.progressSection}>
@@ -57,7 +60,19 @@ const NutritionStats: React.FC<NutritionStatsProps> = ({
         <View style={styles.macroItem}>
           <Text style={styles.macroLabel}>Tinh bột</Text>
           <View style={[styles.macroBar, { backgroundColor: COLORS.under_process }]}>
-            <View style={[styles.macroProgress, { width: `${(starch.current / starch.target) * 100}%`, backgroundColor: COLORS.process }]} />
+            <View style={[
+              styles.macroProgress,
+              {
+                width: `${Math.min(
+                  Math.max(
+                    (starch && starch.target > 0) ? (starch.current / starch.target) * 100 : 0,
+                    0
+                  ),
+                  100
+                )}%`,
+                backgroundColor: COLORS.process
+              }
+            ]} />
           </View>
           <Text style={styles.macroValue}>{starch.current} / {starch.target} g</Text>
         </View>
@@ -65,7 +80,19 @@ const NutritionStats: React.FC<NutritionStatsProps> = ({
         <View style={styles.macroItem}>
           <Text style={styles.macroLabel}>Protein</Text>
           <View style={[styles.macroBar, { backgroundColor: COLORS.under_process }]}>
-            <View style={[styles.macroProgress, { width: `${(protein.current / protein.target) * 100}%`, backgroundColor: COLORS.primary }]} />
+            <View style={[
+              styles.macroProgress,
+              {
+                width: `${Math.min(
+                  Math.max(
+                    (protein && protein.target > 0) ? (protein.current / protein.target) * 100 : 0,
+                    0
+                  ),
+                  100
+                )}%`,
+                backgroundColor: COLORS.primary
+              }
+            ]} />
           </View>
           <Text style={styles.macroValue}>{protein.current} / {protein.target} g</Text>
         </View>
@@ -73,7 +100,19 @@ const NutritionStats: React.FC<NutritionStatsProps> = ({
         <View style={styles.macroItem}>
           <Text style={styles.macroLabel}>Chất béo</Text>
           <View style={[styles.macroBar, { backgroundColor: COLORS.under_process }]}>
-            <View style={[styles.macroProgress, { width: `${(fat.current / fat.target) * 100}%`, backgroundColor: COLORS.process }]} />
+            <View style={[
+              styles.macroProgress,
+              {
+                width: `${Math.min(
+                  Math.max(
+                    (fat && fat.target > 0) ? (fat.current / fat.target) * 100 : 0,
+                    0
+                  ),
+                  100
+                )}%`,
+                backgroundColor: COLORS.process
+              }
+            ]} />
           </View>
           <Text style={styles.macroValue}>{fat.current} / {fat.target} g</Text>
         </View>

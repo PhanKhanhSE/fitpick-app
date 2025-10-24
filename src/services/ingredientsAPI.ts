@@ -191,7 +191,7 @@ export const ingredientsAPI = {
       }));
 
       // Đánh dấu tất cả nguyên liệu
-      const markPromises = ingredients.map(ingredient => 
+      const markPromises = ingredients.map((ingredient: IngredientData) =>
         ingredientsAPI.markIngredient(mealId, ingredient.ingredientId, hasIt)
       );
 

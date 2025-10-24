@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { Alert } from 'react-native';
 import { mealHistoryAPI, MealHistoryDto, CreateMealHistoryDto, DetailedDailyStats, MealEatenCheck } from '../services/mealHistoryAPI';
 
+// Re-export types so other modules can import them from this hook file if needed
+export type { MealHistoryDto, CreateMealHistoryDto, DetailedDailyStats, MealEatenCheck } from '../services/mealHistoryAPI';
+
 export const useMealHistory = () => {
   const [mealHistory, setMealHistory] = useState<MealHistoryDto[]>([]);
   const [loading, setLoading] = useState(false);

@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { mealPlanAPI, TodayMealPlanDto, Mealplan, MealDto } from '../services/mealPlanAPI';
+import { mealPlanAPI, TodayMealPlanDto, Mealplan, MealDto, WeeklyMealPlanDto, UserLimitationInfo } from '../services/mealPlanAPI';
 import { useIngredients } from './useIngredients';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const useMealPlans = () => {
   const [todayMealPlans, setTodayMealPlans] = useState<TodayMealPlanDto[]>([]);
   const [userMealPlans, setUserMealPlans] = useState<Mealplan[]>([]);
+  const [weeklyMealPlan, setWeeklyMealPlan] = useState<WeeklyMealPlanDto | null>(null);
+  const [limitationInfo, setLimitationInfo] = useState<UserLimitationInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentSelectedDate, setCurrentSelectedDate] = useState<Date>(new Date()); // Lưu trữ ngày hiện tại
@@ -13,6 +15,7 @@ export const useMealPlans = () => {
 
   // Load thực đơn theo ngày cụ thể
   const loadTodayMealPlan = async (selectedDate?: Date) => {
+    let targetDateString = '';
     try {
       setLoading(true);
       setError(null);
@@ -332,9 +335,81 @@ export const useMealPlans = () => {
     }, 0);
   };
 
+  // Load thông tin giới hạn của user
+  const loadLimitationInfo = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await mealPlanAPI.getUserLimitationInfo();
+      
+      if (response.success && response.data) {
+        setLimitationInfo(response.data);
+      } else {
+        setError(response.message || 'Không thể lấy thông tin giới hạn');
+      }
+    } catch (err) {
+      setError('Lỗi khi lấy thông tin giới hạn');
+      console.error('Error loading limitation info:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load thực đơn tuần (Premium only)
+  const loadWeeklyMealPlan = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await mealPlanAPI.getWeeklyMealPlan();
+      
+      if (response.success && response.data) {
+        setWeeklyMealPlan(response.data);
+      } else if (response.success && (response as any).notFound) {
+        // Không có thực đơn tuần: hiển thị trạng thái trống, không set error
+        setWeeklyMealPlan(null);
+      } else {
+        setError(response.message || 'Không thể lấy thực đơn tuần');
+      }
+    } catch (err) {
+      setError('Lỗi khi lấy thực đơn tuần');
+      console.error('Error loading weekly meal plan:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Tạo thực đơn tuần (Premium only)
+  const generateWeeklyMealPlan = async (weekStartDate: string): Promise<boolean> => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await mealPlanAPI.generateWeeklyMealPlan(weekStartDate);
+      
+      if (response.success && response.data) {
+        setWeeklyMealPlan(response.data);
+        // Đồng bộ lại từ server để đảm bảo hiển thị chính xác
+        await loadWeeklyMealPlan();
+        return true;
+      } else {
+        setError(response.message || 'Không thể tạo thực đơn tuần');
+        return false;
+      }
+    } catch (err) {
+      setError('Lỗi khi tạo thực đơn tuần');
+      console.error('Error generating weekly meal plan:', err);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Load data khi component mount
   useEffect(() => {
     loadTodayMealPlan();
+    loadLimitationInfo();
   }, []);
 
   // Xóa món ăn từ local storage
@@ -363,13 +438,18 @@ export const useMealPlans = () => {
     // State
     todayMealPlans,
     userMealPlans,
+    weeklyMealPlan,
+    limitationInfo,
     loading,
     error,
 
     // Actions
     loadTodayMealPlan,
     loadUserMealPlans,
+    loadWeeklyMealPlan,
+    loadLimitationInfo,
     generateMealPlan,
+    generateWeeklyMealPlan,
     swapMeal,
     deleteMealPlan,
     replaceMealBySuggestion,

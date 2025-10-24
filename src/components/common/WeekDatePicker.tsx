@@ -121,13 +121,13 @@ const WeekDatePicker: React.FC<WeekDatePickerProps> = ({
 
           {/* Week Days */}
           <View style={styles.weekDays}>
-            {weekDays.map((day, index) => {
+            {weekDays.map((day) => {
               const isSelected = selectedDate?.toDateString() === day.date.toDateString();
               const canSelect = isProUser || !day.isFuture;
               
               return (
                 <TouchableOpacity
-                  key={index}
+                  key={`week-day-${day.date.toDateString()}`}
                   style={[
                     styles.dayButton,
                     day.isToday && styles.todayButton,

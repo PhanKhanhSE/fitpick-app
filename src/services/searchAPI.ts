@@ -50,6 +50,8 @@ export interface MealDetailData {
   statusName?: string;
   ingredients?: MealIngredientDetail[];
   instructions?: MealInstruction[];
+  // Optional tags array (used by UI to determine meal time or categories)
+  tags?: string[];
 }
 
 export interface MealIngredientDetail {

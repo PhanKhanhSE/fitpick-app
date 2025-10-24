@@ -23,6 +23,7 @@ interface Review {
   date: string;
   rating: number;
   content: string;
+  avatar?: string; // optional avatar url (may come from API)
 }
 
 interface MealDetailTabsProps {

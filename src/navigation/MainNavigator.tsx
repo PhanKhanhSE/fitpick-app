@@ -18,6 +18,7 @@ import ProfileScreen from '../screens/profile/ProfileScreen';
 import ReviewsScreen from '../screens/detail/review/ReviewsScreen';
 import NotificationsScreen from '../screens/home/NotificationsScreen';
 import PersonalNutritionScreen from '../screens/profile/setting/PersonalNutritionScreen';
+import WeeklyMealPlanScreen from '../screens/home/WeeklyMealPlanScreen';
 import SettingScreen from '../screens/profile/setting/SettingScreen';
 import ForgotPasswordScreen from '../screens/profile/setting/ForgotPasswordScreen';
 import VerifyCodeScreen from '../screens/profile/setting/VerifyCodeScreen';
@@ -29,6 +30,7 @@ import TermsOfServiceScreen from '../screens/profile/setting/TermsOfServiceScree
 import PrivacyPolicyScreen from '../screens/profile/setting/PrivacyPolicyScreen';
 import EditProfileScreen from '../screens/profile/setting/EditProfileScreen';
 import FilterResultsScreen from '../screens/search/FilterResultsScreen';
+import ProPersonalizedScreen from '../screens/profile/ProPersonalizedScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -107,6 +109,11 @@ export const MainNavigator = () => {
                     options={{ headerShown: false }} 
                 />
                 <Stack.Screen
+                    name="WeeklyMealPlanScreen"
+                    component={WeeklyMealPlanScreen}
+                    options={{ headerShown: false }} 
+                />
+                <Stack.Screen
                     name="SettingScreen"
                     component={SettingScreen}
                     options={{ headerShown: false }} 
@@ -159,6 +166,11 @@ export const MainNavigator = () => {
                 <Stack.Screen
                     name="FilterResults"
                     component={FilterResultsScreen}
+                    options={{ headerShown: false }} 
+                />
+                <Stack.Screen
+                    name="ProPersonalized"
+                    component={ProPersonalizedScreen}
                     options={{ headerShown: false }} 
                 />
             </Stack.Navigator>

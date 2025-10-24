@@ -314,6 +314,14 @@ const ProfileScreen: React.FC = () => {
     navigation.navigate("PostDetailScreen", { post });
   };
 
+  const handleProPersonalizedPress = () => {
+    navigation.navigate("ProPersonalized");
+  };
+
+  const handleWeeklyMealPlanPress = () => {
+    navigation.navigate("WeeklyMealPlanScreen");
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
@@ -331,6 +339,34 @@ const ProfileScreen: React.FC = () => {
           avatar={userData.avatar}
           onAvatarPress={handleAvatarChange}
         />
+
+        {/* PRO Features Section */}
+        {userData.accountType === 'PRO' && (
+          <View style={styles.proFeaturesSection}>
+            <Text style={styles.proFeaturesTitle}>✨ Tính năng Premium</Text>
+            <View style={styles.proButtonsContainer}>
+              <TouchableOpacity 
+                style={styles.proFeatureButton} 
+                onPress={handleProPersonalizedPress}
+              >
+                <View style={styles.proFeatureIcon}>
+                  <Text style={styles.proFeatureEmoji}>🎯</Text>
+                </View>
+                <Text style={styles.proFeatureText}>Gợi ý cá nhân hóa</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={styles.proFeatureButton} 
+                onPress={handleWeeklyMealPlanPress}
+              >
+                <View style={styles.proFeatureIcon}>
+                  <Text style={styles.proFeatureEmoji}>📅</Text>
+                </View>
+                <Text style={styles.proFeatureText}>Thực đơn tuần</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
 
         <StickyTabsWithDate
           activeTab={activeTab}
@@ -424,6 +460,58 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: COLORS.muted,
     marginTop: SPACING.lg,
+  },
+
+  // PRO Features Section
+  proFeaturesSection: {
+    backgroundColor: '#FFF9E6',
+    marginHorizontal: SPACING.md,
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.md,
+    padding: SPACING.md,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#FFD700',
+  },
+  proFeaturesTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.text,
+    marginBottom: SPACING.sm,
+  },
+  proButtonsContainer: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+  },
+  proFeatureButton: {
+    flex: 1,
+    backgroundColor: '#FFF',
+    padding: SPACING.md,
+    borderRadius: 10,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  proFeatureIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#FFE0E0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.xs,
+  },
+  proFeatureEmoji: {
+    fontSize: 24,
+  },
+  proFeatureText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.text,
+    textAlign: 'center',
   },
 
   // Modal styles

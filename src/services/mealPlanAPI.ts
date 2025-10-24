@@ -57,12 +57,39 @@ export interface Mealplan {
   };
 }
 
-// Interface cho API response
-interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  message: string;
-  errors?: string[];
+// Interface cho WeeklyMealPlanDto
+export interface WeeklyMealPlanDto {
+  weekStartDate: string;
+  weekEndDate: string;
+  userId: number;
+  dailyPlans: WeeklyDailyMealPlanDto[];
+  totalCalories: number;
+  generatedAt: string;
+}
+
+// Interface cho DailyMealPlanDto
+export interface DailyMealPlanDto {
+  date: string;
+  dayName: string;
+  meals: TodayMealPlanDto[];
+}
+
+// Interface cho WeeklyDailyMealPlanDto (để tránh conflict với AiService)
+export interface WeeklyDailyMealPlanDto {
+  date: string;
+  dayName: string;
+  meals: TodayMealPlanDto[];
+}
+
+// Interface cho UserLimitationInfo
+export interface UserLimitationInfo {
+  isPremium: boolean;
+  canViewAllMeals: boolean;
+  canCreateUnlimitedMealPlans: boolean;
+  canViewWeeklyMealPlan: boolean;
+  remainingMealPlansToday: number;
+  maxMealPlansPerDay: number;
+  maxMealsToView: number;
 }
 
 export const mealPlanAPI = {
@@ -326,6 +353,94 @@ export const mealPlanAPI = {
       return { 
         success: false, 
         message: error.response?.data?.message || 'Lỗi khi lấy chi tiết món ăn' 
+      };
+    }
+  },
+
+  // Tạo thực đơn tuần (Premium only)
+  generateWeeklyMealPlan: async (weekStartDate: string): Promise<{ success: boolean; data?: WeeklyMealPlanDto; message?: string }> => {
+    try {
+      const response = await apiClient.post('/api/mealplans/generate-weekly', {
+        weekStartDate: weekStartDate
+      });
+      
+      if (response.data.success && response.data.data) {
+        return { 
+          success: true, 
+          data: response.data.data,
+          message: response.data.message 
+        };
+      }
+      
+      return { 
+        success: false, 
+        message: response.data.message || 'Không thể tạo thực đơn tuần' 
+      };
+    } catch (error: any) {
+      console.error('Error generating weekly meal plan:', error);
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Lỗi khi tạo thực đơn tuần' 
+      };
+    }
+  },
+
+  // Lấy thực đơn tuần hiện tại (Premium only)
+  getWeeklyMealPlan: async (): Promise<{ success: boolean; data?: WeeklyMealPlanDto; message?: string; notFound?: boolean }> => {
+    try {
+      const response = await apiClient.get('/api/mealplans/weekly');
+      
+      if (response.data.success && response.data.data) {
+        return { 
+          success: true, 
+          data: response.data.data,
+          message: response.data.message 
+        };
+      }
+      
+      return { 
+        success: false, 
+        message: response.data.message || 'Không thể lấy thực đơn tuần' 
+      };
+    } catch (error: any) {
+      console.error('Error fetching weekly meal plan:', error);
+      if (error.response?.status === 404) {
+        // Không có thực đơn tuần nào, không coi là lỗi UI. Cho phép hiển thị trạng thái trống và nút tạo mới.
+        return {
+          success: true,
+          notFound: true,
+          message: error.response?.data?.message || 'Chưa có thực đơn tuần nào'
+        };
+      }
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Lỗi khi lấy thực đơn tuần' 
+      };
+    }
+  },
+
+  // Lấy thông tin giới hạn của user
+  getUserLimitationInfo: async (): Promise<{ success: boolean; data?: UserLimitationInfo; message?: string }> => {
+    try {
+      const response = await apiClient.get('/api/mealplans/limitation-info');
+      
+      if (response.data.success && response.data.data) {
+        return { 
+          success: true, 
+          data: response.data.data,
+          message: response.data.message 
+        };
+      }
+      
+      return { 
+        success: false, 
+        message: response.data.message || 'Không thể lấy thông tin giới hạn' 
+      };
+    } catch (error: any) {
+      console.error('Error fetching user limitation info:', error);
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Lỗi khi lấy thông tin giới hạn' 
       };
     }
   }

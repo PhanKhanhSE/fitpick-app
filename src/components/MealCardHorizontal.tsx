@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADII } from '../utils/theme';
+import { useUser } from '../hooks/useUser';
 
 interface MealCardVerticalProps {
   id?: string;
@@ -40,6 +41,8 @@ const MealCardVertical: React.FC<MealCardVerticalProps> = ({
   width = 158,
   height = 175,
 }) => {
+  const { isProUser } = useUser();
+  const showLock = (isLocked ?? false) && !(isProUser && isProUser());
   return (
     <TouchableOpacity 
       style={[styles.container, { width, height }]} 
@@ -67,8 +70,8 @@ const MealCardVertical: React.FC<MealCardVerticalProps> = ({
           />
         </TouchableOpacity>
         
-        {/* Lock Icon */}
-        {isLocked && (
+        {/* Lock Icon (hidden for PRO users) */}
+        {showLock && (
           <View style={styles.lockContainer}>
             <Ionicons name="lock-closed" size={35} color={COLORS.primary} />
           </View>

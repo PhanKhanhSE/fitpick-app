@@ -3,8 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MealTypeService } from './mealTypeService';
 import { Alert } from 'react-native';
 
-// Base URL for API
-const API_BASE_URL = 'https://67342df5afbc.ngrok-free.app';
+// Base URL for API (ngrok)
+const API_BASE_URL = 'https://cecily-unantagonising-unadjustably.ngrok-free.dev';
 
 // Create axios instance
 const apiClient = axios.create({

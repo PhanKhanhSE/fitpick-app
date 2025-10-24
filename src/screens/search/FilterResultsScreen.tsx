@@ -16,6 +16,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MealData } from '../../services/searchAPI';
 import { filterAPI } from '../../services/filterAPI';
 import { useFavorites } from '../../hooks/useFavorites';
+import { useUser } from '../../hooks/useUser';
 import MealCardHorizontal from '../../components/MealCardHorizontal';
 
 interface AppliedFilters {
@@ -43,6 +44,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 const FilterResultsScreen: React.FC<FilterResultsScreenProps> = ({ route }) => {
   const navigation = useNavigation<NavigationProp>();
   const { appliedFilters } = route.params;
+  const { isProUser } = useUser();
   
   const [searchResults, setSearchResults] = useState<MealData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -162,7 +164,8 @@ const FilterResultsScreen: React.FC<FilterResultsScreenProps> = ({ route }) => {
       time: meal.cookingtime ? `${meal.cookingtime} phút` : '15 phút',
       image: { uri: meal.imageUrl || 'https://via.placeholder.com/150' },
       tag: convertCategoryToVietnamese(meal.categoryName || 'Món ăn'),
-      isLocked: meal.isPremium || false,
+      // Hide lock for PRO users
+      isLocked: (meal.isPremium || false) && !(isProUser && isProUser()),
       isFavorite: meal.mealid ? isFavorite(meal.mealid) : false,
       description: meal.description || '',
       price: meal.price || 0,

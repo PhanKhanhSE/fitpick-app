@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Alert, ActivityIndicator } from 'react-native';
 import { COLORS, SPACING, RADII } from '../../../utils/theme';
 import MealCardVertical from '../../MealCardHorizontal';
+import { Ionicons } from '@expo/vector-icons';
+import { mealPlanAPI } from '../../../services/mealPlanAPI';
 
 const { width } = Dimensions.get('window');
 
 interface MealData {
   id: string;
+  // A stable unique key for React lists; can differ from id to avoid duplicates
+  uniqueKey?: string;
   title: string;
   calories: string;
   time: string;
@@ -21,6 +25,8 @@ interface MyMenuSectionProps {
   onSeeMore?: () => void;
   isFavorite?: (mealId: number) => boolean;
   onFavoritePress?: (mealId: number) => void;
+  onAutoSuggest?: () => void;
+  navigation?: any;
 }
 
 const MyMenuSection: React.FC<MyMenuSectionProps> = ({ 
@@ -28,15 +34,87 @@ const MyMenuSection: React.FC<MyMenuSectionProps> = ({
   onMealPress, 
   onSeeMore, 
   isFavorite, 
-  onFavoritePress 
+  onFavoritePress,
+  onAutoSuggest,
+  navigation
 }) => {
+  const [isAutoSuggesting, setIsAutoSuggesting] = useState(false);
+
+  const handleAutoSuggest = async () => {
+    if (onAutoSuggest) {
+      await onAutoSuggest();
+      return;
+    }
+
+    // Default implementation: generate meal plan for today
+    try {
+      setIsAutoSuggesting(true);
+      const today = new Date();
+      const response = await mealPlanAPI.generateMealPlan(today);
+      
+      if (response.success) {
+        Alert.alert(
+          'Thành công',
+          'Đã tự động chọn món phù hợp với profile của bạn!',
+          [
+            {
+              text: 'Xem thực đơn',
+              onPress: () => {
+                // Navigate to Menu tab to see the generated meal plan
+                if (navigation) {
+                  (navigation as any).jumpTo('Menu');
+                }
+              }
+            },
+            {
+              text: 'OK',
+              style: 'cancel'
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Lỗi', response.message || 'Không thể tự động chọn món');
+      }
+    } catch (error) {
+      console.error('Error auto-suggesting meals:', error);
+      Alert.alert('Lỗi', 'Không thể tự động chọn món. Vui lòng thử lại.');
+    } finally {
+      setIsAutoSuggesting(false);
+    }
+  };
+
+  const handleNavigateToMenu = () => {
+    if (navigation) {
+      (navigation as any).jumpTo('Menu');
+    } else if (onSeeMore) {
+      onSeeMore();
+    }
+  };
 
   return (
     <View style={styles.myMenuSection}>
       <View style={[styles.sectionHeader, styles.myMenuSectionHeader]}>
         <Text style={[styles.sectionTitle, styles.myMenuTitle]}>Thực đơn của tôi</Text>
-        <TouchableOpacity onPress={onSeeMore}>
+        <TouchableOpacity onPress={handleNavigateToMenu}>
           <Text style={[styles.seeMore, styles.myMenuSeeMore]}>xem thêm</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Auto Suggest Button */}
+      <View style={styles.autoSuggestContainer}>
+        <TouchableOpacity 
+          style={styles.autoSuggestButton}
+          onPress={handleAutoSuggest}
+          disabled={isAutoSuggesting}
+        >
+          {isAutoSuggesting ? (
+            <ActivityIndicator size="small" color="#FFF" />
+          ) : (
+            <Ionicons name="sparkles" size={20} color="#FFF" />
+          )}
+          <Text style={styles.autoSuggestText}>
+            {isAutoSuggesting ? 'Đang chọn món...' : 'Tự động chọn món cho tôi'}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -47,7 +125,7 @@ const MyMenuSection: React.FC<MyMenuSectionProps> = ({
         contentContainerStyle={styles.mealScrollContent}
       >
         {mealData.map((meal) => (
-          <View key={meal.id} style={styles.mealCardWrapper}>
+          <View key={meal.uniqueKey || meal.id} style={styles.mealCardWrapper}>
             <MealCardVertical
               id={meal.id}
               title={meal.title}
@@ -115,6 +193,27 @@ const styles = StyleSheet.create({
   myMenuSectionHeader: {
     marginTop: 0,
     marginBottom: SPACING.md,
+  },
+  autoSuggestContainer: {
+    paddingHorizontal: SPACING.md,
+    marginBottom: SPACING.md,
+  },
+  autoSuggestButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: RADII.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+  },
+  autoSuggestText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: SPACING.sm,
   },
 });
 

@@ -69,7 +69,10 @@ const MenuScreen: React.FC = () => {
 
   // Convert TodayMealPlanDto to MealData format for UI
   const convertToMealData = (mealPlan: TodayMealPlanDto) => ({
+    // Keep id as mealId for selection and actions
     id: mealPlan.meal.mealid.toString(),
+    // Provide a stable unique key to prevent duplicate key warnings when the same meal appears multiple times
+    uniqueKey: `${mealPlan.date}-${mealPlan.mealTime}-${mealPlan.planId ?? 'local'}-${mealPlan.meal.mealid}`,
     title: mealPlan.meal.name,
     calories: `${mealPlan.meal.calories || 0} kcal`,
     time: `${mealPlan.meal.cookingtime || 0} phút`,
@@ -314,14 +317,22 @@ const MenuScreen: React.FC = () => {
 
   const handleShowDailyView = () => {
     setShowMenuActionModal(false);
-    setSuccessMessage('Chuyển sang hiển thị theo ngày');
+    // Already on daily view (MenuScreen shows daily meal plan)
+    setSuccessMessage('Đang hiển thị theo ngày');
     setShowSuccessModal(true);
   };
 
   const handleShowWeeklyView = () => {
     setShowMenuActionModal(false);
-    setSuccessMessage('Tính năng PRO - vui lòng nâng cấp');
-    setShowSuccessModal(true);
+    
+    // Check if user is PRO
+    if (isProUser && !isProUser()) {
+      setShowProUpgradeModal(true);
+      return;
+    }
+    
+    // Navigate to weekly meal plan screen
+    navigation.navigate('WeeklyMealPlanScreen' as any);
   };
 
   const handleAddAllToShoppingList = async () => {
@@ -396,7 +407,10 @@ const MenuScreen: React.FC = () => {
     selectedDate.setHours(0, 0, 0, 0);
     
     if (selectedDate > today && !canPlanFutureMeals()) {
-      setShowProUpgradeModal(true);
+      // Only show upgrade modal for non-Pro users
+      if (!(isProUser && isProUser())) {
+        setShowProUpgradeModal(true);
+      }
       return;
     }
     
@@ -430,7 +444,10 @@ const MenuScreen: React.FC = () => {
         tomorrow.setDate(today.getDate() + 1);
         
         if (newDate.getTime() >= tomorrow.getTime()) {
-          setShowProUpgradeModal(true);
+          // Only show upgrade modal for non-Pro users
+          if (!(isProUser && isProUser())) {
+            setShowProUpgradeModal(true);
+          }
           return;
         }
       }
@@ -535,6 +552,17 @@ const MenuScreen: React.FC = () => {
       {/* Content */}
       {!loading && (
         <ScrollView showsVerticalScrollIndicator={false} style={styles.content}>
+          {/* Empty state when no meals */}
+          {buasangMeals.length === 0 && buatruaMeals.length === 0 && buatoiMeals.length === 0 && (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="restaurant-outline" size={48} color={COLORS.textDim} />
+              <Text style={styles.emptyTitle}>Chưa có thực đơn cho ngày này</Text>
+              <Text style={styles.emptyDesc}>Hãy để chúng tôi tự động chọn món phù hợp cho bạn.</Text>
+              <TouchableOpacity style={styles.primaryButton} onPress={handleGenerateMealPlan}>
+                <Text style={styles.primaryButtonText}>Tạo thực đơn tự động</Text>
+              </TouchableOpacity>
+            </View>
+          )}
           <MealSection
             title="Bữa sáng"
             totalCalories={`${getTotalCalories(breakfast)} kcal`}
@@ -632,7 +660,7 @@ const MenuScreen: React.FC = () => {
       />
       
       <ProUpgradeModal
-        visible={showProUpgradeModal}
+        visible={showProUpgradeModal && !(isProUser && isProUser())}
         onClose={handleCloseModal}
         onUpgrade={handleUpgradeToPro}
       />
@@ -775,6 +803,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: COLORS.textDim,
     fontWeight: '500',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: SPACING.xl,
+    gap: SPACING.sm,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  emptyDesc: {
+    fontSize: 13,
+    color: COLORS.textDim,
+    marginBottom: SPACING.md,
   },
 });
 

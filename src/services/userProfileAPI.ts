@@ -8,7 +8,8 @@ export const userProfileAPI = {
   // Get user profile information
   getUserProfile: async () => {
     try {
-      const response = await apiClient.get('/api/user/profile');
+      // Backend route: GET /api/users/me
+      const response = await apiClient.get('/api/users/me');
       return response.data;
     } catch (error: any) {
       console.error('Error fetching user profile:', error);
@@ -16,11 +17,13 @@ export const userProfileAPI = {
     }
   },
 
+  
+
   // Get user nutrition statistics for a specific date
   getNutritionStats: async (date?: string) => {
     try {
       const params = date ? { date } : {};
-      const response = await apiClient.get('/api/user/nutrition-stats', { params });
+      const response = await apiClient.get('/api/healthprofiles/user/nutrition-stats', { params });
       return response.data;
     } catch (error: any) {
       console.error('Error fetching nutrition stats:', error);
@@ -84,7 +87,8 @@ export const userProfileAPI = {
   getDetailedNutritionStats: async (date?: string) => {
     try {
       const params = date ? { date } : {};
-      const response = await apiClient.get('/api/user/detailed-nutrition-stats', { params });
+      // Currently we reuse the nutrition-stats endpoint (macros + calories)
+      const response = await apiClient.get('/api/healthprofiles/user/nutrition-stats', { params });
       return response.data;
     } catch (error: any) {
       console.error('Error fetching detailed nutrition stats:', error);
@@ -108,7 +112,8 @@ export const userProfileAPI = {
   // Get user's nutrition goals
   getNutritionGoals: async () => {
     try {
-      const response = await apiClient.get('/api/user/nutrition-goals');
+      // Backend route: GET /api/healthprofiles/user/goal
+      const response = await apiClient.get('/api/healthprofiles/user/goal');
       return response.data;
     } catch (error: any) {
       console.error('Error fetching nutrition goals:', error);
@@ -194,10 +199,11 @@ export const userProfileAPI = {
     }
   },
 
-  // Get user profile from /api/user/profile endpoint (includes goals, diet plan, etc.)
+  // Get current user profile (includes goals, diet plan if available)
   getCurrentUserProfile: async () => {
     try {
-      const response = await apiClient.get('/api/user/profile');
+      // Backend route: GET /api/users/me
+      const response = await apiClient.get('/api/users/me');
       return response.data;
     } catch (error: any) {
       console.error('Error fetching current user profile:', error);
@@ -319,7 +325,7 @@ export const userProfileAPI = {
       console.log('🔍 FormData created, sending request with fetch...');
       
       // Use fetch instead of axios
-      const response = await fetch('https://67342df5afbc.ngrok-free.app/api/users/me/avatar-simple', {
+      const response = await fetch('https://cecily-unantagonising-unadjustably.ngrok-free.dev/api/users/me/avatar-simple', {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

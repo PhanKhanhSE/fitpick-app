@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,8 +15,10 @@ import NutritionStats from '../../components/home/NutritionStats';
 import MyMenuSection from '../../components/home/personal/MyMenuSection';
 import SuggestedSection from '../../components/home/personal/SuggestedSection';
 import PremiumModal from '../../components/home/PremiumModal';
+import LimitationInfo from '../../components/common/LimitationInfo';
 import CommunityScreen from './community/CommunityScreen';
-import { useNavigation } from '@react-navigation/native';
+import { useUser } from '../../hooks/useUser';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/navigation';
 import { userProfileAPI } from '../../services/userProfileAPI';
@@ -31,13 +34,14 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 const HomeScreen: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState('personal'); // 'personal' or 'community'
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const { isProUser } = useUser();
   const navigation = useNavigation<NavigationProp>();
   
   // Use favorites hook for global state management
   const { isFavorite, toggleFavorite } = useFavorites();
   
   // Use meal plans hook for today's meals
-  const { todayMealPlans, loadTodayMealPlan } = useMealPlans();
+  const { todayMealPlans, loadTodayMealPlan, limitationInfo } = useMealPlans();
 
   // Use notifications hook for unread count
   const { unreadCount } = useNotifications();
@@ -51,8 +55,9 @@ const HomeScreen: React.FC = () => {
     fat: { current: 0, target: 0 },
   });
 
-  const [suggestedMeals, setSuggestedMeals] = useState([]);
+  const [suggestedMeals, setSuggestedMeals] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Load dữ liệu từ API
   useEffect(() => {
@@ -61,6 +66,25 @@ const HomeScreen: React.FC = () => {
       // Load today's meal plan
       loadTodayMealPlan();
     }
+  }, [selectedTab]);
+
+  // Reload data when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      if (selectedTab === 'personal') {
+        loadPersonalData();
+        loadTodayMealPlan();
+      }
+    }, [selectedTab])
+  );
+
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    if (selectedTab === 'personal') {
+      await loadPersonalData();
+      await loadTodayMealPlan();
+    }
+    setRefreshing(false);
   }, [selectedTab]);
 
   const loadSuggestedMeals = async () => {
@@ -165,14 +189,20 @@ const HomeScreen: React.FC = () => {
 
   const handleMealPress = (meal: any) => {
     if (meal.isLocked) {
-      setShowPremiumModal(true);
+      if (isProUser && isProUser()) {
+        navigation.navigate('MealDetail', { meal });
+      } else {
+        setShowPremiumModal(true);
+      }
     } else {
       navigation.navigate('MealDetail', { meal });
     }
   };
 
   const handlePremiumPress = () => {
-    setShowPremiumModal(true);
+    if (!(isProUser && isProUser())) {
+      setShowPremiumModal(true);
+    }
   };
 
   const handleClosePremiumModal = () => {
@@ -211,6 +241,14 @@ const HomeScreen: React.FC = () => {
     navigation.navigate('PersonalNutritionScreen');
   };
 
+  const handleWeeklyMealPlanPress = () => {
+    navigation.navigate('WeeklyMealPlanScreen');
+  };
+
+  const handleProPersonalizedPress = () => {
+    navigation.navigate('ProPersonalized');
+  };
+
   // Convert todayMealPlans to MyMenuSection format
   const convertMealPlansToMenuData = () => {
     if (!todayMealPlans || todayMealPlans.length === 0) {
@@ -218,13 +256,17 @@ const HomeScreen: React.FC = () => {
     }
 
     return todayMealPlans.map((mealPlan) => ({
+      // Keep id as the meal id for favorite toggles/links
       id: mealPlan.meal.mealid.toString(),
+      // Use a composite unique key to avoid duplicate keys when same meal repeats across meal times
+      uniqueKey: `${mealPlan.date}-${mealPlan.mealTime}-${mealPlan.planId}-${mealPlan.meal.mealid}`,
       title: mealPlan.meal.name,
       calories: `${mealPlan.meal.calories} kcal`,
       time: `${mealPlan.meal.cookingtime} phút`,
       image: { uri: mealPlan.meal.imageUrl || 'https://via.placeholder.com/200x150' },
       tag: mealPlan.meal.categoryName || 'Thực đơn',
-      isLocked: mealPlan.meal.isPremium || false,
+      // Hide lock for PRO users
+      isLocked: (mealPlan.meal.isPremium || false) && !(isProUser && isProUser()),
     }));
   };
 
@@ -274,6 +316,14 @@ const HomeScreen: React.FC = () => {
           <ScrollView 
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ flexGrow: 1 }}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={[COLORS.primary]}
+                tintColor={COLORS.primary}
+              />
+            }
           >
             {/* Nutrition Stats */}
             <NutritionStats
@@ -285,6 +335,17 @@ const HomeScreen: React.FC = () => {
               onPress={handlePersonalNutritionPress}
             />
             
+            {/* Limitation Info */}
+            <LimitationInfo 
+              limitationInfo={limitationInfo}
+              onUpgradePress={() => {
+                // Only show upgrade modal for non-PRO users
+                if (!(isProUser && isProUser())) {
+                  setShowPremiumModal(true);
+                }
+              }}
+            />
+            
             {/* My Menu Section */}
             <MyMenuSection 
               mealData={convertMealPlansToMenuData()}
@@ -292,14 +353,35 @@ const HomeScreen: React.FC = () => {
               onSeeMore={handleSeeMoreMenu}
               isFavorite={isFavorite}
               onFavoritePress={toggleFavorite}
+              navigation={navigation}
             />
 
             {/* Premium Upgrade */}
             <View style={styles.premiumSection}>
               <Text style={styles.premiumText}>Có ngày thực đơn mới, gợi ý riêng cho bạn mỗi tuần.</Text>
-              <TouchableOpacity style={styles.premiumButton} onPress={handlePremiumPress}>
-                <Text style={styles.premiumButtonText}>Nâng cấp lên Premium</Text>
-              </TouchableOpacity>
+              <View style={styles.premiumButtons}>
+                {/* Only show upgrade button for non-PRO users */}
+                {!(isProUser && isProUser()) && (
+                  <TouchableOpacity style={styles.premiumButton} onPress={handlePremiumPress}>
+                    <Text style={styles.premiumButtonText}>Nâng cấp lên Premium</Text>
+                  </TouchableOpacity>
+                )}
+
+                {/* PRO user features */}
+                {limitationInfo?.isPremium && (
+                  <>
+                    <TouchableOpacity style={styles.weeklyButton} onPress={handleWeeklyMealPlanPress}>
+                      <Ionicons name="calendar" size={16} color="#FFF" />
+                      <Text style={styles.weeklyButtonText}>Thực đơn tuần</Text>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity style={styles.personalizedButton} onPress={handleProPersonalizedPress}>
+                      <Ionicons name="sparkles" size={16} color="#FFF" />
+                      <Text style={styles.personalizedButtonText}>Gợi ý cá nhân hóa</Text>
+                    </TouchableOpacity>
+                  </>
+                )}
+              </View>
             </View>
 
             {/* Suggested Dishes Section */}
@@ -321,7 +403,7 @@ const HomeScreen: React.FC = () => {
 
       {/* Premium Modal */}
       <PremiumModal
-        visible={showPremiumModal}
+        visible={showPremiumModal && !(isProUser && isProUser())}
         onClose={handleClosePremiumModal}
         onUpgrade={handleUpgrade}
       />
@@ -395,6 +477,10 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xs,
     lineHeight: 25,
   },
+  premiumButtons: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+  },
   premiumButton: {
     backgroundColor: COLORS.primary,
     borderRadius: RADII.umd,
@@ -404,6 +490,33 @@ const styles = StyleSheet.create({
   premiumButtonText: {
     color: 'white',
     fontSize: 14,
+  },
+  weeklyButton: {
+    backgroundColor: '#4CAF50',
+    borderRadius: RADII.umd,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.umd,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  weeklyButtonText: {
+    color: 'white',
+    fontSize: 14,
+    marginLeft: SPACING.xs,
+  },
+  personalizedButton: {
+    backgroundColor: '#FF9800',
+    borderRadius: RADII.umd,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.umd,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: SPACING.sm,
+  },
+  personalizedButtonText: {
+    color: 'white',
+    fontSize: 14,
+    marginLeft: SPACING.xs,
   },
   communityContainer: {
     flex: 1,

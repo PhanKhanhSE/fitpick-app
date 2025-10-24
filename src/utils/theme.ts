@@ -10,6 +10,12 @@ export const COLORS = {
     process: '#4CAF50',
     under_process: '#CCD6DD',
     white: '#FFFFFF',
+    // Additional semantic colors used across the app
+    success: '#4CAF50',
+    error: '#F44336',
+    gray: '#6E6E6E',
+    lightGray: '#F0F0F0',
+    textLight: '#FAFAFA',
 };
 
 export const SPACING = {
@@ -30,6 +36,7 @@ export const RADII = {
     md: 24,
     xl: 40,
     xxl: 48,
+    full: 9999,
 };
 
 export const FONTS = {

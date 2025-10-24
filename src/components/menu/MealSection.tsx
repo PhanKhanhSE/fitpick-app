@@ -9,6 +9,7 @@ interface MealData {
   calories: string;
   time: string;
   image: { uri: string };
+  uniqueKey?: string; // stable unique key for React lists
 }
 
 interface MealSectionProps {
@@ -43,7 +44,7 @@ const MealSection: React.FC<MealSectionProps> = ({
         <View style={styles.mealsList}>
           {meals.map((meal) => (
             <MealItem
-              key={meal.id}
+              key={meal.uniqueKey ?? meal.id}
               id={meal.id}
               title={meal.title}
               calories={meal.calories}

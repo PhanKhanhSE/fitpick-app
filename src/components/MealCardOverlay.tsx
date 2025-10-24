@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADII } from '../utils/theme';
+import { useUser } from '../hooks/useUser';
 
 interface MealCardOverlayProps {
   id?: string;
@@ -44,11 +45,13 @@ const MealCardOverlay: React.FC<MealCardOverlayProps> = ({
   height = 220,
   layout = 'vertical',
 }) => {
+  const { isProUser } = useUser();
   // Set default dimensions based on layout
   const defaultWidth = layout === 'horizontal' ? 240 : 180;
   const defaultHeight = layout === 'horizontal' ? 160 : 220;
   const cardWidth = width || defaultWidth;
   const cardHeight = height || defaultHeight;
+  const showLock = (isLocked ?? false) && !(isProUser && isProUser());
   return (
     <TouchableOpacity 
       style={[
@@ -104,8 +107,8 @@ const MealCardOverlay: React.FC<MealCardOverlayProps> = ({
         </Text>
       </View>
       
-      {/* Lock Icon */}
-      {isLocked && (
+      {/* Lock Icon (hidden for PRO users) */}
+      {showLock && (
         <View style={styles.lockContainer}>
           <Ionicons name="lock-closed" size={35} color="white" />
         </View>

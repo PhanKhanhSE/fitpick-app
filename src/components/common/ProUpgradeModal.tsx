@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADII } from '../../utils/theme';
+import { useUser } from '../../hooks/useUser';
 
 interface ProUpgradeModalProps {
   visible: boolean;
@@ -18,9 +19,12 @@ const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
   title = 'Tính năng Pro',
   message = 'Chỉ tài khoản Pro mới có thể sử dụng tính năng này. Nâng cấp ngay để trải nghiệm đầy đủ!'
 }) => {
+  const { isProUser } = useUser();
+  // Derive visibility: never show for PRO users
+  const computedVisible = visible && !(isProUser && isProUser());
   return (
     <Modal
-      visible={visible}
+      visible={computedVisible}
       transparent
       animationType="fade"
       onRequestClose={onClose}

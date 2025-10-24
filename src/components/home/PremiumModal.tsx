@@ -11,6 +11,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS, SPACING, RADII } from "../../utils/theme";
+import { useUser } from '../../hooks/useUser';
 
 const { height } = Dimensions.get("window");
 const freeFeaturesIndex = [0, 1];
@@ -26,11 +27,14 @@ const PremiumModal: React.FC<PremiumModalProps> = ({
   onClose,
   onUpgrade,
 }) => {
+  const { isProUser } = useUser();
   const insets = useSafeAreaInsets();
   const slideAnim = React.useRef(new Animated.Value(height)).current;
+  // Derive final visibility: never show for PRO users
+  const computedVisible = visible && !(isProUser && isProUser());
 
   React.useEffect(() => {
-    if (visible) {
+    if (computedVisible) {
       Animated.spring(slideAnim, {
         toValue: 0,
         useNativeDriver: true,
@@ -45,7 +49,7 @@ const PremiumModal: React.FC<PremiumModalProps> = ({
         friction: 10,
       }).start();
     }
-  }, [visible, slideAnim]);
+  }, [computedVisible, slideAnim]);
 
   const features = [
     "Gợi ý theo nguyên liệu có sẵn",
@@ -58,7 +62,7 @@ const PremiumModal: React.FC<PremiumModalProps> = ({
 
   return (
     <Modal
-      visible={visible}
+      visible={computedVisible}
       transparent
       animationType="none"
       onRequestClose={onClose}

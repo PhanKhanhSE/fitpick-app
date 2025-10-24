@@ -47,6 +47,7 @@ export type RootStackParamList = {
     ProfileScreen: undefined;
     NotificationsScreen: undefined;
     PersonalNutritionScreen: undefined;
+    WeeklyMealPlanScreen: undefined;
     SettingScreen: undefined;
     ForgotPasswordScreen: undefined;
     VerifyCodeScreen: { email: string };
@@ -60,6 +61,9 @@ export type RootStackParamList = {
     TermsOfService: undefined;
     PrivacyPolicy: undefined;
     EditProfile: undefined;
+    
+    // PRO features
+    ProPersonalized: undefined;
     
     // Search screens
     FilterResults: {

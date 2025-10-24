@@ -21,6 +21,7 @@ import { searchAPI, SearchFilters, MealData } from '../../services/searchAPI';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { convertCategoryToVietnamese } from '../../utils/categoryMapping';
 import { useFavorites } from '../../hooks/useFavorites';
+import { useUser } from '../../hooks/useUser';
 import { filterAPI } from '../../services/filterAPI';
 import { userProfileAPI } from '../../services/userProfileAPI';
 import { checkAuthStatus } from '../../services/api';
@@ -42,6 +43,8 @@ const SearchScreen: React.FC = () => {
   
   // Favorites hook
   const { favorites, toggleFavorite, isFavorite } = useFavorites();
+  // User hook
+  const { isProUser } = useUser();
   
   // Search states
   const [isSearchActive, setIsSearchActive] = useState(false);
@@ -176,7 +179,8 @@ const SearchScreen: React.FC = () => {
       time: meal.cookingtime ? `${meal.cookingtime} phút` : '15 phút',
       image: { uri: meal.imageUrl || 'https://via.placeholder.com/150' },
       tag: convertCategoryToVietnamese(meal.categoryName || 'Món ăn'),
-      isLocked: meal.isPremium || false,
+      // Hide lock for PRO users
+      isLocked: (meal.isPremium || false) && !(isProUser && isProUser()),
       isFavorite: meal.mealid ? isFavorite(meal.mealid) : false,
       description: meal.description || '',
       price: meal.price || 0,
@@ -346,7 +350,12 @@ const SearchScreen: React.FC = () => {
 
   const handleMealPress = (meal: any) => {
     if (meal.isLocked) {
-      setShowPremiumModal(true);
+      // If user is premium, allow access; otherwise show upgrade modal
+      if (isProUser && isProUser()) {
+        navigation.navigate('MealDetail', { meal });
+      } else {
+        setShowPremiumModal(true);
+      }
     } else {
       navigation.navigate('MealDetail', { meal });
     }
@@ -538,7 +547,7 @@ const SearchScreen: React.FC = () => {
 
       {/* Premium Modal */}
       <PremiumModal
-        visible={showPremiumModal}
+        visible={showPremiumModal && !(isProUser && isProUser())}
         onClose={handleClosePremiumModal}
         onUpgrade={handleUpgrade}
       />

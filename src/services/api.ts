@@ -3,8 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MealTypeService } from './mealTypeService';
 import apiClient from './apiClient';
 
-// Base URL for API
-const API_BASE_URL = 'https://67342df5afbc.ngrok-free.app';
+// Base URL for API (ngrok)
+const API_BASE_URL = 'https://cecily-unantagonising-unadjustably.ngrok-free.dev';
 
 // Auth API functions
 export const authAPI = {

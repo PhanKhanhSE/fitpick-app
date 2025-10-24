@@ -15,6 +15,7 @@ import { useFavorites } from '../../hooks/useFavorites';
 import { useIngredients } from '../../hooks/useIngredients';
 import { useMealPlans } from '../../hooks/useMealPlans';
 import { useMealHistory } from '../../hooks/useMealHistory';
+import { useUser } from '../../hooks/useUser';
 import { getMealTimeFromTag, getMealTimeDisplayName } from '../../utils/mealTimeUtils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
@@ -25,6 +26,7 @@ import {
   MealDetailTabs,
   MealDetailActions,
 } from '../../components/details';
+import DatePickerModal from '../../components/common/DatePickerModal';
 import { searchAPI, MealDetailData } from '../../services/searchAPI';
 import { mealReviewAPI, MealReview } from '../../services/mealReviewAPI';
 
@@ -57,7 +59,8 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
   const { isFavorite: isMealFavorite, toggleFavorite } = useFavorites();
   const { addMealToProducts, getMealQuantity, saveMealQuantity } = useIngredients();
   const { addMealToMenu, isMealInPlan } = useMealPlans();
-  const { isMealEatenToday, markMealAsEaten, loading: mealHistoryLoading } = useMealHistory();
+  const { isMealEatenToday, markMealAsEaten, unmarkMealAsEaten, loading: mealHistoryLoading } = useMealHistory();
+  const { isProUser } = useUser();
   
   const [activeTab, setActiveTab] = useState<'Ingredients' | 'Instructions' | 'Nutrition' | 'Reviews'>('Ingredients');
   const [scrollY] = useState(new Animated.Value(0));
@@ -72,6 +75,7 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
     averageRating: 0,
     totalReviews: 0
   });
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Kiểm tra xem meal có trong product list không
   const checkIfInProductList = async (mealId: number) => {
@@ -297,7 +301,23 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
     const mealId = parseInt(meal.id);
     await toggleFavorite(mealId);
   };
+  
   const handleAddToPlan = async () => {
+    if (!mealDetail) {
+      Alert.alert('Lỗi', 'Không thể lấy thông tin món ăn');
+      return;
+    }
+
+    // Check if user is PRO and show date picker
+    if (isProUser && isProUser()) {
+      setShowDatePicker(true);
+    } else {
+      // FREE user: add to today only
+      await addMealToPlanForDate(new Date());
+    }
+  };
+
+  const addMealToPlanForDate = async (selectedDate: Date) => {
     if (!mealDetail) {
       Alert.alert('Lỗi', 'Không thể lấy thông tin món ăn');
       return;
@@ -311,11 +331,16 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
       );
       
       const mealTimeDisplay = getMealTimeDisplayName(mealTime);
+      const dateDisplay = selectedDate.toLocaleDateString('vi-VN', { 
+        weekday: 'long', 
+        day: 'numeric', 
+        month: 'numeric' 
+      });
       
       // Hiển thị confirmation dialog
       Alert.alert(
         'Thêm vào thực đơn',
-        `Món ăn "${meal.title}" sẽ được thêm vào ${mealTimeDisplay}. Bạn có muốn tiếp tục?`,
+        `Món ăn "${meal.title}" sẽ được thêm vào ${mealTimeDisplay} ngày ${dateDisplay}. Bạn có muốn tiếp tục?`,
         [
           {
             text: 'Hủy',
@@ -325,14 +350,13 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
             text: 'Thêm',
             onPress: async () => {
               const mealId = parseInt(meal.id);
-              const today = new Date();
               
-              const success = await addMealToMenu(mealId, today, mealTime);
+              const success = await addMealToMenu(mealId, selectedDate, mealTime);
               
               if (success) {
                 Alert.alert(
                   'Thành công', 
-                  `Đã thêm "${meal.title}" vào ${mealTimeDisplay}`,
+                  `Đã thêm "${meal.title}" vào ${mealTimeDisplay} ngày ${dateDisplay}`,
                   [
                     {
                       text: 'Xem thực đơn',
@@ -517,6 +541,14 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
         isInProductList={isInProductList}
         isInMealPlan={isMealInPlan(parseInt(meal.id))}
         isEaten={isMealEatenToday(parseInt(meal.id))}
+      />
+
+      {/* Date Picker Modal for PRO users */}
+      <DatePickerModal
+        visible={showDatePicker}
+        onClose={() => setShowDatePicker(false)}
+        onSelectDate={addMealToPlanForDate}
+        title="Chọn ngày thêm vào thực đơn"
       />
     </SafeAreaView>
   );

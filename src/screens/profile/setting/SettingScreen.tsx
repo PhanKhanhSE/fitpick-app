@@ -19,6 +19,7 @@ import { authAPI } from "../../../services/api";
 import { notificationAPI } from "../../../services/notificationAPI";
 import { notificationSettingsAPI } from "../../../services/notificationSettingsAPI";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useUser } from '../../../hooks/useUser';
 
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../types/navigation';
@@ -31,6 +32,7 @@ const SettingsScreen: React.FC = () => {
   const [userEmail, setUserEmail] = useState<string>('');
   const [accountType, setAccountType] = useState<string>('FREE');
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const { isProUser } = useUser();
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -333,13 +335,16 @@ const SettingsScreen: React.FC = () => {
           </View>
         </View>
 
-        <TouchableOpacity 
-          style={styles.item}
-          onPress={() => setShowPremiumModal(true)}
-        >
-          <Text style={styles.itemNormal}>Nâng cấp lên PRO</Text>
-          <Ionicons name="chevron-forward" size={18} color={COLORS.text} style={styles.forwardButton} />
-        </TouchableOpacity>
+        {/* Hide upgrade menu item for PRO users */}
+        {!(isProUser && isProUser()) && (
+          <TouchableOpacity 
+            style={styles.item}
+            onPress={() => setShowPremiumModal(true)}
+          >
+            <Text style={styles.itemNormal}>Nâng cấp lên PRO</Text>
+            <Ionicons name="chevron-forward" size={18} color={COLORS.text} style={styles.forwardButton} />
+          </TouchableOpacity>
+        )}
 
         <TouchableOpacity style={styles.item}>
           <Text style={styles.itemNormal}>Email</Text>
@@ -438,7 +443,7 @@ const SettingsScreen: React.FC = () => {
 
       {/* Premium Modal */}
       <PremiumModal
-        visible={showPremiumModal}
+        visible={showPremiumModal && !(isProUser && isProUser())}
         onClose={() => setShowPremiumModal(false)}
         onUpgrade={handleUpgradeToPro}
       />
