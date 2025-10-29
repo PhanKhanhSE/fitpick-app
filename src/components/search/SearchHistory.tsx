@@ -26,7 +26,7 @@ const SearchHistory: React.FC<SearchHistoryProps> = ({
         <View style={styles.historySection}>
           {searchHistory.map((item, index) => (
             <TouchableOpacity
-              key={index}
+              key={`history-${item}-${index}`}
               style={styles.historyItem}
               onPress={() => onHistoryPress(item)}
             >

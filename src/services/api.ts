@@ -4,7 +4,7 @@ import { MealTypeService } from './mealTypeService';
 import apiClient from './apiClient';
 
 // Base URL for API
-const API_BASE_URL = 'https://ecc8daba9d35.ngrok-free.app';
+const API_BASE_URL = 'https://fondlingly-unheaped-amos.ngrok-free.dev';
 
 // Auth API functions
 export const authAPI = {
@@ -26,20 +26,35 @@ export const authAPI = {
   // Login user
   login: async (email: string, password: string) => {
     try {
+      console.log('🔐 Debug - API login called with:', { email, password: '***' });
+      console.log('🌐 Debug - Full URL:', `${API_BASE_URL}/api/auth/login`);
+      
       const response = await apiClient.post('/api/auth/login', {
         email,
         password,
       });
       
+      console.log('🔐 Debug - Raw API response:', response.data);
       const { token, refreshToken, user } = response.data.data;
+      
+      console.log('🔐 Debug - Extracted tokens:', { 
+        hasToken: !!token, 
+        hasRefreshToken: !!refreshToken, 
+        hasUser: !!user 
+      });
       
       // Store tokens
       await AsyncStorage.setItem('accessToken', token);
       await AsyncStorage.setItem('refreshToken', refreshToken);
       await AsyncStorage.setItem('user', JSON.stringify(user));
       
+      console.log('✅ Debug - Tokens stored successfully');
       return response.data;
     } catch (error: any) {
+      console.log('❌ Debug - API login error:', error);
+      console.log('❌ Debug - Error status:', error.response?.status);
+      console.log('❌ Debug - Error data:', error.response?.data);
+      console.log('❌ Debug - Error message:', error.message);
       throw error;
     }
   },

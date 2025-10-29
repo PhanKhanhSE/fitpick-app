@@ -116,10 +116,10 @@ const SearchScreen: React.FC = () => {
         ...getFilterParams()
       });
 
-      console.log('🔍 Debug - Popular Response:', popularResponse);
+      // console.log('🔍 Debug - Popular Response:', popularResponse);
 
       if (popularResponse.success) {
-        console.log('🔍 Debug - Popular Data:', popularResponse.data);
+        // console.log('🔍 Debug - Popular Data:', popularResponse.data);
         const popularData = popularResponse.data.map((meal: MealData, index: number) => convertMealData(meal, index));
         setPopularMeals(popularData);
         setDefaultPopularMeals(popularData);
@@ -132,10 +132,10 @@ const SearchScreen: React.FC = () => {
         ...getFilterParams()
       });
 
-      console.log('🔍 Debug - Suggested Response:', suggestedResponse);
+      // console.log('🔍 Debug - Suggested Response:', suggestedResponse);
 
       if (suggestedResponse.success) {
-        console.log('🔍 Debug - Suggested Data:', suggestedResponse.data);
+        // console.log('🔍 Debug - Suggested Data:', suggestedResponse.data);
         const suggestedData = suggestedResponse.data.map((meal: MealData, index: number) => convertMealData(meal, index));
         setSuggestedMeals(suggestedData);
         setDefaultSuggestedMeals(suggestedData);
@@ -170,9 +170,12 @@ const SearchScreen: React.FC = () => {
   };
 
   // Convert backend meal data to frontend format
-  const convertMealData = (meal: MealData, index?: number) => {
+  const convertMealData = (meal: MealData, index: number) => {
+    // Create unique ID by combining mealid and index to avoid duplicates
+    const uniqueId = meal.mealid ? `${meal.mealid}-${index}` : `temp-${index}-${Date.now()}`;
+    
     return {
-      id: meal.mealid ? meal.mealid.toString() : `temp-${index || Math.random()}`,
+      id: uniqueId,
       title: meal.name || 'Unknown Meal',
       calories: meal.calories ? `${meal.calories} kcal` : '0 kcal',
       time: meal.cookingtime ? `${meal.cookingtime} phút` : '15 phút',
@@ -197,41 +200,71 @@ const SearchScreen: React.FC = () => {
 
     try {
       setIsLoading(true);
+      console.log('🔍 Debug - Searching for:', text.trim());
       
-      // Load popular search results (first 10 results)
-      const popularResponse = await searchAPI.searchByText(text.trim());
-      let popularData: MealData[] = [];
-      if (popularResponse.success && popularResponse.data) {
-        popularData = Array.isArray(popularResponse.data) ? popularResponse.data.slice(0, 10) : [];
-        setSearchResults(popularData);
-      }
-
-      // Load suggested search results (different criteria for variety)
-      const suggestedResponse = await searchAPI.searchMeals({ 
-        name: text.trim(), // Search by name
-        dietType: 'vegetarian', // Different diet type for variety
-        maxCalories: 600,
-        minCalories: 100
+      // Search for meals by name
+      const searchResponse = await searchAPI.searchMeals({ 
+        name: text.trim()
       });
-      if (suggestedResponse.success && suggestedResponse.data) {
-        const suggestedData = Array.isArray(suggestedResponse.data) ? suggestedResponse.data.slice(0, 8) : [];
-        setSuggestedMeals(suggestedData);
+      
+      console.log('🔍 Debug - Search Response:', searchResponse);
+      
+      if (searchResponse.success && searchResponse.data) {
+        const searchData = Array.isArray(searchResponse.data) ? searchResponse.data : [];
+        console.log('🔍 Debug - Found meals before filtering:', searchData.length);
+        
+        // Filter and sort results for more accurate matches
+        const searchTerm = text.trim().toLowerCase();
+        
+        const filteredAndSortedData = searchData
+          .map((meal: MealData) => {
+            const mealName = meal.name?.toLowerCase() || '';
+            let score = 0;
+            
+            // Exact match gets highest priority (score: 100)
+            if (mealName === searchTerm) {
+              score = 100;
+            }
+            // Starts with search term (score: 80)
+            else if (mealName.startsWith(searchTerm)) {
+              score = 80;
+            }
+            // Contains search term as whole word (score: 60)
+            else if (mealName.includes(searchTerm)) {
+              score = 60;
+            }
+            // Contains all search words (score: 40)
+            else {
+              const words = mealName.split(/\s+/);
+              const searchWords = searchTerm.split(/\s+/);
+              const allWordsFound = searchWords.every(searchWord => 
+                words.some(mealWord => mealWord.includes(searchWord))
+              );
+              if (allWordsFound) {
+                score = 40;
+              }
+            }
+            
+            return { meal, score };
+          })
+          .filter(({ score }) => score >= 40) // Only include meals with good relevance (score >= 40)
+          .sort((a, b) => b.score - a.score) // Sort by score descending
+          .slice(0, 20) // Limit to top 20 results
+          .map(({ meal }) => meal); // Extract just the meal objects
+        
+        console.log('🔍 Debug - Filtered and sorted meals:', filteredAndSortedData.length);
+        
+        // Convert to display format
+        const convertedData = filteredAndSortedData.map((meal: MealData, index: number) => convertMealData(meal, index));
+        console.log('🔍 Debug - Converted data:', convertedData);
+        
+        // Set search results
+        setSearchResults(convertedData);
+        setSuggestedMeals([]); // Clear suggested meals when searching
       } else {
-        // Fallback: try with different criteria if first attempt fails
-        try {
-          const fallbackResponse = await searchAPI.searchMeals({ 
-            name: text.trim(),
-            maxCalories: 400,
-            minCalories: 200
-          });
-          if (fallbackResponse.success && fallbackResponse.data) {
-            const fallbackData = Array.isArray(fallbackResponse.data) ? fallbackResponse.data.slice(0, 8) : [];
-            setSuggestedMeals(fallbackData);
-          }
-        } catch (fallbackError) {
-          console.log('Fallback suggestion search failed:', fallbackError);
-          setSuggestedMeals([]);
-        }
+        console.log('🔍 Debug - No search results found');
+        setSearchResults([]);
+        setSuggestedMeals([]);
       }
       
       // Add to search history
@@ -265,9 +298,9 @@ const SearchScreen: React.FC = () => {
         pageSize: 20
       };
 
-      console.log('🔍 Debug - Filter request:', filterRequest);
+      // console.log('🔍 Debug - Filter request:', filterRequest);
       const response = await filterAPI.searchWithFilters(filterRequest);
-      console.log('🔍 Debug - Filter response:', response);
+      // console.log('🔍 Debug - Filter response:', response);
       
       if (response.success && response.data) {
         const searchData = Array.isArray(response.data) ? response.data as unknown as MealData[] : [];
@@ -405,7 +438,7 @@ const SearchScreen: React.FC = () => {
   const handleApplyFilters = async () => {
     setShowFilterModal(false);
     
-    console.log('🔍 Debug - Applied filters:', appliedFilters);
+    // console.log('🔍 Debug - Applied filters:', appliedFilters);
     
     // Navigate to FilterResultsScreen
     navigation.navigate('FilterResults', { appliedFilters });
@@ -493,8 +526,8 @@ const SearchScreen: React.FC = () => {
           />
         )}
 
-        {/* Search Results - Suggested Section */}
-        {searchResults.length > 0 && suggestedMeals.length > 0 && (
+        {/* Search Results - Suggested Section - Only show when no search results */}
+        {searchResults.length === 0 && suggestedMeals.length > 0 && (
           <SuggestedSection
             data={suggestedMeals as any}
             favorites={favorites}
@@ -540,12 +573,14 @@ const SearchScreen: React.FC = () => {
         setAppliedFilters={setAppliedFilters}
       />
 
-      {/* Premium Modal */}
-      <PremiumModal
-        visible={showPremiumModal}
-        onClose={handleClosePremiumModal}
-        onUpgrade={handleUpgrade}
-      />
+      {/* Premium Modal - Chỉ hiển thị cho tài khoản Free */}
+      {!isProUser() && (
+        <PremiumModal
+          visible={showPremiumModal}
+          onClose={handleClosePremiumModal}
+          onUpgrade={handleUpgrade}
+        />
+      )}
     </SafeAreaView>
   );
 };

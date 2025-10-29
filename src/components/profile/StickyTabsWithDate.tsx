@@ -35,14 +35,15 @@ const StickyTabsWithDate: React.FC<StickyTabsWithDateProps> = ({
             Thống kê Dinh dưỡng
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity 
+        {/* Ẩn tab Bài viết */}
+        {/* <TouchableOpacity 
           style={[styles.tab, activeTab === 'posts' && styles.activeTab]}
           onPress={() => onTabChange('posts')}
         >
           <Text style={[styles.tabText, activeTab === 'posts' && styles.activeTabText]}>
             Bài viết của tôi
           </Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
 
       {/* Date Navigation */}

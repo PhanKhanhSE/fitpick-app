@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { userProfileAPI } from '../services/userProfileAPI';
+import { useUser } from './useUser';
 
 export interface ProUserPermissions {
   userId: number;
@@ -16,12 +17,30 @@ export const useProUser = () => {
   const [permissions, setPermissions] = useState<ProUserPermissions | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { userInfo } = useUser();
 
   const loadProUserPermissions = async () => {
     try {
       setLoading(true);
       setError(null);
       
+      // Nếu user là FREE, không cần gọi API Pro permissions
+      if (userInfo?.accountType === 'FREE') {
+        const freePermissions: ProUserPermissions = {
+          userId: userInfo.id || 0,
+          isProUser: false,
+          canViewFutureDates: false,
+          canPlanFutureMeals: false,
+          canViewPastDates: true, // FREE users can view past dates
+          canUsePremiumFeatures: false,
+          canCreateWeeklyMealPlan: false,
+          canViewDetailedReports: false,
+        };
+        setPermissions(freePermissions);
+        return freePermissions;
+      }
+      
+      // Chỉ gọi API Pro permissions cho PRO users
       const response = await userProfileAPI.getProUserPermissions();
       
       if (response.success && response.data) {
@@ -39,7 +58,7 @@ export const useProUser = () => {
         const isProResponse = await userProfileAPI.isProUser();
         if (isProResponse.success) {
           const fallbackPermissions: ProUserPermissions = {
-            userId: 0,
+            userId: userInfo?.id || 0,
             isProUser: isProResponse.data,
             canViewFutureDates: isProResponse.data,
             canPlanFutureMeals: isProResponse.data,
@@ -62,36 +81,83 @@ export const useProUser = () => {
   };
 
   const isProUser = (): boolean => {
+    // Ưu tiên kiểm tra từ userInfo trước
+    if (userInfo?.accountType === 'PRO') {
+      return true;
+    }
+    if (userInfo?.accountType === 'FREE') {
+      return false;
+    }
+    // Fallback về permissions nếu có
     return permissions?.isProUser || false;
   };
 
   const canViewFutureDates = (): boolean => {
+    // Ưu tiên kiểm tra từ userInfo trước
+    if (userInfo?.accountType === 'PRO') {
+      return true;
+    }
+    if (userInfo?.accountType === 'FREE') {
+      return false;
+    }
     return permissions?.canViewFutureDates || false;
   };
 
   const canPlanFutureMeals = (): boolean => {
+    // Ưu tiên kiểm tra từ userInfo trước
+    if (userInfo?.accountType === 'PRO') {
+      return true;
+    }
+    if (userInfo?.accountType === 'FREE') {
+      return false;
+    }
     return permissions?.canPlanFutureMeals || false;
   };
 
   const canViewPastDates = (): boolean => {
-    return permissions?.canViewPastDates || true; // Default to true
+    // Cả FREE và PRO đều có thể xem quá khứ
+    return true;
   };
 
   const canUsePremiumFeatures = (): boolean => {
+    // Ưu tiên kiểm tra từ userInfo trước
+    if (userInfo?.accountType === 'PRO') {
+      return true;
+    }
+    if (userInfo?.accountType === 'FREE') {
+      return false;
+    }
     return permissions?.canUsePremiumFeatures || false;
   };
 
   const canCreateWeeklyMealPlan = (): boolean => {
+    // Ưu tiên kiểm tra từ userInfo trước
+    if (userInfo?.accountType === 'PRO') {
+      return true;
+    }
+    if (userInfo?.accountType === 'FREE') {
+      return false;
+    }
     return permissions?.canCreateWeeklyMealPlan || false;
   };
 
   const canViewDetailedReports = (): boolean => {
+    // Ưu tiên kiểm tra từ userInfo trước
+    if (userInfo?.accountType === 'PRO') {
+      return true;
+    }
+    if (userInfo?.accountType === 'FREE') {
+      return false;
+    }
     return permissions?.canViewDetailedReports || false;
   };
 
   useEffect(() => {
-    loadProUserPermissions();
-  }, []);
+    // Chỉ load permissions khi có userInfo
+    if (userInfo) {
+      loadProUserPermissions();
+    }
+  }, [userInfo]);
 
   return {
     permissions,

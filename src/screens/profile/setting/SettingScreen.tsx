@@ -333,13 +333,16 @@ const SettingsScreen: React.FC = () => {
           </View>
         </View>
 
-        <TouchableOpacity 
-          style={styles.item}
-          onPress={() => setShowPremiumModal(true)}
-        >
-          <Text style={styles.itemNormal}>Nâng cấp lên PRO</Text>
-          <Ionicons name="chevron-forward" size={18} color={COLORS.text} style={styles.forwardButton} />
-        </TouchableOpacity>
+        {/* Nâng cấp lên PRO - Chỉ hiển thị cho tài khoản Free */}
+        {accountType === 'FREE' && (
+          <TouchableOpacity 
+            style={styles.item}
+            onPress={() => setShowPremiumModal(true)}
+          >
+            <Text style={styles.itemNormal}>Nâng cấp lên PRO</Text>
+            <Ionicons name="chevron-forward" size={18} color={COLORS.text} style={styles.forwardButton} />
+          </TouchableOpacity>
+        )}
 
         <TouchableOpacity style={styles.item}>
           <Text style={styles.itemNormal}>Email</Text>
@@ -413,8 +416,8 @@ const SettingsScreen: React.FC = () => {
           <Ionicons name="chevron-forward" size={18} color={COLORS.muted} style={styles.forwardButton} />
         </TouchableOpacity>
 
-        {/* Test Notification Button - Chỉ hiển thị trong development */}
-        {__DEV__ && (
+        {/* Test Notification Button - Đã xóa để push git */}
+        {/* {__DEV__ && (
           <View style={styles.testWrapper}>
             <TouchableOpacity 
               style={[styles.testButton, loading && styles.testButtonDisabled]} 
@@ -427,7 +430,7 @@ const SettingsScreen: React.FC = () => {
               </Text>
             </TouchableOpacity>
           </View>
-        )}
+        )} */}
 
         <View style={styles.logoutWrapper}>
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
@@ -436,12 +439,14 @@ const SettingsScreen: React.FC = () => {
         </View>
       </View>
 
-      {/* Premium Modal */}
-      <PremiumModal
-        visible={showPremiumModal}
-        onClose={() => setShowPremiumModal(false)}
-        onUpgrade={handleUpgradeToPro}
-      />
+      {/* Premium Modal - Chỉ hiển thị cho tài khoản Free */}
+      {accountType === 'FREE' && (
+        <PremiumModal
+          visible={showPremiumModal}
+          onClose={() => setShowPremiumModal(false)}
+          onUpgrade={handleUpgradeToPro}
+        />
+      )}
 
       {/* Change Password Modal */}
       <ChangePasswordModal

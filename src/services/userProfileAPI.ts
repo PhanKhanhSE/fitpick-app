@@ -317,7 +317,7 @@ export const userProfileAPI = {
       console.log('🔍 FormData created, sending request with fetch...');
       
       // Use fetch instead of axios
-      const response = await fetch('https://ecc8daba9d35.ngrok-free.app/api/users/me/avatar-simple', {
+      const response = await fetch('https://fondlingly-unheaped-amos.ngrok-free.dev/api/users/me/avatar-simple', {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

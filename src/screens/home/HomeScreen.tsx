@@ -39,7 +39,7 @@ const HomeScreen: React.FC = () => {
   const { isFavorite, toggleFavorite } = useFavorites();
   
   // Use meal plans hook for today's meals
-  const { todayMealPlans, loadTodayMealPlan } = useMealPlans();
+  const { todayMealPlans, loadTodayMealPlan, loading: mealPlansLoading } = useMealPlans();
 
   // Use notifications hook for unread count
   const { unreadCount } = useNotifications();
@@ -56,8 +56,21 @@ const HomeScreen: React.FC = () => {
     fat: { current: 0, target: 0 },
   });
 
-  const [suggestedMeals, setSuggestedMeals] = useState([]);
+  const [suggestedMeals, setSuggestedMeals] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Debug logging for meal plans
+  useEffect(() => {
+    console.log('🔄 Debug - HomeScreen todayMealPlans updated:', todayMealPlans?.length || 0, 'meals');
+    if (todayMealPlans && todayMealPlans.length > 0) {
+      console.log('✅ Debug - Meal plans data:', todayMealPlans.map(plan => ({
+        id: plan.meal.mealid,
+        name: plan.meal.name,
+        calories: plan.meal.calories,
+        mealTime: plan.mealTime
+      })));
+    }
+  }, [todayMealPlans]);
 
   // Load dữ liệu từ API
   useEffect(() => {
@@ -230,20 +243,26 @@ const HomeScreen: React.FC = () => {
 
   // Convert todayMealPlans to MyMenuSection format
   const convertMealPlansToMenuData = () => {
+    console.log('🔄 Debug - convertMealPlansToMenuData called with:', todayMealPlans?.length || 0, 'meals');
+    
     if (!todayMealPlans || todayMealPlans.length === 0) {
+      console.log('⚠️ Debug - No meal plans available, returning empty array');
       return [];
     }
 
-    return todayMealPlans.map((mealPlan) => ({
-      id: mealPlan.meal.mealid.toString(),
+    const convertedData = todayMealPlans.map((mealPlan, index) => ({
+      id: `${mealPlan.planId}-${mealPlan.meal.mealid}-${mealPlan.mealTime}-${index}`,
       title: mealPlan.meal.name,
-      calories: `${mealPlan.meal.calories} kcal`,
-      time: `${mealPlan.meal.cookingtime} phút`,
+      calories: `${mealPlan.meal.calories || 0} kcal`,
+      time: `${mealPlan.meal.cookingtime || 0} phút`,
       image: { uri: mealPlan.meal.imageUrl || 'https://via.placeholder.com/200x150' },
       tag: mealPlan.meal.categoryName || 'Thực đơn',
       // Premium/Pro users can view all meals, only Free users are restricted
       isLocked: (mealPlan.meal.isPremium || false) && !isProUser,
     }));
+    
+    console.log('✅ Debug - Converted meal data:', convertedData);
+    return convertedData;
   };
 
   return (
@@ -260,14 +279,15 @@ const HomeScreen: React.FC = () => {
                 Dành cho bạn
               </Text>
             </TouchableOpacity>
-            <TouchableOpacity 
+            {/* Ẩn tab Cộng đồng */}
+            {/* <TouchableOpacity 
               style={[styles.tab, selectedTab === 'community' && styles.activeTab]}
               onPress={() => handleTabPress('community')}
             >
               <Text style={[styles.tabText, selectedTab === 'community' && styles.activeTabText]}>
                 Cộng đồng
               </Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
           
           <View style={styles.headerIcons}>
@@ -282,59 +302,56 @@ const HomeScreen: React.FC = () => {
         </View>
       </View>
 
-      {selectedTab === 'personal' ? (
-        isLoading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={COLORS.primary} />
-            <Text style={styles.loadingText}>Đang tải dữ liệu...</Text>
-          </View>
-        ) : (
-          <ScrollView 
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ flexGrow: 1 }}
-          >
-            {/* Nutrition Stats */}
-            <NutritionStats
-              targetCalories={nutritionData.targetCalories}
-              consumedCalories={nutritionData.consumedCalories}
-              starch={nutritionData.starch}
-              protein={nutritionData.protein}
-              fat={nutritionData.fat}
-              onPress={handlePersonalNutritionPress}
-            />
-            
-            {/* My Menu Section */}
-            <MyMenuSection 
-              mealData={convertMealPlansToMenuData()}
-              onMealPress={handleMealPress}
-              onSeeMore={handleSeeMoreMenu}
-              isFavorite={isFavorite}
-              onFavoritePress={toggleFavorite}
-            />
+      {/* Luôn hiển thị tab personal, ẩn tab community */}
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={styles.loadingText}>Đang tải dữ liệu...</Text>
+        </View>
+      ) : (
+        <ScrollView 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ flexGrow: 1 }}
+        >
+          {/* Nutrition Stats */}
+          <NutritionStats
+            targetCalories={nutritionData.targetCalories}
+            consumedCalories={nutritionData.consumedCalories}
+            starch={nutritionData.starch}
+            protein={nutritionData.protein}
+            fat={nutritionData.fat}
+            onPress={handlePersonalNutritionPress}
+          />
+          
+          {/* My Menu Section */}
+          <MyMenuSection 
+            mealData={convertMealPlansToMenuData()}
+            onMealPress={handleMealPress}
+            onSeeMore={handleSeeMoreMenu}
+            isFavorite={isFavorite}
+            onFavoritePress={toggleFavorite}
+          />
 
-            {/* Premium Upgrade */}
+          {/* Premium Upgrade - Chỉ hiển thị cho tài khoản Free */}
+          {!isProUser && (
             <View style={styles.premiumSection}>
               <Text style={styles.premiumText}>Có ngày thực đơn mới, gợi ý riêng cho bạn mỗi tuần.</Text>
               <TouchableOpacity style={styles.premiumButton} onPress={handlePremiumPress}>
                 <Text style={styles.premiumButtonText}>Nâng cấp lên Premium</Text>
               </TouchableOpacity>
             </View>
+          )}
 
-            {/* Suggested Dishes Section */}
-            <SuggestedSection 
-              mealData={suggestedMeals}
-              onMealPress={handleMealPress}
-              onSeeMore={handleSeeMore}
-              onExploreMore={handleExploreMore}
-              isFavorite={isFavorite}
-              onFavoritePress={toggleFavorite}
-            />
-          </ScrollView>
-        )
-      ) : (
-        <View style={styles.communityContainer}>
-          <CommunityScreen />
-        </View>
+          {/* Suggested Dishes Section */}
+          <SuggestedSection 
+            mealData={suggestedMeals}
+            onMealPress={handleMealPress}
+            onSeeMore={handleSeeMore}
+            onExploreMore={handleExploreMore}
+            isFavorite={isFavorite}
+            onFavoritePress={toggleFavorite}
+          />
+        </ScrollView>
       )}
 
       {/* Premium Modal */}

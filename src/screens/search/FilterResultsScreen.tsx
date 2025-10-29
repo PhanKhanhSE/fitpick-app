@@ -60,13 +60,13 @@ const FilterResultsScreen: React.FC<FilterResultsScreenProps> = ({ route }) => {
     try {
       setIsLoading(true);
       
-      console.log('🔍 Debug - Applied filters:', appliedFilters);
+      // console.log('🔍 Debug - Applied filters:', appliedFilters);
       
       if (appliedFilters.nutritionGoal) {
-        console.log('🔍 Debug - Using personal nutrition search');
+        // console.log('🔍 Debug - Using personal nutrition search');
         await handleSearchWithPersonalNutrition();
       } else {
-        console.log('🔍 Debug - Using general filter search');
+        // console.log('🔍 Debug - Using general filter search');
         await handleSearchWithFilters();
       }
     } catch (error) {
@@ -91,9 +91,9 @@ const FilterResultsScreen: React.FC<FilterResultsScreenProps> = ({ route }) => {
         pageSize: 50 // Show more results in dedicated screen
       };
 
-      console.log('🔍 Debug - Filter request:', filterRequest);
+      // console.log('🔍 Debug - Filter request:', filterRequest);
       const response = await filterAPI.searchWithFilters(filterRequest);
-      console.log('🔍 Debug - Filter response:', response);
+      // console.log('🔍 Debug - Filter response:', response);
       
       if (response.success && response.data) {
         const searchData = Array.isArray(response.data) ? response.data as unknown as MealData[] : [];
@@ -267,7 +267,7 @@ const FilterResultsScreen: React.FC<FilterResultsScreenProps> = ({ route }) => {
           {searchResults.length > 0 ? (
             <View style={styles.mealsList}>
               {searchResults.map((meal, index) => (
-                <View key={meal.mealid || `temp-${index}`}>
+                <View key={`meal-${meal.mealid || index}`}>
                   {renderMealItem({ item: meal, index })}
                 </View>
               ))}

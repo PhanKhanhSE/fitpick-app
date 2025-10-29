@@ -92,7 +92,7 @@ const WeeklyMenuScreen: React.FC = () => {
   };
 
   // Convert TodayMealPlanDto to WeeklyMealData format
-  const convertToWeeklyMealData = (mealPlan: TodayMealPlanDto, dateString: string): WeeklyMealData => {
+  const convertToWeeklyMealData = (mealPlan: TodayMealPlanDto, dateString: string, index?: number): WeeklyMealData => {
     const mealId = mealPlan.meal.mealid;
     const caloriesNumber = mealPlan.meal.calories || 0;
     const isEaten = isMealEatenOnDate(mealId, dateString);
@@ -108,7 +108,7 @@ const WeeklyMenuScreen: React.FC = () => {
     }
 
     return {
-      id: mealId.toString(),
+      id: `${mealPlan.planId}-${mealId}-${mealPlan.mealTime}-${index || 0}`,
       title: mealPlan.meal.name,
       calories: `${caloriesNumber} kcal`,
       time: `${mealPlan.meal.cookingtime || 0} phút`,
@@ -195,9 +195,9 @@ const WeeklyMenuScreen: React.FC = () => {
         }
       });
       
-      const breakfastMeals = breakfast.map(mealPlan => convertToWeeklyMealData(mealPlan, dateString));
-      const lunchMeals = lunch.map(mealPlan => convertToWeeklyMealData(mealPlan, dateString));
-      const dinnerMeals = dinner.map(mealPlan => convertToWeeklyMealData(mealPlan, dateString));
+      const breakfastMeals = breakfast.map((mealPlan, index) => convertToWeeklyMealData(mealPlan, dateString, index));
+      const lunchMeals = lunch.map((mealPlan, index) => convertToWeeklyMealData(mealPlan, dateString, index));
+      const dinnerMeals = dinner.map((mealPlan, index) => convertToWeeklyMealData(mealPlan, dateString, index));
       
       const totalCalories = breakfast.reduce((total, plan) => total + (plan.meal.calories || 0), 0) +
                            lunch.reduce((total, plan) => total + (plan.meal.calories || 0), 0) +
@@ -453,30 +453,30 @@ const WeeklyMenuScreen: React.FC = () => {
     );
   };
 
-  // Debug function để kiểm tra dữ liệu
-  const debugData = () => {
-    console.log('🔍 Debug Weekly Data:');
-    weeklyData.forEach((day, index) => {
-      console.log(`Day ${index + 1} (${day.dateString}):`, {
-        breakfast: day.breakfast.length,
-        lunch: day.lunch.length,
-        dinner: day.dinner.length,
-        totalCalories: day.totalCalories
-      });
-    });
-  };
+  // Debug function đã xóa để push git
+  // const debugData = () => {
+  //   console.log('🔍 Debug Weekly Data:');
+  //   weeklyData.forEach((day, index) => {
+  //     console.log(`Day ${index + 1} (${day.dateString}):`, {
+  //       breakfast: day.breakfast.length,
+  //       lunch: day.lunch.length,
+  //       dinner: day.dinner.length,
+  //       totalCalories: day.totalCalories
+  //     });
+  //   });
+  // };
 
   // Load data khi component mount và khi currentWeekStart thay đổi
   useEffect(() => {
     loadWeeklyData();
   }, [currentWeekStart]);
 
-  // Debug data khi weeklyData thay đổi
-  useEffect(() => {
-    if (weeklyData.length > 0) {
-      debugData();
-    }
-  }, [weeklyData]);
+  // Debug data khi weeklyData thay đổi - đã xóa để push git
+  // useEffect(() => {
+  //   if (weeklyData.length > 0) {
+  //     debugData();
+  //   }
+  // }, [weeklyData]);
 
   // Reload data khi quay lại screen
   useFocusEffect(
@@ -517,8 +517,8 @@ const WeeklyMenuScreen: React.FC = () => {
             <Text style={styles.mealTitle}>Bữa sáng</Text>
             {dayData.breakfast.length > 0 ? (
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {dayData.breakfast.map((meal) => (
-                  <View key={meal.id} style={styles.mealCardContainer}>
+                {dayData.breakfast.map((meal, index) => (
+                  <View key={meal.id || `breakfast-${index}`} style={styles.mealCardContainer}>
                     <TouchableOpacity
                       style={[styles.mealCard, meal.isEaten && styles.eatenMealCard]}
                       onPress={() => handleMealPress(meal)}
@@ -575,8 +575,8 @@ const WeeklyMenuScreen: React.FC = () => {
             <Text style={styles.mealTitle}>Bữa trưa</Text>
             {dayData.lunch.length > 0 ? (
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {dayData.lunch.map((meal) => (
-                  <View key={meal.id} style={styles.mealCardContainer}>
+                {dayData.lunch.map((meal, index) => (
+                  <View key={meal.id || `lunch-${index}`} style={styles.mealCardContainer}>
                     <TouchableOpacity
                       style={[styles.mealCard, meal.isEaten && styles.eatenMealCard]}
                       onPress={() => handleMealPress(meal)}
@@ -633,8 +633,8 @@ const WeeklyMenuScreen: React.FC = () => {
             <Text style={styles.mealTitle}>Bữa tối</Text>
             {dayData.dinner.length > 0 ? (
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {dayData.dinner.map((meal) => (
-                  <View key={meal.id} style={styles.mealCardContainer}>
+                {dayData.dinner.map((meal, index) => (
+                  <View key={meal.id || `dinner-${index}`} style={styles.mealCardContainer}>
                     <TouchableOpacity
                       style={[styles.mealCard, meal.isEaten && styles.eatenMealCard]}
                       onPress={() => handleMealPress(meal)}
@@ -724,8 +724,8 @@ const WeeklyMenuScreen: React.FC = () => {
           </Text>
         </TouchableOpacity>
         
-        {/* Debug Button - Tạm thời */}
-        <TouchableOpacity 
+        {/* Debug Button - Đã xóa để push git */}
+        {/* <TouchableOpacity 
           style={[styles.autoReplaceButton, { backgroundColor: '#666', marginTop: 8 }]}
           onPress={debugData}
         >
@@ -733,7 +733,7 @@ const WeeklyMenuScreen: React.FC = () => {
           <Text style={styles.autoReplaceButtonText}>
             Debug Data
           </Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
 
       {/* Error Message */}

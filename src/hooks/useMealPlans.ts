@@ -26,25 +26,25 @@ export const useMealPlans = () => {
       const response = await mealPlanAPI.getMealPlanByDate(targetDate);
       
       if (response.success && response.data) {
-        console.log('🔄 Debug - API response data:', response.data);
+        // console.log('🔄 Debug - API response data:', response.data);
         
         // Load meals từ local storage
         const userAddedMeals = await AsyncStorage.getItem('userAddedMeals');
         const localMeals = userAddedMeals ? JSON.parse(userAddedMeals) : [];
         
-        console.log('🔍 Debug - Local meals:', localMeals);
-        console.log('🔍 Debug - Target date:', targetDateString);
+        // console.log('🔍 Debug - Local meals:', localMeals);
+        // console.log('🔍 Debug - Target date:', targetDateString);
         
         // Merge với API data
         const mergedPlans = [...response.data];
         
         // Thêm meals từ local storage cho ngày được chọn
         for (const localMeal of localMeals) {
-          console.log('🔍 Debug - Checking local meal:', localMeal, 'vs target:', targetDateString);
+          // console.log('🔍 Debug - Checking local meal:', localMeal, 'vs target:', targetDateString);
           
           // Chỉ load meals của ngày được chọn
           if (localMeal.date === targetDateString) {
-            console.log('✅ Debug - Found matching meal for target date, fetching details...');
+            // console.log('✅ Debug - Found matching meal for target date, fetching details...');
             // Fetch meal detail từ API
             try {
               const mealDetailResponse = await mealPlanAPI.getMealDetail(localMeal.mealId);
@@ -74,7 +74,7 @@ export const useMealPlans = () => {
                   }
                 };
                 mergedPlans.push(todayMealPlan);
-                console.log('✅ Debug - Added local meal to merged plans:', todayMealPlan);
+                // console.log('✅ Debug - Added local meal to merged plans:', todayMealPlan);
               }
             } catch (error) {
               console.error('Error fetching meal detail for local meal:', error);
@@ -82,14 +82,34 @@ export const useMealPlans = () => {
           }
         }
         
-        console.log('🎯 Debug - Final merged plans:', mergedPlans);
-        console.log('🔄 Debug - Setting todayMealPlans state with', mergedPlans.length, 'meals');
-        setTodayMealPlans(mergedPlans);
+        // Remove duplicates based on mealid and mealTime
+        console.log('🔍 Debug - Before deduplication, checking for duplicates...');
+        mergedPlans.forEach((plan, index) => {
+          console.log(`🔍 Debug - Plan ${index}: mealid=${plan.meal.mealid}, mealTime=${plan.mealTime}, planId=${plan.planId}`);
+        });
+        
+        const uniquePlans = mergedPlans.filter((plan, index, self) => {
+          const isDuplicate = self.findIndex(p => 
+            p.meal.mealid === plan.meal.mealid && 
+            p.mealTime === plan.mealTime
+          ) !== index;
+          
+          if (isDuplicate) {
+            console.log(`🚫 Debug - Removing duplicate: mealid=${plan.meal.mealid}, mealTime=${plan.mealTime}, planId=${plan.planId}`);
+          }
+          
+          return !isDuplicate;
+        });
+        
+        console.log('🎯 Debug - Final merged plans (before deduplication):', mergedPlans.length);
+        console.log('🎯 Debug - Final merged plans (after deduplication):', uniquePlans.length);
+        console.log('🔄 Debug - Setting todayMealPlans state with', uniquePlans.length, 'meals');
+        setTodayMealPlans(uniquePlans);
       } else {
         setError(response.message || `Không thể tải thực đơn ngày ${targetDateString}`);
       }
     } catch (err) {
-      setError(`Lỗi khi tải thực đơn ngày ${targetDateString}`);
+      setError(`Lỗi khi tải thực đơn ngày ${currentSelectedDate.toISOString().split('T')[0]}`);
       console.error('Error loading meal plan by date:', err);
     } finally {
       setLoading(false);
@@ -177,7 +197,7 @@ export const useMealPlans = () => {
       
       if (response.success) {
         // Reload data sau khi thay đổi thành công với ngày hiện tại
-        console.log('🔄 Debug - Reloading data after replace by suggestion for date:', currentSelectedDate.toISOString().split('T')[0]);
+        // console.log('🔄 Debug - Reloading data after replace by suggestion for date:', currentSelectedDate.toISOString().split('T')[0]);
         await loadTodayMealPlan(currentSelectedDate);
         return true;
       } else {
@@ -203,7 +223,7 @@ export const useMealPlans = () => {
       
       if (response.success) {
         // Reload data sau khi thay đổi thành công với ngày hiện tại
-        console.log('🔄 Debug - Reloading data after replace by favorites for date:', currentSelectedDate.toISOString().split('T')[0]);
+        // console.log('🔄 Debug - Reloading data after replace by favorites for date:', currentSelectedDate.toISOString().split('T')[0]);
         await loadTodayMealPlan(currentSelectedDate);
         return true;
       } else {
@@ -351,7 +371,7 @@ export const useMealPlans = () => {
       // Lưu lại vào AsyncStorage
       await AsyncStorage.setItem('userAddedMeals', JSON.stringify(updatedMeals));
       
-      console.log('✅ Debug - Removed meal from local storage:', { mealId, date });
+      // console.log('✅ Debug - Removed meal from local storage:', { mealId, date });
       return true;
     } catch (error) {
       console.error('Error removing meal from local storage:', error);

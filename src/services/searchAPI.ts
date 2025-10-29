@@ -84,10 +84,16 @@ export const searchAPI = {
       if (filters.minPrice) params.append('minPrice', filters.minPrice.toString());
       if (filters.maxPrice) params.append('maxPrice', filters.maxPrice.toString());
 
-      const response = await apiClient.get(`/api/users/meals?${params.toString()}`);
+      const url = `/api/users/meals?${params.toString()}`;
+      console.log('🔍 Debug - Search API URL:', url);
+      console.log('🔍 Debug - Search filters:', filters);
+
+      const response = await apiClient.get(url);
+      console.log('🔍 Debug - Search API Response:', response.data);
       return response.data;
     } catch (error: any) {
       console.error('Error searching meals:', error);
+      console.error('Error details:', error.response?.data);
       throw error;
     }
   },

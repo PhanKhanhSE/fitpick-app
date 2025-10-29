@@ -46,8 +46,8 @@ const SuggestedSection: React.FC<SuggestedSectionProps> = ({
         style={styles.mealScrollView}
         contentContainerStyle={styles.mealScrollContent}
       >
-        {mealData.map((meal) => (
-          <View key={meal.id} style={styles.mealCardWrapper}>
+        {mealData.map((meal, index) => (
+          <View key={meal.id || `suggested-meal-${index}`} style={styles.mealCardWrapper}>
             <MealCardOverlay
               id={meal.id}
               title={meal.title}

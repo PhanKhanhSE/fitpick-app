@@ -36,7 +36,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const ProfileScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
-  const [activeTab, setActiveTab] = useState<"nutrition" | "posts">("nutrition");
+  const [activeTab, setActiveTab] = useState<"nutrition" | "posts">("nutrition"); // Luôn là nutrition, tab posts đã bị ẩn
   const { height } = useWindowDimensions();
   const { handleChangeAvatar, isUploading } = useBase64Upload();
   const { isProUser, canViewFutureDates, canPlanFutureMeals } = useProUser();
@@ -85,11 +85,14 @@ const ProfileScreen: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    // Luôn load nutrition data vì tab posts đã bị ẩn
     if (activeTab === 'nutrition') {
       loadNutritionData();
-    } else if (activeTab === 'posts') {
-      loadUserPosts();
     }
+    // Tab posts đã bị ẩn, không load user posts nữa
+    // else if (activeTab === 'posts') {
+    //   loadUserPosts();
+    // }
   }, [activeTab, selectedDate]);
 
   const loadUserData = async () => {
@@ -354,7 +357,19 @@ const ProfileScreen: React.FC = () => {
           </View>
         ) : (
           <>
-            {activeTab === "nutrition" ? (
+            {/* Luôn hiển thị tab nutrition, ẩn tab posts */}
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <NutritionStats {...nutritionData} onPress={handlePersonalNutritionPress} />
+              <NutritionBars nutritionBars={nutritionBars} />
+              <TipSection tipText="Hãy duy trì chế độ ăn uống cân bằng và tập thể dục đều đặn để có sức khỏe tốt!" />
+              <UsedMealsList 
+                selectedDate={selectedDate} 
+                onMealPress={handleMealPress} 
+              />
+            </ScrollView>
+            
+            {/* Ẩn phần hiển thị posts */}
+            {/* {activeTab === "nutrition" ? (
               <ScrollView showsVerticalScrollIndicator={false}>
                 <NutritionStats {...nutritionData} onPress={handlePersonalNutritionPress} />
                 <NutritionBars nutritionBars={nutritionBars} />
@@ -390,7 +405,7 @@ const ProfileScreen: React.FC = () => {
                   <View style={{ height: SPACING.xxl }} />
                 </ScrollView>
               </View>
-            )}
+            )} */}
           </>
         )}
       </ScrollView>

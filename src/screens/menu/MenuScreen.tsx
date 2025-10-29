@@ -86,11 +86,11 @@ const MenuScreen: React.FC = () => {
   const buatruaMeals = lunch.map(convertToMealData);
   const buatoiMeals = dinner.map(convertToMealData);
 
-  // Debug logs để kiểm tra data
-  console.log('🖥️ Debug - MenuScreen render data:');
-  console.log('  - Breakfast meals:', buasangMeals.length, buasangMeals.map(m => m.title));
-  console.log('  - Lunch meals:', buatruaMeals.length, buatruaMeals.map(m => m.title));
-  console.log('  - Dinner meals:', buatoiMeals.length, buatoiMeals.map(m => m.title));
+  // Debug logs đã xóa để push git
+  // console.log('🖥️ Debug - MenuScreen render data:');
+  // console.log('  - Breakfast meals:', buasangMeals.length, buasangMeals.map(m => m.title));
+  // console.log('  - Lunch meals:', buatruaMeals.length, buatruaMeals.map(m => m.title));
+  // console.log('  - Dinner meals:', buatoiMeals.length, buatoiMeals.map(m => m.title));
 
   // Convert menu meal to format expected by MealDetailScreen
   const convertMenuMealToMeal = (meal: any) => {
@@ -250,12 +250,10 @@ const MenuScreen: React.FC = () => {
       // Tìm meal plan tương ứng với meal này
       const mealPlan = todayMealPlans.find(plan => plan.meal.mealid === parseInt(selectedMeal.id));
       
-      console.log('🔍 Debug - Selected meal:', selectedMeal);
-      console.log('🔍 Debug - Today meal plans:', todayMealPlans);
-      console.log('🔍 Debug - Found meal plan:', mealPlan);
+      // Debug logs đã xóa để push git
       
       if (mealPlan && mealPlan.planId && mealPlan.planId > 0) {
-        console.log('🔍 Debug - Using planId:', mealPlan.planId);
+        // console.log('🔍 Debug - Using planId:', mealPlan.planId);
         const success = await replaceMealBySuggestion(mealPlan.planId);
         
         if (success) {
@@ -265,7 +263,7 @@ const MenuScreen: React.FC = () => {
           Alert.alert('Lỗi', 'Không thể thay đổi món theo gợi ý');
         }
       } else {
-        console.error('❌ Debug - Meal plan not found or planId is invalid:', mealPlan);
+        // console.error('❌ Debug - Meal plan not found or planId is invalid:', mealPlan);
         Alert.alert(
           'Không thể thay đổi món này', 
           'Món ăn này được thêm từ local storage. Để sử dụng tính năng thay đổi, hãy tạo thực đơn mới từ hệ thống.',
@@ -290,12 +288,10 @@ const MenuScreen: React.FC = () => {
       // Tìm meal plan tương ứng với meal này
       const mealPlan = todayMealPlans.find(plan => plan.meal.mealid === parseInt(selectedMeal.id));
       
-      console.log('🔍 Debug - Selected meal:', selectedMeal);
-      console.log('🔍 Debug - Today meal plans:', todayMealPlans);
-      console.log('🔍 Debug - Found meal plan:', mealPlan);
+      // Debug logs đã xóa để push git
       
       if (mealPlan && mealPlan.planId && mealPlan.planId > 0) {
-        console.log('🔍 Debug - Using planId:', mealPlan.planId);
+        // console.log('🔍 Debug - Using planId:', mealPlan.planId);
         const success = await replaceMealByFavorites(mealPlan.planId);
         
         if (success) {
@@ -305,7 +301,7 @@ const MenuScreen: React.FC = () => {
           Alert.alert('Lỗi', 'Không thể thay đổi món từ danh sách yêu thích');
         }
       } else {
-        console.error('❌ Debug - Meal plan not found or planId is invalid:', mealPlan);
+        // console.error('❌ Debug - Meal plan not found or planId is invalid:', mealPlan);
         Alert.alert('Lỗi', 'Không thể thay đổi món này. Món ăn này có thể là món được thêm từ local storage.');
       }
     } catch (error) {
@@ -636,11 +632,14 @@ const MenuScreen: React.FC = () => {
         message={successMessage}
       />
       
-      <ProUpgradeModal
-        visible={showProUpgradeModal}
-        onClose={handleCloseModal}
-        onUpgrade={handleUpgradeToPro}
-      />
+      {/* Pro Upgrade Modal - Chỉ hiển thị cho tài khoản Free */}
+      {!isProUser() && (
+        <ProUpgradeModal
+          visible={showProUpgradeModal}
+          onClose={handleCloseModal}
+          onUpgrade={handleUpgradeToPro}
+        />
+      )}
     </SafeAreaView>
   );
 };
