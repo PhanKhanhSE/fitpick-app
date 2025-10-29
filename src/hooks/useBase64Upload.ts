@@ -51,7 +51,7 @@ export const useBase64Upload = () => {
       }
       
       // Send base64 data as JSON
-      const response = await fetch('https://67342df5afbc.ngrok-free.app/api/users/me/avatar-base64', {
+      const response = await fetch('https://ecc8daba9d35.ngrok-free.app/api/users/me/avatar-base64', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

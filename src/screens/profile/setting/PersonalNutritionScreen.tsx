@@ -13,6 +13,7 @@ import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS, SPACING } from "../../../utils/theme";
 import { userProfileAPI } from "../../../services/userProfileAPI";
+import API_BASE_URL from "../../../services/api";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback } from 'react';
 
@@ -40,13 +41,22 @@ const PersonalNutritionScreen: React.FC = () => {
       setLoading(true);
       
       // Load user profile
-      const profileResponse = await userProfileAPI.getCurrentUserProfile();
+      console.log('🔄 Loading user profile...');
+      const profileResponse = await userProfileAPI.getUserProfile();
+      console.log('📊 Full profile response:', JSON.stringify(profileResponse, null, 2));
       
       if (profileResponse.success && profileResponse.data) {
         setUserProfile(profileResponse.data);
+        console.log('✅ User profile loaded:', {
+          goal: profileResponse.data.goal,
+          dietPlan: profileResponse.data.dietPlan,
+          cookingLevel: profileResponse.data.cookingLevel,
+          activityLevel: profileResponse.data.activityLevel,
+          fullData: profileResponse.data
+        });
       } else {
-        console.log('⚠️ Profile response not successful, using fallback');
-        throw new Error('Profile response not successful');
+        console.log('⚠️ Profile response not successful:', profileResponse);
+        // Don't throw error, just use fallback
       }
       
       // Load nutrition stats
@@ -54,6 +64,7 @@ const PersonalNutritionScreen: React.FC = () => {
       
       if (nutritionResponse.success && nutritionResponse.data) {
         setNutritionData(nutritionResponse.data);
+        console.log('✅ Nutrition stats loaded:', nutritionResponse.data);
       } else {
         console.log('⚠️ Nutrition response not successful, using mock data');
         setNutritionData({
@@ -91,7 +102,7 @@ const PersonalNutritionScreen: React.FC = () => {
             goal: storedGoal || parsedProfile.goal || '',
             dietPlan: storedDietPlan || parsedProfile.dietPlan || '',
             cookingLevel: storedCookingLevel || parsedProfile.cookingLevel || '',
-            activityLevel: storedActivityLevel || parsedProfile.activityLevel || '',
+            ActivityLevel: storedActivityLevel || parsedProfile.ActivityLevel || parsedProfile.activityLevel || '',
             ...parsedProfile
           });
         } else {
@@ -100,7 +111,7 @@ const PersonalNutritionScreen: React.FC = () => {
             goal: storedGoal || '',
             dietPlan: storedDietPlan || '',
             cookingLevel: storedCookingLevel || '',
-            activityLevel: storedActivityLevel || '',
+            ActivityLevel: storedActivityLevel || '',
           });
         }
         
@@ -122,6 +133,41 @@ const PersonalNutritionScreen: React.FC = () => {
     }
   };
 
+  const handleCreateHealthProfile = async () => {
+    try {
+      // Default values for health profile
+      const healthProfileData = {
+        healthGoalId: 1, // Default to "healthy" goal
+        lifestyleId: 2,  // Default to "light" activity
+        targetCalories: 2000,
+        targetWeight: userProfile.targetWeight || 70,
+        dailyMeals: 3
+      };
+
+      const response = await fetch(`${API_BASE_URL}/api/users/me/create-health-profile`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await AsyncStorage.getItem('accessToken')}`
+        },
+        body: JSON.stringify(healthProfileData)
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        Alert.alert('Thành công', 'Đã tạo hồ sơ dinh dưỡng thành công!');
+        // Reload data
+        loadNutritionData();
+      } else {
+        Alert.alert('Lỗi', result.message || 'Không thể tạo hồ sơ dinh dưỡng');
+      }
+    } catch (error) {
+      console.error('Error creating health profile:', error);
+      Alert.alert('Lỗi', 'Có lỗi xảy ra khi tạo hồ sơ dinh dưỡng');
+    }
+  };
+
   const renderNutritionGoal = (title: string, current: number, target: number, unit: string) => {
     const percentage = target > 0 ? Math.round((current / target) * 100) : 0;
     const isOverTarget = percentage > 100;
@@ -140,7 +186,7 @@ const PersonalNutritionScreen: React.FC = () => {
               styles.progressFill, 
               { 
                 width: `${Math.min(percentage, 100)}%`,
-                backgroundColor: isOverTarget ? COLORS.error : COLORS.primary
+                backgroundColor: isOverTarget ? '#FF4444' : COLORS.primary
               }
             ]} 
           />
@@ -203,6 +249,21 @@ const PersonalNutritionScreen: React.FC = () => {
               <Text style={styles.infoLabel}>Mức độ vận động:</Text>
               <Text style={styles.infoValue}>{userProfile.activityLevel || 'Chưa cập nhật'}</Text>
             </View>
+            
+            {/* Show onboarding button if data is missing */}
+            {(userProfile.goal === 'Chưa cập nhật' || userProfile.activityLevel === 'Chưa cập nhật') && (
+              <View style={styles.onboardingSection}>
+                <Text style={styles.onboardingText}>
+                  Bạn chưa hoàn thành thiết lập hồ sơ. Hãy cập nhật thông tin để có trải nghiệm tốt nhất!
+                </Text>
+                <TouchableOpacity 
+                  style={styles.onboardingButton}
+                  onPress={handleCreateHealthProfile}
+                >
+                  <Text style={styles.onboardingButtonText}>Hoàn thành thiết lập</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         )}
 
@@ -418,5 +479,32 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     fontWeight: "500",
     marginLeft: SPACING.sm,
+  },
+  onboardingSection: {
+    marginTop: 20,
+    padding: 16,
+    backgroundColor: '#F0F8FF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  onboardingText: {
+    fontSize: 14,
+    color: COLORS.textDim,
+    textAlign: 'center',
+    marginBottom: 12,
+    lineHeight: 20,
+  },
+  onboardingButton: {
+    backgroundColor: COLORS.primary,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  onboardingButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

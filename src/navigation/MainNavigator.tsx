@@ -29,6 +29,7 @@ import TermsOfServiceScreen from '../screens/profile/setting/TermsOfServiceScree
 import PrivacyPolicyScreen from '../screens/profile/setting/PrivacyPolicyScreen';
 import EditProfileScreen from '../screens/profile/setting/EditProfileScreen';
 import FilterResultsScreen from '../screens/search/FilterResultsScreen';
+import WeeklyMenuScreen from '../screens/menu/WeeklyMenuScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -159,6 +160,11 @@ export const MainNavigator = () => {
                 <Stack.Screen
                     name="FilterResults"
                     component={FilterResultsScreen}
+                    options={{ headerShown: false }} 
+                />
+                <Stack.Screen
+                    name="WeeklyMenuScreen"
+                    component={WeeklyMenuScreen}
                     options={{ headerShown: false }} 
                 />
             </Stack.Navigator>

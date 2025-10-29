@@ -4,7 +4,7 @@ import { MealTypeService } from './mealTypeService';
 import { Alert } from 'react-native';
 
 // Base URL for API
-const API_BASE_URL = 'https://67342df5afbc.ngrok-free.app';
+const API_BASE_URL = 'https://ecc8daba9d35.ngrok-free.app';
 
 // Create axios instance
 const apiClient = axios.create({

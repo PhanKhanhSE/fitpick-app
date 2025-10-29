@@ -21,24 +21,47 @@ export const useUser = () => {
       setLoading(true);
       setError(null);
       
-      // Thử load từ API trước
-      const profileResponse = await userProfileAPI.getUserProfile();
+      // Thử load từ API mới trước
+      const profileResponse = await userProfileAPI.getCurrentUserProfile();
       
       if (profileResponse.success && profileResponse.data) {
         const profile = profileResponse.data;
         const user: UserInfo = {
           id: profile.id,
           email: profile.email || '',
-          fullName: profile.fullName || '',
+          fullName: profile.fullname || '',
           avatarUrl: profile.avatarUrl,
           accountType: profile.accountType === 'PRO' ? 'PRO' : 'FREE',
-          subscriptionType: profile.subscriptionType
+          subscriptionType: profile.roleName
         };
         
         setUserInfo(user);
         // Lưu vào AsyncStorage để cache
         await AsyncStorage.setItem('userInfo', JSON.stringify(user));
         return user;
+      }
+      
+      // Fallback: Thử load từ API cũ
+      try {
+        const profileResponseOld = await userProfileAPI.getUserProfile();
+        
+        if (profileResponseOld.success && profileResponseOld.data) {
+          const profile = profileResponseOld.data;
+          const user: UserInfo = {
+            id: profile.id,
+            email: profile.email || '',
+            fullName: profile.fullName || '',
+            avatarUrl: profile.avatarUrl,
+            accountType: profile.accountType === 'PRO' ? 'PRO' : 'FREE',
+            subscriptionType: profile.subscriptionType
+          };
+          
+          setUserInfo(user);
+          await AsyncStorage.setItem('userInfo', JSON.stringify(user));
+          return user;
+        }
+      } catch (oldApiError) {
+        console.log('Old API not available, trying fallback...');
       }
       
       // Fallback: Load từ AsyncStorage

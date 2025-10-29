@@ -21,6 +21,7 @@ import { searchAPI, SearchFilters, MealData } from '../../services/searchAPI';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { convertCategoryToVietnamese } from '../../utils/categoryMapping';
 import { useFavorites } from '../../hooks/useFavorites';
+import { useProUser } from '../../hooks/useProUser';
 import { filterAPI } from '../../services/filterAPI';
 import { userProfileAPI } from '../../services/userProfileAPI';
 import { checkAuthStatus } from '../../services/api';
@@ -37,6 +38,7 @@ interface AppliedFilters {
 const SearchScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const insets = useSafeAreaInsets();
+  const { isProUser } = useProUser();
   const [searchText, setSearchText] = useState('');
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   
@@ -176,7 +178,8 @@ const SearchScreen: React.FC = () => {
       time: meal.cookingtime ? `${meal.cookingtime} phút` : '15 phút',
       image: { uri: meal.imageUrl || 'https://via.placeholder.com/150' },
       tag: convertCategoryToVietnamese(meal.categoryName || 'Món ăn'),
-      isLocked: meal.isPremium || false,
+      // Premium/Pro users can view all meals, only Free users are restricted
+      isLocked: (meal.isPremium || false) && !isProUser(),
       isFavorite: meal.mealid ? isFavorite(meal.mealid) : false,
       description: meal.description || '',
       price: meal.price || 0,
@@ -345,7 +348,8 @@ const SearchScreen: React.FC = () => {
   };
 
   const handleMealPress = (meal: any) => {
-    if (meal.isLocked) {
+    // Premium/Pro users can view all meals, only Free users are restricted
+    if (meal.isLocked && !isProUser()) {
       setShowPremiumModal(true);
     } else {
       navigation.navigate('MealDetail', { meal });

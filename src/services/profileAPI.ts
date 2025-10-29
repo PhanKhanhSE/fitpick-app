@@ -81,7 +81,7 @@ export const profileAPI = {
   // Get user profile
   getUserProfile: async () => {
     try {
-      const response = await apiClient.get('/api/user/profile');
+      const response = await apiClient.get('/api/users/me');
       return response.data;
     } catch (error: any) {
       throw error;

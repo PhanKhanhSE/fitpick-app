@@ -70,4 +70,7 @@ export type RootStackParamList = {
             cookingTime: string[];
         };
     };
+    
+    // Menu screens
+    WeeklyMenuScreen: undefined;
 };

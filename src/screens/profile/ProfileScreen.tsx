@@ -29,6 +29,7 @@ import UsedMealsList from "../../components/profile/UsedMealsList";
 import { CreatePost, PostItem } from "../../components/home/community";
 import { userProfileAPI } from "../../services/userProfileAPI";
 import { useBase64Upload } from "../../hooks/useBase64Upload";
+import { useProUser } from "../../hooks/useProUser";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -38,6 +39,7 @@ const ProfileScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"nutrition" | "posts">("nutrition");
   const { height } = useWindowDimensions();
   const { handleChangeAvatar, isUploading } = useBase64Upload();
+  const { isProUser, canViewFutureDates, canPlanFutureMeals } = useProUser();
 
   // State cho post & modal menu
   const [selectedPost, setSelectedPost] = useState<any | null>(null);
@@ -101,8 +103,8 @@ const ProfileScreen: React.FC = () => {
         const profile = profileResponse.data;
         
         setUserData({
-          name: profile.fullName || profile.email?.split('@')[0] || "Người dùng",
-          fullName: profile.fullName || "",
+          name: profile.fullname || profile.email?.split('@')[0] || "Người dùng",
+          fullName: profile.fullname || "",
           email: profile.email || "",
           avatar: profile.avatarUrl || "https://i.pravatar.cc/100?img=1",
           accountType: profile.accountType || "FREE",
@@ -117,11 +119,11 @@ const ProfileScreen: React.FC = () => {
         const user = JSON.parse(storedUser);
         
         setUserData({
-          name: user.fullName || user.email?.split('@')[0] || "Người dùng",
+          name: user.fullName || user.fullname || user.email?.split('@')[0] || "Người dùng",
           accountType: "FREE",
           avatar: "https://i.pravatar.cc/100?img=1",
           email: user.email || "",
-          fullName: user.fullName || "",
+          fullName: user.fullName || user.fullname || "",
         });
       }
     } catch (error) {
@@ -132,11 +134,11 @@ const ProfileScreen: React.FC = () => {
       if (storedUser) {
         const user = JSON.parse(storedUser);
         setUserData({
-          name: user.fullName || user.email?.split('@')[0] || "Người dùng",
+          name: user.fullName || user.fullname || user.email?.split('@')[0] || "Người dùng",
           accountType: "FREE",
           avatar: "https://i.pravatar.cc/100?img=1",
           email: user.email || "",
-          fullName: user.fullName || "",
+          fullName: user.fullName || user.fullname || "",
         });
       }
     } finally {
@@ -241,6 +243,7 @@ const ProfileScreen: React.FC = () => {
   const handleMealPress = (meal: any) =>
     navigation.navigate("MealDetail", { meal });
   const handleTabChange = (tab: "nutrition" | "posts") => setActiveTab(tab);
+  const handlePersonalNutritionPress = () => navigation.navigate("PersonalNutritionScreen");
   const handlePreviousDate = () => {
     const currentDate = new Date(selectedDate);
     currentDate.setDate(currentDate.getDate() - 1);
@@ -353,7 +356,7 @@ const ProfileScreen: React.FC = () => {
           <>
             {activeTab === "nutrition" ? (
               <ScrollView showsVerticalScrollIndicator={false}>
-                <NutritionStats {...nutritionData} />
+                <NutritionStats {...nutritionData} onPress={handlePersonalNutritionPress} />
                 <NutritionBars nutritionBars={nutritionBars} />
                 <TipSection tipText="Hãy duy trì chế độ ăn uống cân bằng và tập thể dục đều đặn để có sức khỏe tốt!" />
                 <UsedMealsList 

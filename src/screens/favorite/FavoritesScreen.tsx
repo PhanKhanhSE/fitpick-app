@@ -20,6 +20,7 @@ import { useFavorites } from '../../hooks/useFavorites';
 import { useIngredients } from '../../hooks/useIngredients';
 import { useMealPlans } from '../../hooks/useMealPlans';
 import { useUser } from '../../hooks/useUser';
+import { useProUser } from '../../hooks/useProUser';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 import {
@@ -36,7 +37,7 @@ const FavoritesScreen: React.FC = () => {
   const { removeFavorite, removeMultipleFavorites } = useFavorites();
   const { addMealToProducts } = useIngredients();
   const { isMealInPlan } = useMealPlans();
-  const { isProUser } = useUser();
+  const { isProUser } = useProUser();
   
   const [multiSelect, setMultiSelect] = useState(false);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);

@@ -1,14 +1,12 @@
 import apiClient from './apiClient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as FileSystem from 'expo-file-system';
-
 
 // API service for user profile and nutrition data
 export const userProfileAPI = {
   // Get user profile information
   getUserProfile: async () => {
     try {
-      const response = await apiClient.get('/api/user/profile');
+      const response = await apiClient.get('/api/users/me');
       return response.data;
     } catch (error: any) {
       console.error('Error fetching user profile:', error);
@@ -130,7 +128,7 @@ export const userProfileAPI = {
   // Update user profile
   updateProfile: async (profileData: any) => {
     try {
-      const response = await apiClient.put('/api/user/profile', profileData);
+      const response = await apiClient.put('/api/users/me/update-profile', profileData);
       return response.data;
     } catch (error: any) {
       console.error('Error updating profile:', error);
@@ -194,10 +192,10 @@ export const userProfileAPI = {
     }
   },
 
-  // Get user profile from /api/user/profile endpoint (includes goals, diet plan, etc.)
+  // Get user profile from /api/users/me endpoint (includes Pro user info)
   getCurrentUserProfile: async () => {
     try {
-      const response = await apiClient.get('/api/user/profile');
+      const response = await apiClient.get('/api/users/me');
       return response.data;
     } catch (error: any) {
       console.error('Error fetching current user profile:', error);
@@ -319,7 +317,7 @@ export const userProfileAPI = {
       console.log('🔍 FormData created, sending request with fetch...');
       
       // Use fetch instead of axios
-      const response = await fetch('https://67342df5afbc.ngrok-free.app/api/users/me/avatar-simple', {
+      const response = await fetch('https://ecc8daba9d35.ngrok-free.app/api/users/me/avatar-simple', {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -350,6 +348,29 @@ export const userProfileAPI = {
       return response.data;
     } catch (error: any) {
       console.error('Error deactivating account:', error);
+      throw error;
+    }
+  },
+
+  // Pro user APIs
+  // Check if user is Pro user
+  isProUser: async () => {
+    try {
+      const response = await apiClient.get('/api/users/me/is-pro');
+      return response.data;
+    } catch (error: any) {
+      console.error('Error checking Pro user status:', error);
+      throw error;
+    }
+  },
+
+  // Get Pro user permissions
+  getProUserPermissions: async () => {
+    try {
+      const response = await apiClient.get('/api/users/me/pro-permissions');
+      return response.data;
+    } catch (error: any) {
+      console.error('Error fetching Pro user permissions:', error);
       throw error;
     }
   }

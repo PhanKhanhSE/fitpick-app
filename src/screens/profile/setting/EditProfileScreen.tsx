@@ -61,7 +61,7 @@ const EditProfileScreen: React.FC = () => {
       const profile = response.data;
       
       setUserProfile({
-        fullName: profile.fullName || '',
+        fullName: profile.fullname || '',
         email: profile.email || '',
         phone: profile.phone || '',
         avatarUrl: profile.avatarUrl || '',

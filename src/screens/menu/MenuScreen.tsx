@@ -17,6 +17,7 @@ import { COLORS, SPACING, RADII } from '../../utils/theme';
 import { useIngredients } from '../../hooks/useIngredients';
 import { useMealPlans } from '../../hooks/useMealPlans';
 import { useUser } from '../../hooks/useUser';
+import { useProUser } from '../../hooks/useProUser';
 import { useFavorites } from '../../hooks/useFavorites';
 import { TodayMealPlanDto } from '../../services/mealPlanAPI';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -35,7 +36,8 @@ import ProUpgradeModal from '../../components/common/ProUpgradeModal';
 const MenuScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const { addMealToProducts, isMealInProductList } = useIngredients();
-  const { userInfo, isProUser, canViewFutureDates, canPlanFutureMeals } = useUser();
+  const { userInfo } = useUser();
+  const { isProUser, canViewFutureDates, canPlanFutureMeals } = useProUser();
   const { isFavorite } = useFavorites();
   const { 
     todayMealPlans, 
@@ -320,8 +322,11 @@ const MenuScreen: React.FC = () => {
 
   const handleShowWeeklyView = () => {
     setShowMenuActionModal(false);
-    setSuccessMessage('Tính năng PRO - vui lòng nâng cấp');
-    setShowSuccessModal(true);
+    if (isProUser()) {
+      navigation.navigate('WeeklyMenuScreen');
+    } else {
+      setShowProUpgradeModal(true);
+    }
   };
 
   const handleAddAllToShoppingList = async () => {

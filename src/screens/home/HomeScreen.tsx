@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, RADII } from '../../utils/theme';
 import NutritionStats from '../../components/home/NutritionStats';
 import MyMenuSection from '../../components/home/personal/MyMenuSection';
@@ -24,6 +25,7 @@ import { convertCategoryToVietnamese } from '../../utils/categoryMapping';
 import { useFavorites } from '../../hooks/useFavorites';
 import { useMealPlans } from '../../hooks/useMealPlans';
 import { useNotifications } from '../../hooks/useNotifications';
+import { useProUser } from '../../hooks/useProUser';
 import NotificationBadge from '../../components/NotificationBadge';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -41,6 +43,9 @@ const HomeScreen: React.FC = () => {
 
   // Use notifications hook for unread count
   const { unreadCount } = useNotifications();
+
+  // Use Pro user hook for permissions
+  const { isProUser, canViewFutureDates, canPlanFutureMeals } = useProUser();
 
   // State cho dữ liệu từ API
   const [nutritionData, setNutritionData] = useState({
@@ -63,6 +68,16 @@ const HomeScreen: React.FC = () => {
     }
   }, [selectedTab]);
 
+  // Reload data when screen comes into focus (after eating meals)
+  useFocusEffect(
+    React.useCallback(() => {
+      if (selectedTab === 'personal') {
+        loadPersonalData();
+        loadTodayMealPlan();
+      }
+    }, [selectedTab])
+  );
+
   const loadSuggestedMeals = async () => {
     try {
       const response = await searchAPI.searchMeals({ 
@@ -80,7 +95,8 @@ const HomeScreen: React.FC = () => {
           time: `${meal.cookingTime || 15} phút`,
           image: { uri: meal.imageUrl || meal.image || 'https://via.placeholder.com/200x150' },
           tag: convertCategoryToVietnamese(meal.categoryName || 'Gợi ý'),
-          isLocked: false,
+          // Premium/Pro users can view all meals, only Free users are restricted
+          isLocked: (meal.isPremium || false) && !isProUser,
         }));
         setSuggestedMeals(suggestedData);
       } else {
@@ -164,7 +180,8 @@ const HomeScreen: React.FC = () => {
   };
 
   const handleMealPress = (meal: any) => {
-    if (meal.isLocked) {
+    // Premium/Pro users can view all meals, only Free users are restricted
+    if (meal.isLocked && !isProUser) {
       setShowPremiumModal(true);
     } else {
       navigation.navigate('MealDetail', { meal });
@@ -224,7 +241,8 @@ const HomeScreen: React.FC = () => {
       time: `${mealPlan.meal.cookingtime} phút`,
       image: { uri: mealPlan.meal.imageUrl || 'https://via.placeholder.com/200x150' },
       tag: mealPlan.meal.categoryName || 'Thực đơn',
-      isLocked: mealPlan.meal.isPremium || false,
+      // Premium/Pro users can view all meals, only Free users are restricted
+      isLocked: (mealPlan.meal.isPremium || false) && !isProUser,
     }));
   };
 

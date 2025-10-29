@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
 import { COLORS, SPACING } from "../../utils/theme";
+import ProUserBadge from "../common/ProUserBadge";
 
 interface UserProfileProps {
   name: string;
@@ -26,7 +27,10 @@ const UserProfile: React.FC<UserProfileProps> = ({
         />
       </TouchableOpacity>
       <View style={styles.userInfo}>
-        <Text style={styles.userName}>{name}</Text>
+        <View style={styles.nameContainer}>
+          <Text style={styles.userName}>{name}</Text>
+          <ProUserBadge isProUser={accountType === 'PRO'} size="small" />
+        </View>
         <View style={styles.accountTypeContainer}>
           <Text style={styles.accountTypeLabel}>Tài khoản </Text>
           <View style={styles.accountTypeBadge}>
@@ -62,11 +66,16 @@ const styles = StyleSheet.create({
     marginLeft: SPACING.md,
     flex: 1,
   },
+  nameContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: SPACING.xs,
+  },
   userName: {
     fontSize: 18,
     fontWeight: "600",
     color: COLORS.text,
-    marginBottom: SPACING.xs,
+    marginRight: SPACING.xs,
   },
   accountTypeContainer: {
     flexDirection: "row",
