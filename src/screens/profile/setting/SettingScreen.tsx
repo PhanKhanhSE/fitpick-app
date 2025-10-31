@@ -13,6 +13,8 @@ import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS, RADII, SPACING } from "../../../utils/theme";
 import PremiumModal from "../../../components/home/PremiumModal";
+import { paymentsAPI } from "../../../services/paymentAPI";
+import { Linking } from "react-native";
 import ChangePasswordModal from "./ChangePasswordModal";
 import { userProfileAPI, settingsAPI } from "../../../services/userProfileAPI";
 import { authAPI } from "../../../services/api";
@@ -111,11 +113,20 @@ const SettingsScreen: React.FC = () => {
     }
   };
 
-  const handleUpgradeToPro = () => {
-    // Logic nâng cấp lên PRO
-    console.log('Upgrading to PRO...');
-    Alert.alert('Thành công', 'Bạn đã nâng cấp lên PRO thành công!');
-    setShowPremiumModal(false);
+  const handleUpgradeToPro = async () => {
+    try {
+      setShowPremiumModal(false);
+      const res = await paymentsAPI.createPayment({ plan: 'PRO', amount: 29000, returnUrl: 'fitpick://payments/callback' });
+      const url = res?.data?.checkoutUrl || res?.data?.paymentUrl || res?.data?.url || res?.checkoutUrl || res?.paymentUrl || res?.url;
+      if (url) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert('Lỗi', 'Không nhận được link thanh toán.');
+      }
+    } catch (e: any) {
+      console.error('Upgrade error:', e);
+      Alert.alert('Lỗi', 'Không thể khởi tạo thanh toán.');
+    }
   };
 
   const handleChangePassword = async (oldPassword: string, newPassword: string) => {

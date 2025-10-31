@@ -4,7 +4,7 @@ import { MealTypeService } from './mealTypeService';
 import apiClient from './apiClient';
 
 // Base URL for API
-const API_BASE_URL = 'https://fondlingly-unheaped-amos.ngrok-free.dev';
+const API_BASE_URL = 'https://fitpick-be.onrender.com';
 
 // Auth API functions
 export const authAPI = {
@@ -29,10 +29,17 @@ export const authAPI = {
       console.log('🔐 Debug - API login called with:', { email, password: '***' });
       console.log('🌐 Debug - Full URL:', `${API_BASE_URL}/api/auth/login`);
       
-      const response = await apiClient.post('/api/auth/login', {
-        email,
-        password,
-      });
+      const doLogin = async () => apiClient.post('/api/auth/login', { email, password });
+      let response = await doLogin();
+      
+      // Retry once on transient network error
+      if (!response?.data) {
+        try {
+          response = await doLogin();
+        } catch (e) {
+          throw e;
+        }
+      }
       
       console.log('🔐 Debug - Raw API response:', response.data);
       const { token, refreshToken, user } = response.data.data;

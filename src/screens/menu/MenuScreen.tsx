@@ -32,6 +32,8 @@ import {
   SuccessModal 
 } from '../../components/menu';
 import ProUpgradeModal from '../../components/common/ProUpgradeModal';
+import { paymentsAPI } from '../../services/paymentAPI';
+import { Linking } from 'react-native';
 
 const MenuScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
@@ -143,11 +145,20 @@ const MenuScreen: React.FC = () => {
     setSelectedMeal(null);
   };
 
-  const handleUpgradeToPro = () => {
-    // TODO: Navigate to upgrade screen or handle payment
-    console.log('Upgrading to Pro...');
-    Alert.alert('Thành công', 'Bạn đã nâng cấp lên Pro thành công!');
-    setShowProUpgradeModal(false);
+  const handleUpgradeToPro = async () => {
+    try {
+      setShowProUpgradeModal(false);
+      const res = await paymentsAPI.createPayment({ plan: 'PRO', amount: 29000, returnUrl: 'fitpick://payments/callback' });
+      const url = res?.data?.checkoutUrl || res?.data?.paymentUrl || res?.data?.url || res?.checkoutUrl || res?.paymentUrl || res?.url;
+      if (url) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert('Lỗi', 'Không nhận được link thanh toán.');
+      }
+    } catch (e: any) {
+      console.error('Upgrade error:', e);
+      Alert.alert('Lỗi', 'Không thể khởi tạo thanh toán.');
+    }
   };
 
   const handleAddToFavorites = () => {

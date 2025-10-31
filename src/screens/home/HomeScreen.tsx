@@ -27,6 +27,8 @@ import { useMealPlans } from '../../hooks/useMealPlans';
 import { useNotifications } from '../../hooks/useNotifications';
 import { useProUser } from '../../hooks/useProUser';
 import NotificationBadge from '../../components/NotificationBadge';
+import { Linking, Alert } from 'react-native';
+import { paymentsAPI } from '../../services/paymentAPI';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -109,7 +111,7 @@ const HomeScreen: React.FC = () => {
           image: { uri: meal.imageUrl || meal.image || 'https://via.placeholder.com/200x150' },
           tag: convertCategoryToVietnamese(meal.categoryName || 'Gợi ý'),
           // Premium/Pro users can view all meals, only Free users are restricted
-          isLocked: (meal.isPremium || false) && !isProUser,
+          isLocked: (meal.isPremium || false) && !isProUser(),
         }));
         setSuggestedMeals(suggestedData);
       } else {
@@ -194,7 +196,7 @@ const HomeScreen: React.FC = () => {
 
   const handleMealPress = (meal: any) => {
     // Premium/Pro users can view all meals, only Free users are restricted
-    if (meal.isLocked && !isProUser) {
+    if (meal.isLocked && !isProUser()) {
       setShowPremiumModal(true);
     } else {
       navigation.navigate('MealDetail', { meal });
@@ -209,10 +211,20 @@ const HomeScreen: React.FC = () => {
     setShowPremiumModal(false);
   };
 
-  const handleUpgrade = () => {
-    // Handle upgrade logic here
-    console.log('Upgrade to premium');
-    setShowPremiumModal(false);
+  const handleUpgrade = async () => {
+    try {
+      setShowPremiumModal(false);
+      const res = await paymentsAPI.createPayment({ plan: 'PRO', amount: 29000, returnUrl: 'fitpick://payments/callback' });
+      const url = res?.data?.checkoutUrl || res?.data?.paymentUrl || res?.data?.url || res?.checkoutUrl || res?.paymentUrl || res?.url;
+      if (url) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert('Lỗi', 'Không nhận được link thanh toán.');
+      }
+    } catch (e: any) {
+      console.error('Upgrade error:', e);
+      Alert.alert('Lỗi', 'Không thể khởi tạo thanh toán.');
+    }
   };
 
   const handleSeeMore = () => {
@@ -258,7 +270,7 @@ const HomeScreen: React.FC = () => {
       image: { uri: mealPlan.meal.imageUrl || 'https://via.placeholder.com/200x150' },
       tag: mealPlan.meal.categoryName || 'Thực đơn',
       // Premium/Pro users can view all meals, only Free users are restricted
-      isLocked: (mealPlan.meal.isPremium || false) && !isProUser,
+      isLocked: (mealPlan.meal.isPremium || false) && !isProUser(),
     }));
     
     console.log('✅ Debug - Converted meal data:', convertedData);

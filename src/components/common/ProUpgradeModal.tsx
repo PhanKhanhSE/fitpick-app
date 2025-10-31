@@ -7,61 +7,37 @@ interface ProUpgradeModalProps {
   visible: boolean;
   onClose: () => void;
   onUpgrade: () => void;
-  title?: string;
-  message?: string;
 }
 
-const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
-  visible,
-  onClose,
-  onUpgrade,
-  title = 'Tính năng Pro',
-  message = 'Chỉ tài khoản Pro mới có thể sử dụng tính năng này. Nâng cấp ngay để trải nghiệm đầy đủ!'
-}) => {
+const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({ visible, onClose, onUpgrade }) => {
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
         <View style={styles.modal}>
           <View style={styles.header}>
-            <View style={styles.iconContainer}>
-              <Ionicons name="star" size={24} color="#FFD700" />
-            </View>
-            <Text style={styles.title}>{title}</Text>
-          </View>
-          
-          <Text style={styles.message}>{message}</Text>
-          
-          <View style={styles.features}>
-            <Text style={styles.featuresTitle}>Tài khoản Pro bao gồm:</Text>
-            <View style={styles.featureItem}>
-              <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-              <Text style={styles.featureText}>Lên kế hoạch cho ngày tương lai</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-              <Text style={styles.featureText}>Xem lịch sử thực đơn không giới hạn</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-              <Text style={styles.featureText}>Tính năng AI nâng cao</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-              <Text style={styles.featureText}>Hỗ trợ ưu tiên</Text>
-            </View>
-          </View>
-          
-          <View style={styles.buttons}>
-            <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-              <Text style={styles.cancelButtonText}>Để sau</Text>
+            <Text style={styles.title}>Nâng cấp FitPick PRO</Text>
+            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+              <Ionicons name="close" size={22} color={COLORS.text} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.upgradeButton} onPress={onUpgrade}>
-              <Text style={styles.upgradeButtonText}>Nâng cấp Pro</Text>
+          </View>
+
+          <View style={styles.list}>
+            <View style={styles.itemRow}>
+              <Ionicons name="checkmark-circle" size={18} color={COLORS.primary} />
+              <Text style={styles.itemText}>Xem tất cả món ăn trả phí</Text>
+            </View>
+            <View style={styles.itemRow}>
+              <Ionicons name="checkmark-circle" size={18} color={COLORS.primary} />
+              <Text style={styles.itemText}>Lên thực đơn theo tuần (Weekly Plan)</Text>
+            </View>
+          </View>
+
+          <View style={styles.buttons}>
+            <TouchableOpacity style={styles.secondary} onPress={onClose}>
+              <Text style={styles.secondaryText}>Để sau</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.primary} onPress={onUpgrade}>
+              <Text style={styles.primaryText}>Nâng cấp PRO</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -86,78 +62,60 @@ const styles = StyleSheet.create({
     maxWidth: 400,
   },
   header: {
-    alignItems: 'center',
-    marginBottom: SPACING.md,
-  },
-  iconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#FFF8E1',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: SPACING.sm,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: COLORS.text,
-    textAlign: 'center',
-  },
-  message: {
-    fontSize: 16,
-    color: COLORS.textDim,
-    textAlign: 'center',
-    marginBottom: SPACING.lg,
-    lineHeight: 22,
-  },
-  features: {
-    marginBottom: SPACING.lg,
-  },
-  featuresTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.text,
-    marginBottom: SPACING.sm,
-  },
-  featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: SPACING.xs,
+    justifyContent: 'space-between',
+    marginBottom: SPACING.md,
   },
-  featureText: {
+  closeBtn: {
+    padding: SPACING.xs,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  list: {
+    gap: SPACING.sm,
+    marginBottom: SPACING.lg,
+  },
+  itemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  itemText: {
     fontSize: 14,
-    color: COLORS.textDim,
-    marginLeft: SPACING.sm,
+    color: COLORS.text,
   },
   buttons: {
     flexDirection: 'row',
     gap: SPACING.sm,
   },
-  cancelButton: {
+  secondary: {
     flex: 1,
-    paddingVertical: SPACING.md,
-    borderRadius: RADII.md,
     borderWidth: 1,
     borderColor: COLORS.border,
+    borderRadius: RADII.md,
+    paddingVertical: SPACING.md,
     alignItems: 'center',
   },
-  cancelButtonText: {
+  secondaryText: {
+    color: COLORS.text,
     fontSize: 16,
     fontWeight: '500',
-    color: COLORS.textDim,
   },
-  upgradeButton: {
+  primary: {
     flex: 1,
-    paddingVertical: SPACING.md,
-    borderRadius: RADII.md,
     backgroundColor: COLORS.primary,
+    borderRadius: RADII.md,
+    paddingVertical: SPACING.md,
     alignItems: 'center',
   },
-  upgradeButtonText: {
+  primaryText: {
+    color: 'white',
     fontSize: 16,
     fontWeight: '600',
-    color: 'white',
   },
 });
 

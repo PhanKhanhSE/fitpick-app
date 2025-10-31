@@ -4,13 +4,13 @@ import { MealTypeService } from './mealTypeService';
 import { Alert } from 'react-native';
 
 // Base URL for API
-const API_BASE_URL = 'https://fondlingly-unheaped-amos.ngrok-free.dev';
+const API_BASE_URL = 'https://fitpick-be.onrender.com';
 console.log('🌐 Debug - API Base URL:', API_BASE_URL);
 
 // Create axios instance
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
     'ngrok-skip-browser-warning': 'true', // Bỏ qua warning page của ngrok
@@ -24,7 +24,9 @@ apiClient.interceptors.request.use(
     const refreshToken = await AsyncStorage.getItem('refreshToken');
     const user = await AsyncStorage.getItem('user');
     
-    if (token) {
+    // Do not attach Authorization to auth endpoints
+    const isAuthEndpoint = (config.url || '').startsWith('/api/auth');
+    if (token && !isAuthEndpoint) {
       config.headers.Authorization = `Bearer ${token}`;
       console.log('🔑 Debug - Adding token to request:', config.url);
     } else {

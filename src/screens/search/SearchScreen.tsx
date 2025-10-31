@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -25,6 +26,7 @@ import { useProUser } from '../../hooks/useProUser';
 import { filterAPI } from '../../services/filterAPI';
 import { userProfileAPI } from '../../services/userProfileAPI';
 import { checkAuthStatus } from '../../services/api';
+import { paymentsAPI } from '../../services/paymentAPI';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -397,9 +399,20 @@ const SearchScreen: React.FC = () => {
     setShowPremiumModal(false);
   };
 
-  const handleUpgrade = () => {
-    console.log('Upgrade to premium');
-    setShowPremiumModal(false);
+  const handleUpgrade = async () => {
+    try {
+      setShowPremiumModal(false);
+      const res = await paymentsAPI.createPayment({ plan: 'PRO', amount: 29000, returnUrl: 'fitpick://payments/callback' });
+      const url = res?.data?.checkoutUrl || res?.data?.paymentUrl || res?.data?.url || res?.checkoutUrl || res?.paymentUrl || res?.url;
+      if (url) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert('Lỗi', 'Không nhận được link thanh toán.');
+      }
+    } catch (e: any) {
+      console.error('Upgrade error:', e);
+      Alert.alert('Lỗi', 'Không thể khởi tạo thanh toán.');
+    }
   };
 
   const handleSearchFocus = () => {
@@ -526,8 +539,8 @@ const SearchScreen: React.FC = () => {
           />
         )}
 
-        {/* Search Results - Suggested Section - Only show when no search results */}
-        {searchResults.length === 0 && suggestedMeals.length > 0 && (
+        {/* Search Results - Suggested Section (only during active search when no direct name results) */}
+        {isSearchActive && searchResults.length === 0 && suggestedMeals.length > 0 && (
           <SuggestedSection
             data={suggestedMeals as any}
             favorites={favorites}
@@ -537,8 +550,8 @@ const SearchScreen: React.FC = () => {
           />
         )}
 
-        {/* Default Popular Section - Only show when no search results */}
-        {searchResults.length === 0 && !isLoading && (
+        {/* Default Popular Section - only when not searching */}
+        {!isSearchActive && !isLoading && (
           <PopularSection
             data={popularMeals as any}
             favorites={favorites}
@@ -548,8 +561,8 @@ const SearchScreen: React.FC = () => {
           />
         )}
 
-        {/* Default Suggested Section - Only show when no search results */}
-        {searchResults.length === 0 && !isLoading && (
+        {/* Default Suggested Section - only when not searching */}
+        {!isSearchActive && !isLoading && (
           <SuggestedSection
             data={defaultSuggestedMeals as any}
             favorites={favorites}
