@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Alert } from 'react-native';
-import { mealHistoryAPI, MealHistoryDto, CreateMealHistoryDto, DetailedDailyStats, MealEatenCheck } from '../services/mealHistoryAPI';
+import { mealHistoryAPI, MealHistoryDto, DetailedDailyStats, MealEatenCheck } from '../services/mealHistoryAPI';
 
 export const useMealHistory = () => {
   const [mealHistory, setMealHistory] = useState<MealHistoryDto[]>([]);

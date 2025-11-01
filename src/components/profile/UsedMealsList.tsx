@@ -9,7 +9,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../utils/theme';
-import { useMealHistory, MealHistoryDto } from '../../hooks/useMealHistory';
+import { useMealHistory} from '../../hooks/useMealHistory';
+import { MealHistoryDto } from '../../services/mealHistoryAPI';
 
 interface UsedMealsListProps {
   selectedDate: string;

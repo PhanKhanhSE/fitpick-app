@@ -8,7 +8,19 @@ export interface CreatePaymentRequest {
 
 export interface CreatePaymentResponse {
   success?: boolean;
-  data?: any;
+  // Some payment providers return the checkout/payment url at the top level
+  checkoutUrl?: string;
+  paymentUrl?: string;
+  url?: string;
+
+  // or they return it inside `data` object
+  data?: {
+    checkoutUrl?: string;
+    paymentUrl?: string;
+    url?: string;
+    [key: string]: any;
+  } | any;
+
   message?: string;
 }
 

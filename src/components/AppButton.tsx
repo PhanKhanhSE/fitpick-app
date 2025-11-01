@@ -8,6 +8,7 @@ interface AppButtonProps {
     filled?: boolean; // true = nút hồng đặc, false = viền hồng
     style?: ViewStyle; // Custom style cho button
     textStyle?: TextStyle; // Custom style cho text
+    disabled?: boolean;
 }
 
 const AppButton: React.FC<AppButtonProps> = ({ 
@@ -15,19 +16,23 @@ const AppButton: React.FC<AppButtonProps> = ({
     onPress, 
     filled = true, 
     style, 
-    textStyle 
+    textStyle,
+    disabled = false,
 }) => {
     return (
         <TouchableOpacity
-            onPress={onPress}
+            onPress={() => { if (!disabled) onPress(); }}
+            activeOpacity={disabled ? 1 : 0.7}
             style={[
                 filled ? styles.filledButton : styles.outlinedButton,
-                style
+                style,
+                disabled && styles.disabledButton,
             ]}
         >
             <Text style={[
                 filled ? styles.filledText : styles.outlinedText,
-                textStyle
+                textStyle,
+                disabled && styles.disabledText,
             ]}>
                 {title}
             </Text>
@@ -62,5 +67,11 @@ const styles = StyleSheet.create({
         color: COLORS.primary,
         fontWeight: 'bold',
         fontSize: 16,
+    },
+    disabledText: {
+        opacity: 0.7,
+    },
+    disabledButton: {
+        opacity: 0.6,
     },
 });

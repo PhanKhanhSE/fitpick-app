@@ -57,7 +57,7 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
   const { isFavorite: isMealFavorite, toggleFavorite } = useFavorites();
   const { addMealToProducts, getMealQuantity, saveMealQuantity } = useIngredients();
   const { addMealToMenu, isMealInPlan } = useMealPlans();
-  const { isMealEatenToday, markMealAsEaten, loading: mealHistoryLoading } = useMealHistory();
+  const { isMealEatenToday, markMealAsEaten, loading: _mealHistoryLoading } = useMealHistory();
   
   const [activeTab, setActiveTab] = useState<'Ingredients' | 'Instructions' | 'Nutrition' | 'Reviews'>('Ingredients');
   const [scrollY] = useState(new Animated.Value(0));
@@ -66,7 +66,7 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
   const [isLoading, setIsLoading] = useState(true);
   const [isInProductList, setIsInProductList] = useState(false);
   const [reviews, setReviews] = useState<any[]>([]);
-  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [_reviewsLoading, setReviewsLoading] = useState(false);
   const [userReview, setUserReview] = useState<any>(null);
   const [ratingStats, setRatingStats] = useState({
     averageRating: 0,
