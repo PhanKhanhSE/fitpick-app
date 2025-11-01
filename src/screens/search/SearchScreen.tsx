@@ -218,7 +218,7 @@ const SearchScreen: React.FC = () => {
         // Filter and sort results for more accurate matches
         const searchTerm = text.trim().toLowerCase();
         
-        const filteredAndSortedData = searchData
+        const filteredAndSortedData = (searchData as MealData[])
           .map((meal: MealData) => {
             const mealName = meal.name?.toLowerCase() || '';
             let score = 0;
@@ -249,10 +249,10 @@ const SearchScreen: React.FC = () => {
             
             return { meal, score };
           })
-          .filter(({ score }) => score >= 40) // Only include meals with good relevance (score >= 40)
-          .sort((a, b) => b.score - a.score) // Sort by score descending
+          .filter((item: { meal: MealData; score: number }) => item.score >= 40) // Only include meals with good relevance (score >= 40)
+          .sort((a: { meal: MealData; score: number }, b: { meal: MealData; score: number }) => b.score - a.score) // Sort by score descending
           .slice(0, 20) // Limit to top 20 results
-          .map(({ meal }) => meal); // Extract just the meal objects
+          .map((item: { meal: MealData; score: number }) => item.meal); // Extract just the meal objects
         
         console.log('🔍 Debug - Filtered and sorted meals:', filteredAndSortedData.length);
         
@@ -260,8 +260,8 @@ const SearchScreen: React.FC = () => {
         const convertedData = filteredAndSortedData.map((meal: MealData, index: number) => convertMealData(meal, index));
         console.log('🔍 Debug - Converted data:', convertedData);
         
-        // Set search results
-        setSearchResults(convertedData);
+  // Set search results (converted UI shape) — cast to MealData[] to satisfy existing state typing
+  setSearchResults(convertedData as unknown as MealData[]);
         setSuggestedMeals([]); // Clear suggested meals when searching
       } else {
         console.log('🔍 Debug - No search results found');

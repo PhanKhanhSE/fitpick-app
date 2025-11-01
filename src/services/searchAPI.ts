@@ -50,6 +50,7 @@ export interface MealDetailData {
   statusName?: string;
   ingredients?: MealIngredientDetail[];
   instructions?: MealInstruction[];
+  tags?: string[];
 }
 
 export interface MealIngredientDetail {

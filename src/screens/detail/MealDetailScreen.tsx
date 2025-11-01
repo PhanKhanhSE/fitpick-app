@@ -57,7 +57,7 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
   const { isFavorite: isMealFavorite, toggleFavorite } = useFavorites();
   const { addMealToProducts, getMealQuantity, saveMealQuantity } = useIngredients();
   const { addMealToMenu, isMealInPlan } = useMealPlans();
-  const { isMealEatenToday, markMealAsEaten, loading: _mealHistoryLoading } = useMealHistory();
+  const { isMealEatenToday, markMealAsEaten, unmarkMealAsEaten, loading: _mealHistoryLoading } = useMealHistory();
   
   const [activeTab, setActiveTab] = useState<'Ingredients' | 'Instructions' | 'Nutrition' | 'Reviews'>('Ingredients');
   const [scrollY] = useState(new Animated.Value(0));

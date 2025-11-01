@@ -19,8 +19,9 @@ export const useBase64Upload = () => {
         const file = result.assets[0];
         
         // Đọc file và convert sang base64
+        // recent versions of expo-file-system may not export EncodingType in types, use string literal
         const base64 = await FileSystem.readAsStringAsync(file.uri, {
-          encoding: FileSystem.EncodingType.Base64,
+          encoding: 'base64' as any,
         });
 
         return {
