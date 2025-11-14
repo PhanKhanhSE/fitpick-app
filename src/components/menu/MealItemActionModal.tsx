@@ -28,6 +28,9 @@ interface MealActionModalProps {
   onReplaceWithSuggestion: () => void;
   onReplaceFromFavorites: () => void;
   onDelete: () => void;
+  // Props để ẩn các option không cần thiết
+  isInFavorites?: boolean;
+  isInProductList?: boolean;
 }
 
 const MealItemActionModal: React.FC<MealActionModalProps> = ({
@@ -39,6 +42,8 @@ const MealItemActionModal: React.FC<MealActionModalProps> = ({
   onReplaceWithSuggestion,
   onReplaceFromFavorites,
   onDelete,
+  isInFavorites = false,
+  isInProductList = false,
 }) => {
   const insets = useSafeAreaInsets();
 
@@ -62,19 +67,26 @@ const MealItemActionModal: React.FC<MealActionModalProps> = ({
             { paddingBottom: insets.bottom + SPACING.md },
           ]}
         >
-          <TouchableOpacity style={styles.modalItem} onPress={onAddToFavorites}>
-            <Text style={styles.modalItemText}>Thêm vào yêu thích</Text>
-          </TouchableOpacity>
+          {/* Thêm vào yêu thích - chỉ hiện khi chưa có trong favorites */}
+          {!isInFavorites && (
+            <TouchableOpacity style={styles.modalItem} onPress={onAddToFavorites}>
+              <Text style={styles.modalItemText}>Thêm vào yêu thích</Text>
+            </TouchableOpacity>
+          )}
 
-          <TouchableOpacity
-            style={styles.modalItem}
-            onPress={onAddToProductList}
-          >
-            <Text style={styles.modalItemText}>
-              Thêm vào danh sách sản phẩm
-            </Text>
-          </TouchableOpacity>
+          {/* Thêm vào danh sách sản phẩm - chỉ hiện khi chưa có trong product list */}
+          {!isInProductList && (
+            <TouchableOpacity
+              style={styles.modalItem}
+              onPress={onAddToProductList}
+            >
+              <Text style={styles.modalItemText}>
+                Thêm vào danh sách sản phẩm
+              </Text>
+            </TouchableOpacity>
+          )}
 
+          {/* Thay đổi - luôn hiện */}
           <TouchableOpacity
             style={styles.modalItem}
             onPress={onReplaceWithSuggestion}
@@ -83,6 +95,7 @@ const MealItemActionModal: React.FC<MealActionModalProps> = ({
             <Ionicons name="chevron-forward" size={16} color={COLORS.muted} />
           </TouchableOpacity>
 
+          {/* Xóa - luôn hiện */}
           <TouchableOpacity
             style={styles.modalItem}
             onPress={onDelete}

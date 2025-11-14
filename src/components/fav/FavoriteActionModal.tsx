@@ -17,6 +17,7 @@ interface FavoriteActionModalProps {
   onAddToMealPlan: () => void;
   onAddToProductList: () => void;
   onDelete: () => void;
+  isInMealPlan?: boolean; // Thêm prop để kiểm tra đã có trong meal plan chưa
 }
 
 const FavoriteActionModal: React.FC<FavoriteActionModalProps> = ({
@@ -26,6 +27,7 @@ const FavoriteActionModal: React.FC<FavoriteActionModalProps> = ({
   onAddToMealPlan,
   onAddToProductList,
   onDelete,
+  isInMealPlan = false,
 }) => {
   const insets = useSafeAreaInsets();
   
@@ -44,12 +46,15 @@ const FavoriteActionModal: React.FC<FavoriteActionModalProps> = ({
           activeOpacity={1}
         />
         <View style={[styles.modalContent, { paddingBottom: insets.bottom + SPACING.md }]}>
-        <TouchableOpacity
-          style={styles.modalItem}
-          onPress={onAddToMealPlan}
-        >
-          <Text style={styles.modalItemText}>Thêm vào thực đơn của tôi</Text>
-        </TouchableOpacity>
+        {/* Chỉ hiện button "Thêm vào thực đơn của tôi" khi chưa có trong meal plan */}
+        {!isInMealPlan && (
+          <TouchableOpacity
+            style={styles.modalItem}
+            onPress={onAddToMealPlan}
+          >
+            <Text style={styles.modalItemText}>Thêm vào thực đơn của tôi</Text>
+          </TouchableOpacity>
+        )}
         
         <TouchableOpacity 
           style={styles.modalItem}

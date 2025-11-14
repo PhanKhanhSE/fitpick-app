@@ -41,9 +41,9 @@ const MealSection: React.FC<MealSectionProps> = ({
         </View>
         
         <View style={styles.mealsList}>
-          {meals.map((meal) => (
+          {meals.map((meal, index) => (
             <MealItem
-              key={meal.id}
+              key={meal.id || `meal-section-${index}`}
               id={meal.id}
               title={meal.title}
               calories={meal.calories}

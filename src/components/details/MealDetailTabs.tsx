@@ -8,7 +8,8 @@ import {
   StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, RADII, SPACING } from '../../utils/theme';
+import { getUserAvatar } from '../../utils/userUtils';
+import { COLORS, SPACING } from '../../utils/theme';
 
 type TabType = 'Ingredients' | 'Instructions' | 'Nutrition' | 'Reviews';
 
@@ -22,6 +23,7 @@ interface Review {
   date: string;
   rating: number;
   content: string;
+  avatar?: string;
 }
 
 interface MealDetailTabsProps {
@@ -36,6 +38,10 @@ interface MealDetailTabsProps {
   rating?: number;
   reviewCount?: number;
   onViewAllReviews?: () => void;
+  reviews?: Review[]; // Thêm prop để truyền reviews từ API
+  userReview?: Review | null; // Review của user hiện tại
+  onEditReview?: () => void; // Callback để edit review
+  onDeleteReview?: () => void; // Callback để delete review
 }
 
 const MealDetailTabs: React.FC<MealDetailTabsProps> = ({
@@ -50,6 +56,10 @@ const MealDetailTabs: React.FC<MealDetailTabsProps> = ({
   rating = 4,
   reviewCount = 0,
   onViewAllReviews,
+  reviews = [],
+  userReview = null,
+  onEditReview,
+  onDeleteReview,
 }) => {
   const tabs: { key: TabType; label: string }[] = [
     { key: 'Ingredients', label: 'Nguyên liệu' },
@@ -59,17 +69,14 @@ const MealDetailTabs: React.FC<MealDetailTabsProps> = ({
   ];
 
   const nutritionData = [
-    { label: 'Calories', value: calories },
+    { label: 'Calo', value: calories },
     { label: 'Tinh bột', value: carbs },
     { label: 'Protein', value: protein },
     { label: 'Chất béo', value: fat },
   ];
 
-  const mockReviews: Review[] = [
-    { user: 'user123', date: '1 ngày', rating: 5, content: 'Món ăn ngon và dễ làm, nguyên liệu tươi.' },
-    { user: 'user456', date: '2 ngày', rating: 4, content: 'Hướng dẫn chi tiết, nhưng hơi tốn thời gian.' },
-    { user: 'user789', date: '3 ngày', rating: 3, content: 'Hương vị ổn, nhưng gia vị hơi nhạt.' },
-  ];
+  // Chỉ sử dụng reviews từ API, không có fallback mock data
+  const displayReviews = reviews;
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -143,48 +150,90 @@ const MealDetailTabs: React.FC<MealDetailTabsProps> = ({
               </View>
             </View>
 
-            {/* Danh sách nhận xét */}
-            {mockReviews.map((review, index) => (
-              <View key={index} style={styles.reviewItem}>
+            {/* User Review (nếu có) */}
+            {userReview && (
+              <View style={[styles.reviewItem, styles.userReviewItem]}>
                 <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-                  {/* Avatar giả */}
                   <Image
-                    source={{ uri: 'https://i.pravatar.cc/100?img=' + (index + 1) }}
+                    source={{ uri: userReview.avatar }}
                     style={styles.avatar}
                   />
-
                   <View style={{ flex: 1, marginLeft: 10 }}>
-                    {/* Username + Ngày */}
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Text style={styles.username}>{review.user}</Text>
-                      <Text style={styles.reviewDate}>{review.date}</Text>
+                      <Text style={styles.username}>Nhận xét của bạn</Text>
+                      <View style={{ flexDirection: 'row', gap: SPACING.xs }}>
+                        <TouchableOpacity onPress={onEditReview} style={styles.actionButton}>
+                          <Ionicons name="create-outline" size={16} color={COLORS.primary} />
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={onDeleteReview} style={styles.actionButton}>
+                          <Ionicons name="trash-outline" size={16} color="#FF4444" />
+                        </TouchableOpacity>
+                      </View>
                     </View>
-
-                    {/* Rating */}
                     <View style={{ flexDirection: 'row', marginTop: 2 }}>
                       {[1, 2, 3, 4, 5].map(i => (
                         <Ionicons
                           key={i}
-                          name={i <= review.rating ? 'star' : 'star-outline'}
+                          name={i <= userReview.rating ? 'star' : 'star-outline'}
                           size={16}
                           color={COLORS.primary}
                         />
                       ))}
                     </View>
-
-                    {/* Nội dung */}
-                    <Text style={styles.reviewContent}>{review.content}</Text>
+                    <Text style={styles.reviewContent}>{userReview.content}</Text>
                   </View>
                 </View>
               </View>
-            ))}
+            )}
 
+            {/* Danh sách nhận xét khác */}
+            {displayReviews.length > 0 ? (
+              displayReviews.slice(0, 3).map((review, index) => (
+                <View key={index} style={styles.reviewItem}>
+                  <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                    <Image
+                      source={{ uri: review.avatar || 'https://i.pravatar.cc/100?img=' + (index + 1) }}
+                      style={styles.avatar}
+                    />
+                    <View style={{ flex: 1, marginLeft: 10 }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Text style={styles.username}>{review.user}</Text>
+                        <Text style={styles.reviewDate}>{review.date}</Text>
+                      </View>
+                      <View style={{ flexDirection: 'row', marginTop: 2 }}>
+                        {[1, 2, 3, 4, 5].map(i => (
+                          <Ionicons
+                            key={i}
+                            name={i <= review.rating ? 'star' : 'star-outline'}
+                            size={16}
+                            color={COLORS.primary}
+                          />
+                        ))}
+                      </View>
+                      <Text style={styles.reviewContent}>{review.content}</Text>
+                    </View>
+                  </View>
+                </View>
+              ))
+            ) : !userReview && (
+              <View style={styles.emptyReviews}>
+                <Text style={styles.emptyReviewsText}>Chưa có nhận xét nào</Text>
+                <Text style={styles.emptyReviewsSubtext}>Hãy là người đầu tiên đánh giá món ăn này!</Text>
+              </View>
+            )}
+
+            {/* Nút tối ưu - gộp viết nhận xét và xem thêm */}
             <TouchableOpacity 
-              style={{ alignItems: 'center', marginTop: SPACING.md }}
+              style={styles.optimizedReviewButton}
               onPress={onViewAllReviews}
             >
-              <Text style={{ color: COLORS.primary, fontWeight: '500', textDecorationLine: 'underline' }}>
-                xem thêm
+              <Ionicons 
+                name={userReview ? "eye-outline" : "star"} 
+                size={20} 
+                color={COLORS.white} 
+              />
+              <Text style={styles.optimizedReviewText}>
+                {userReview ? 'Xem tất cả nhận xét' : 'Viết nhận xét'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -369,6 +418,66 @@ const styles = StyleSheet.create({
     color: COLORS.text, 
     lineHeight: 20, 
     marginTop: 4 
+  },
+  emptyReviews: {
+    alignItems: 'center',
+    paddingVertical: SPACING.xl,
+    paddingHorizontal: SPACING.lg,
+  },
+  emptyReviewsText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.textDim,
+    marginBottom: SPACING.xs,
+  },
+  emptyReviewsSubtext: {
+    fontSize: 14,
+    color: COLORS.muted,
+    textAlign: 'center',
+  },
+  writeReviewButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primary,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    borderRadius: 25,
+    marginTop: SPACING.lg,
+    marginHorizontal: SPACING.lg,
+  },
+  writeReviewText: {
+    color: COLORS.white,
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: SPACING.xs,
+  },
+  userReviewItem: {
+    backgroundColor: '#F8F9FF',
+    borderLeftWidth: 3,
+    borderLeftColor: COLORS.primary,
+    marginBottom: SPACING.md,
+  },
+  actionButton: {
+    padding: SPACING.xs,
+    borderRadius: 4,
+  },
+  optimizedReviewButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primary,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    borderRadius: 25,
+    marginTop: SPACING.lg,
+    marginHorizontal: SPACING.lg,
+  },
+  optimizedReviewText: {
+    color: COLORS.white,
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: SPACING.xs,
   },
 });
 

@@ -12,6 +12,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADII } from '../../../utils/theme';
 import AppButton from '../../../components/AppButton';
+import { userProfileAPI } from '../../../services/userProfileAPI';
 
 type NavigationProp = any;
 type RouteProp = any;
@@ -25,8 +26,9 @@ const CreateNewPasswordScreen: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSavePassword = () => {
+  const handleSavePassword = async () => {
     if (!newPassword.trim()) {
       Alert.alert('Lỗi', 'Vui lòng nhập mật khẩu mới');
       return;
@@ -42,22 +44,28 @@ const CreateNewPasswordScreen: React.FC = () => {
       return;
     }
 
-    // TODO: Call API to save new password
-    console.log('Saving new password for:', email, { code, newPassword });
-    
-    Alert.alert(
-      'Thành công', 
-      'Mật khẩu đã được thay đổi thành công!',
-      [
-        {
-          text: 'OK',
-          onPress: () => {
-            // Navigate back to Settings screen
-            navigation.navigate('SettingScreen');
+    try {
+      setLoading(true);
+      await userProfileAPI.resetPassword(email, code, newPassword);
+      Alert.alert(
+        'Thành công', 
+        'Mật khẩu đã được thay đổi thành công!',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              // Navigate back to Settings screen
+              navigation.navigate('SettingScreen');
+            }
           }
-        }
-      ]
-    );
+        ]
+      );
+    } catch (error: any) {
+
+      Alert.alert('Lỗi', 'Không thể đặt lại mật khẩu. Vui lòng thử lại.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -133,11 +141,12 @@ const CreateNewPasswordScreen: React.FC = () => {
         </View>
 
         <AppButton
-          title="Lưu"
+          title={loading ? "Đang lưu..." : "Lưu"}
           onPress={handleSavePassword}
           filled
           style={styles.saveButton}
           textStyle={{ fontWeight: '600', fontSize: 14 }}
+          disabled={loading}
         />
       </View>
     </SafeAreaView>

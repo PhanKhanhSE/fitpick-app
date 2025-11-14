@@ -17,18 +17,19 @@ interface SuggestedSectionProps {
   mealData: MealData[];
   onMealPress: (meal: MealData) => void;
   onSeeMore?: () => void;
+  onExploreMore?: () => void;
+  isFavorite?: (mealId: number) => boolean;
+  onFavoritePress?: (mealId: number) => void;
 }
 
-const SuggestedSection: React.FC<SuggestedSectionProps> = ({ mealData, onMealPress, onSeeMore }) => {
-  const [favorites, setFavorites] = useState<string[]>([]);
-
-  const handleFavoritePress = (id: string) => {
-    setFavorites(prev => 
-      prev.includes(id) 
-        ? prev.filter(fav => fav !== id)
-        : [...prev, id]
-    );
-  };
+const SuggestedSection: React.FC<SuggestedSectionProps> = ({ 
+  mealData, 
+  onMealPress, 
+  onSeeMore, 
+  onExploreMore,
+  isFavorite,
+  onFavoritePress
+}) => {
 
   return (
     <>
@@ -45,8 +46,8 @@ const SuggestedSection: React.FC<SuggestedSectionProps> = ({ mealData, onMealPre
         style={styles.mealScrollView}
         contentContainerStyle={styles.mealScrollContent}
       >
-        {mealData.map((meal) => (
-          <View key={meal.id} style={styles.mealCardWrapper}>
+        {mealData.map((meal, index) => (
+          <View key={meal.id || `suggested-meal-${index}`} style={styles.mealCardWrapper}>
             <MealCardOverlay
               id={meal.id}
               title={meal.title}
@@ -55,8 +56,8 @@ const SuggestedSection: React.FC<SuggestedSectionProps> = ({ mealData, onMealPre
               image={meal.image}
               tag={meal.tag}
               isLocked={meal.isLocked}
-              isFavorite={favorites.includes(meal.id)}
-              onFavoritePress={() => handleFavoritePress(meal.id)}
+              isFavorite={isFavorite ? isFavorite(parseInt(meal.id)) : false}
+              onFavoritePress={() => onFavoritePress ? onFavoritePress(parseInt(meal.id)) : undefined}
               onPress={() => onMealPress(meal)}
               width={180}
               height={220}
@@ -67,7 +68,7 @@ const SuggestedSection: React.FC<SuggestedSectionProps> = ({ mealData, onMealPre
 
       <View style={styles.noMoreSuggestions}>
         <Text style={styles.noMoreText}>Chưa thấy món ưng ý? </Text>
-        <TouchableOpacity onPress={onSeeMore}>
+        <TouchableOpacity onPress={onExploreMore || onSeeMore}>
           <Text style={styles.exploreMore}>Khám phá thêm</Text>
         </TouchableOpacity>
       </View>

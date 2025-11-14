@@ -5,6 +5,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -14,6 +15,7 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view
 import { RootStackParamList } from "../../types/navigation";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { COLORS, SPACING, RADII, FONTS } from "../../utils/theme";
+import { authAPI } from "../../services/api";
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Register'>;
 
@@ -24,20 +26,84 @@ const RegisterScreen = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const navigation = useNavigation<Nav>();
-  const [selected, setSelected] = useState("");
 
-  const handleContinue = () => {
-    // For testing - navigate directly without form validation
-    // TODO: Add proper form validation when ready for production
-    navigation.navigate('UserInfo');
-    
-    // Original validation logic (commented out for testing):
-    // if (email && password && confirmPassword && password === confirmPassword && agreeToTerms) {
-    //   navigation.navigate('UserInfo');
-    // } else {
-    //   // Show error message
-    // }
+  const validateForm = () => {
+    if (!email || !password || !confirmPassword) {
+      Alert.alert("Lỗi", "Vui lòng điền đầy đủ thông tin");
+      return false;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert("Lỗi", "Mật khẩu xác nhận không khớp");
+      return false;
+    }
+
+    if (password.length < 6) {
+      Alert.alert("Lỗi", "Mật khẩu phải có ít nhất 6 ký tự");
+      return false;
+    }
+
+    if (!agreeToTerms) {
+      Alert.alert("Lỗi", "Vui lòng đồng ý với điều khoản dịch vụ");
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleContinue = async () => {
+    if (!validateForm()) return;
+
+    setIsLoading(true);
+    try {
+      // Đăng ký tài khoản
+      const registerResponse = await authAPI.register(email, password, confirmPassword);
+      
+      if (registerResponse.success) {
+        
+        // Tự động đăng nhập sau khi đăng ký thành công
+        try {
+          const loginResponse = await authAPI.login(email, password);
+          
+          if (loginResponse.success) {
+            
+            Alert.alert(
+              "Đăng ký thành công", 
+              "Tài khoản đã được tạo và sẵn sàng sử dụng!",
+              [
+                {
+                  text: "OK",
+                  onPress: () => navigation.navigate('UserInfo'),
+                },
+              ]
+            );
+          } else {
+            throw new Error('Auto-login failed');
+          }
+        } catch (loginError) {
+
+          // Nếu auto-login thất bại, vẫn cho phép người dùng tiếp tục
+          Alert.alert(
+            "Đăng ký thành công", 
+            "Tài khoản đã được tạo. Vui lòng đăng nhập để tiếp tục.",
+            [
+              {
+                text: "OK",
+                onPress: () => navigation.navigate('Login'),
+              },
+            ]
+          );
+        }
+      }
+    } catch (error: any) {
+
+      const errorMessage = error?.message || "Đăng ký thất bại. Vui lòng thử lại.";
+      Alert.alert("Lỗi đăng ký", errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -149,10 +215,11 @@ const RegisterScreen = () => {
 
           {/* Register Button */}
           <AppButton
-            title="Đăng ký"
+            title={isLoading ? "Đang đăng ký..." : "Đăng ký"}
             onPress={handleContinue}
             filled
             style={styles.registerButton}
+            disabled={isLoading}
           />
 
           {/* Login Link */}

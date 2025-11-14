@@ -1,31 +1,40 @@
 import React from "react";
-import { View, Text, StyleSheet, Image } from "react-native";
+import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
 import { COLORS, SPACING } from "../../utils/theme";
+import ProUserBadge from "../common/ProUserBadge";
 
 interface UserProfileProps {
   name: string;
   accountType: string;
   avatar: string;
+  onAvatarPress?: () => void;
 }
 
 const UserProfile: React.FC<UserProfileProps> = ({
+  name,
+  accountType,
+  avatar,
+  onAvatarPress,
 }) => {
   return (
     <View style={styles.profileSection}>
-      <View style={styles.avatarContainer}>
+      <TouchableOpacity style={styles.avatarContainer} onPress={onAvatarPress}>
         <Image
           source={{
-          uri : 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR7XDKSjjkyUPBWh7lrsh4BrKCkyuNC2v7UfA&s',
-}}
+            uri: avatar,
+          }}
           style={styles.avatar}
         />
-      </View>
+      </TouchableOpacity>
       <View style={styles.userInfo}>
-        <Text style={styles.userName}>Meo Meo Đã Căng</Text>
+        <View style={styles.nameContainer}>
+          <Text style={styles.userName}>{name}</Text>
+          <ProUserBadge isProUser={accountType === 'PRO'} size="small" />
+        </View>
         <View style={styles.accountTypeContainer}>
           <Text style={styles.accountTypeLabel}>Tài khoản </Text>
           <View style={styles.accountTypeBadge}>
-            <Text style={styles.accountTypeText}>FREE</Text>
+            <Text style={styles.accountTypeText}>{accountType}</Text>
           </View>
         </View>
       </View>
@@ -57,11 +66,16 @@ const styles = StyleSheet.create({
     marginLeft: SPACING.md,
     flex: 1,
   },
+  nameContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: SPACING.xs,
+  },
   userName: {
     fontSize: 18,
     fontWeight: "600",
     color: COLORS.text,
-    marginBottom: SPACING.xs,
+    marginRight: SPACING.xs,
   },
   accountTypeContainer: {
     flexDirection: "row",

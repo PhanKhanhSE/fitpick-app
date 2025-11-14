@@ -37,8 +37,8 @@ const UsedMeals: React.FC<UsedMealsProps> = ({
         style={styles.mealsScrollView}
         contentContainerStyle={styles.mealsScrollContent}
       >
-        {meals.map((meal) => (
-          <View key={meal.id} style={styles.mealCardWrapper}>
+        {meals.map((meal, index) => (
+          <View key={meal.id || `used-meal-${index}`} style={styles.mealCardWrapper}>
             <MealCardVertical
               id={meal.id}
               title={meal.title}

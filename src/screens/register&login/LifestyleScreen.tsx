@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Dimensions } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Dimensions, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AppButton from '../../components/AppButton';
@@ -7,6 +7,8 @@ import { useNavigation } from '@react-navigation/native';
 import { COLORS, SPACING, RADII } from '../../utils/theme';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/navigation';
+import { profileAPI } from '../../services/profileAPI';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
 
@@ -23,10 +25,63 @@ const LIFESTYLE_OPTIONS = [
 const LifestyleScreen = () => {
     const navigation = useNavigation<Nav>();
     const [selected, setSelected] = useState<LifestyleKey>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [currentActivityLevel, setCurrentActivityLevel] = useState<string>('');
 
-    const handleContinue = () => {
+    // Load current activity level when component mounts
+    useEffect(() => {
+        loadCurrentActivityLevel();
+    }, []);
+
+    const loadCurrentActivityLevel = async () => {
+        try {
+            // Check if this is settings flow
+            const isSettingsFlow = navigation.getState().routes.some(route => 
+                route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'
+            );
+
+            if (isSettingsFlow) {
+                // Try to get from API first
+                try {
+                    const profileResponse = await profileAPI.getUserProfile();
+                    if (profileResponse.data?.activityLevel) {
+                        setCurrentActivityLevel(profileResponse.data.activityLevel);
+                        // Map activity level to selected state
+                        const activityLevelKey = mapActivityLevelToKey(profileResponse.data.activityLevel);
+                        if (activityLevelKey) {
+                            setSelected(activityLevelKey);
+                        }
+                    }
+                } catch (error) {
+
+                    // Fallback to AsyncStorage
+                    const storedActivityLevel = await AsyncStorage.getItem('userActivityLevel');
+                    if (storedActivityLevel) {
+                        setCurrentActivityLevel(storedActivityLevel);
+                        const activityLevelKey = mapActivityLevelToKey(storedActivityLevel);
+                        if (activityLevelKey) {
+                            setSelected(activityLevelKey);
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+
+        }
+    };
+
+    const mapActivityLevelToKey = (activityLevel: string): LifestyleKey | null => {
+        const lowerActivityLevel = activityLevel.toLowerCase();
+        if (lowerActivityLevel.includes('sedentary') || lowerActivityLevel.includes('ít vận động')) return 'sedentary';
+        if (lowerActivityLevel.includes('light') || lowerActivityLevel.includes('nhẹ')) return 'light';
+        if (lowerActivityLevel.includes('moderate') || lowerActivityLevel.includes('vừa phải')) return 'moderate';
+        if (lowerActivityLevel.includes('high') || lowerActivityLevel.includes('cao')) return 'high';
+        return null;
+    };
+
+    const handleContinue = async () => {
         if (!selected) {
-            alert('Vui lòng chọn mức độ vận động để tiếp tục');
+            Alert.alert('Thông báo', 'Vui lòng chọn mức độ vận động để tiếp tục');
             return;
         }
 
@@ -37,11 +92,39 @@ const LifestyleScreen = () => {
         
         if (isSettingsFlow) {
             // Nếu đang trong settings, lưu mức độ vận động và quay lại
-            console.log('Lưu mức độ vận động:', { selected });
-            navigation.goBack();
+            setIsLoading(true);
+            try {
+                await profileAPI.saveUserLifestyle({ activityLevel: selected });
+                
+                // Also save to AsyncStorage for fallback
+                await AsyncStorage.setItem('userActivityLevel', selected);
+                
+                Alert.alert('Thành công', 'Mức độ vận động đã được cập nhật');
+                navigation.goBack();
+            } catch (error: any) {
+
+                const errorMessage = error?.message || 'Cập nhật mức độ vận động thất bại. Vui lòng thử lại.';
+                Alert.alert('Lỗi', errorMessage);
+            } finally {
+                setIsLoading(false);
+            }
         } else {
             // Nếu đang trong flow đăng ký, tiếp tục đến màn hình EatStyle
-            navigation.navigate('EatStyle');
+            setIsLoading(true);
+            try {
+                await profileAPI.saveUserLifestyle({ activityLevel: selected });
+                
+                // Also save to AsyncStorage for fallback
+                await AsyncStorage.setItem('userActivityLevel', selected);
+                
+                navigation.navigate('EatStyle');
+            } catch (error: any) {
+
+                const errorMessage = error?.message || 'Lưu mức độ vận động thất bại. Vui lòng thử lại.';
+                Alert.alert('Lỗi', errorMessage);
+            } finally {
+                setIsLoading(false);
+            }
         }
     };
 
@@ -60,6 +143,14 @@ const LifestyleScreen = () => {
 
             <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
                 <Text style={styles.description}>Bạn thường hoạt động thể chất ở mức nào?</Text>
+
+                {/* Current Activity Level Display */}
+                {currentActivityLevel && (
+                    <View style={styles.currentActivityLevelContainer}>
+                        <Text style={styles.currentActivityLevelLabel}>Mức độ vận động hiện tại:</Text>
+                        <Text style={styles.currentActivityLevelText}>{currentActivityLevel}</Text>
+                    </View>
+                )}
 
                 <View style={styles.optionsContainer}>
                     {LIFESTYLE_OPTIONS.map(item => (
@@ -151,6 +242,25 @@ const styles = StyleSheet.create({
         color: COLORS.textStrong,
         marginBottom: SPACING.xl,
         fontWeight: '500',
+    },
+    currentActivityLevelContainer: {
+        backgroundColor: '#F0F9FF',
+        borderWidth: 1,
+        borderColor: '#0EA5E9',
+        borderRadius: RADII.md,
+        padding: SPACING.md,
+        marginBottom: SPACING.lg,
+    },
+    currentActivityLevelLabel: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#0369A1',
+        marginBottom: SPACING.xs,
+    },
+    currentActivityLevelText: {
+        fontSize: 16,
+        fontWeight: '500',
+        color: '#0C4A6E',
     },
     optionsContainer: {
         flex: 1,

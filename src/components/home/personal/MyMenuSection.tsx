@@ -19,18 +19,17 @@ interface MyMenuSectionProps {
   mealData: MealData[];
   onMealPress: (meal: MealData) => void;
   onSeeMore?: () => void;
+  isFavorite?: (mealId: number) => boolean;
+  onFavoritePress?: (mealId: number) => void;
 }
 
-const MyMenuSection: React.FC<MyMenuSectionProps> = ({ mealData, onMealPress, onSeeMore }) => {
-  const [favorites, setFavorites] = useState<string[]>([]);
-
-  const handleFavoritePress = (id: string) => {
-    setFavorites(prev => 
-      prev.includes(id) 
-        ? prev.filter(fav => fav !== id)
-        : [...prev, id]
-    );
-  };
+const MyMenuSection: React.FC<MyMenuSectionProps> = ({ 
+  mealData, 
+  onMealPress, 
+  onSeeMore, 
+  isFavorite, 
+  onFavoritePress 
+}) => {
 
   return (
     <View style={styles.myMenuSection}>
@@ -41,31 +40,38 @@ const MyMenuSection: React.FC<MyMenuSectionProps> = ({ mealData, onMealPress, on
         </TouchableOpacity>
       </View>
 
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false}
-        style={styles.mealScrollView}
-        contentContainerStyle={styles.mealScrollContent}
-      >
-        {mealData.map((meal) => (
-          <View key={meal.id} style={styles.mealCardWrapper}>
-            <MealCardVertical
-              id={meal.id}
-              title={meal.title}
-              calories={meal.calories}
-              time={meal.time}
-              image={meal.image}
-              tag={meal.tag}
-              isLocked={meal.isLocked}
-              isFavorite={favorites.includes(meal.id)}
-              onFavoritePress={() => handleFavoritePress(meal.id)}
-              onPress={() => onMealPress(meal)}
-              width={158}
-              height={175}
-            />
-          </View>
-        ))}
-      </ScrollView>
+      {mealData.length > 0 ? (
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          style={styles.mealScrollView}
+          contentContainerStyle={styles.mealScrollContent}
+        >
+          {mealData.map((meal, index) => (
+            <View key={meal.id || `meal-${index}`} style={styles.mealCardWrapper}>
+              <MealCardVertical
+                id={meal.id}
+                title={meal.title}
+                calories={meal.calories}
+                time={meal.time}
+                image={meal.image}
+                tag={meal.tag}
+                isLocked={meal.isLocked}
+                isFavorite={isFavorite ? isFavorite(parseInt(meal.id)) : false}
+                onFavoritePress={() => onFavoritePress ? onFavoritePress(parseInt(meal.id)) : undefined}
+                onPress={() => onMealPress(meal)}
+                width={158}
+                height={175}
+              />
+            </View>
+          ))}
+        </ScrollView>
+      ) : (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyStateText}>Chưa có thực đơn cho hôm nay</Text>
+          <Text style={styles.emptyStateSubtext}>Hãy tạo thực đơn mới hoặc xem gợi ý bên dưới</Text>
+        </View>
+      )}
     </View>
   );
 };
@@ -116,6 +122,22 @@ const styles = StyleSheet.create({
   myMenuSectionHeader: {
     marginTop: 0,
     marginBottom: SPACING.md,
+  },
+  emptyState: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.lg,
+    alignItems: 'center',
+  },
+  emptyStateText: {
+    fontSize: 16,
+    color: 'white',
+    textAlign: 'center',
+    marginBottom: SPACING.xs,
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
+    textAlign: 'center',
   },
 });
 

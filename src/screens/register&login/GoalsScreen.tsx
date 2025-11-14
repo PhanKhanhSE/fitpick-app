@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, TextInput, ScrollView, KeyboardAvoidingView, Dimensions } from 'react-native';
+import React, { useMemo, useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, TextInput, ScrollView, KeyboardAvoidingView, Platform, Dimensions, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AppButton from '../../components/AppButton';
@@ -7,6 +7,8 @@ import { useNavigation } from '@react-navigation/native';
 import { COLORS, SPACING, RADII } from '../../utils/theme';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/navigation';
+import { profileAPI } from '../../services/profileAPI';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
 
@@ -18,21 +20,89 @@ const GOALS = [
     { key: 'lose' as const, title: 'Giảm cân' },
     { key: 'gain' as const, title: 'Tăng cơ'},
     { key: 'gain weight' as const, title: 'Tăng cân' },
+    { key: 'target' as const, title: 'Duy trì cân nặng' },
 ];
 
 const GoalsScreen = () => {
     const navigation = useNavigation<Nav>(); 
     const [selected, setSelected] = useState<GoalKey>(null);
     const [otherText, setOtherText] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [currentGoal, setCurrentGoal] = useState<string>('');
+
+    // Load current goal when component mounts
+    useEffect(() => {
+        loadCurrentGoal();
+    }, []);
+
+    const loadCurrentGoal = async () => {
+        try {
+            // Check if this is settings flow
+            const isSettingsFlow = navigation.getState().routes.some(route => 
+                route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'
+            );
+
+            if (isSettingsFlow) {
+                // Try to get from API first
+                try {
+                    const profileResponse = await profileAPI.getUserProfile();
+                    if (profileResponse.data?.goal) {
+                        setCurrentGoal(profileResponse.data.goal);
+                        // Map goal to selected state
+                        const goalKey = mapGoalToKey(profileResponse.data.goal);
+                        if (goalKey) {
+                            setSelected(goalKey);
+                            // If it's target goal and we have otherGoal, load it
+                            if (goalKey === 'target' && profileResponse.data.otherGoal) {
+                                setOtherText(profileResponse.data.otherGoal);
+                            }
+                        } else {
+                            setSelected('target');
+                            setOtherText(profileResponse.data.goal);
+                        }
+                    }
+                } catch (error) {
+
+                    // Fallback to AsyncStorage
+                    const storedGoal = await AsyncStorage.getItem('userGoal');
+                    if (storedGoal) {
+                        setCurrentGoal(storedGoal);
+                        const goalKey = mapGoalToKey(storedGoal);
+                        if (goalKey) {
+                            setSelected(goalKey);
+                        } else {
+                            setSelected('target');
+                            setOtherText(storedGoal);
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+
+        }
+    };
+
+    const mapGoalToKey = (goal: string): GoalKey | null => {
+        const lowerGoal = goal.toLowerCase();
+        
+        // More specific matching to avoid conflicts
+        if (lowerGoal.includes('tăng cơ') || lowerGoal.includes('gain muscle')) return 'gain';
+        if (lowerGoal.includes('tăng cân') || lowerGoal.includes('gain weight')) return 'gain weight';
+        if (lowerGoal.includes('giảm cân') || lowerGoal.includes('lose weight') || lowerGoal.includes('lose')) return 'lose';
+        if (lowerGoal.includes('duy trì') || lowerGoal.includes('maintain') || lowerGoal.includes('target')) return 'target';
+        if (lowerGoal.includes('lành mạnh') || lowerGoal.includes('healthy') || lowerGoal.includes('ăn uống')) return 'healthy';
+        
+        return null; // Custom goal
+    };
 
     const canContinue = useMemo(() => {
         if (selected && selected !== 'target') return true;
         return otherText.trim().length > 0;
     }, [selected, otherText]);
 
-    const handleContinue = () => {
+    const handleContinue = async () => {
         if (!canContinue) {
-            alert('Vui lòng chọn mục tiêu hoặc điền mục tiêu khác để tiếp tục');
+            Alert.alert('Thông báo', 'Vui lòng chọn mục tiêu hoặc điền mục tiêu khác để tiếp tục');
             return;
         }
 
@@ -43,11 +113,53 @@ const GoalsScreen = () => {
         
         if (isSettingsFlow) {
             // Nếu đang trong settings, lưu mục tiêu và quay lại
-            console.log('Lưu mục tiêu:', { selected, otherText });
-            navigation.goBack();
+            setIsLoading(true);
+            try {
+                const goalData = {
+                    goal: selected || 'other',
+                    otherGoal: selected === 'target' ? otherText : undefined,
+                };
+                
+                
+                await profileAPI.saveUserGoals(goalData);
+                
+                // Also save to AsyncStorage for fallback
+                const goalText = selected === 'target' ? otherText : GOALS.find(g => g.key === selected)?.title || selected || 'other';
+                await AsyncStorage.setItem('userGoal', goalText);
+                
+                Alert.alert('Thành công', 'Mục tiêu đã được cập nhật');
+                navigation.goBack();
+            } catch (error: any) {
+
+                const errorMessage = error?.message || 'Cập nhật mục tiêu thất bại. Vui lòng thử lại.';
+                Alert.alert('Lỗi', errorMessage);
+            } finally {
+                setIsLoading(false);
+            }
         } else {
             // Nếu đang trong flow đăng ký, tiếp tục đến màn hình Lifestyle
-            navigation.navigate('Lifestyle');
+            setIsLoading(true);
+            try {
+                const goalData = {
+                    goal: selected || 'other',
+                    otherGoal: selected === 'target' ? otherText : undefined,
+                };
+                
+                
+                await profileAPI.saveUserGoals(goalData);
+                
+                // Also save to AsyncStorage for fallback
+                const goalText = selected === 'target' ? otherText : GOALS.find(g => g.key === selected)?.title || selected || 'other';
+                await AsyncStorage.setItem('userGoal', goalText);
+                
+                navigation.navigate('Lifestyle');
+            } catch (error: any) {
+
+                const errorMessage = error?.message || 'Lưu mục tiêu thất bại. Vui lòng thử lại.';
+                Alert.alert('Lỗi', errorMessage);
+            } finally {
+                setIsLoading(false);
+            }
         }
     };
 
@@ -67,6 +179,14 @@ const GoalsScreen = () => {
             <KeyboardAvoidingView style={{ flex: 1 }}>
                 <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
                     <Text style={styles.description}>Chọn mục tiêu bạn mong muốn:</Text>
+                    
+                    {/* Current Goal Display */}
+                    {currentGoal && (
+                        <View style={styles.currentGoalContainer}>
+                            <Text style={styles.currentGoalLabel}>Mục tiêu hiện tại:</Text>
+                            <Text style={styles.currentGoalText}>{currentGoal}</Text>
+                        </View>
+                    )}
 
                     <View style={styles.optionsContainer}>
                         {GOALS.map(item => (
@@ -101,22 +221,24 @@ const GoalsScreen = () => {
 
                         {/* target */}
                         <View style={styles.otherSection}>
-                            <Text style={styles.otherTitle}>Cân nặng mục tiêu</Text>
+                            <Text style={styles.otherTitle}>Cân nặng mục tiêu (kg)</Text>
                             <TextInput
                                 style={[
                                     styles.otherInput,
                                     selected === 'target' && styles.otherInputFocused
                                 ]}
-                                placeholder=""
+                                placeholder="Nhập cân nặng mục tiêu"
                                 placeholderTextColor="#9CA3AF"
                                 value={otherText}
                                 onChangeText={(t) => {
-                                    setOtherText(t);
-                                    if (t.trim().length > 0) setSelected('target');
+                                    // Only allow numbers
+                                    const numericValue = t.replace(/[^0-9]/g, '');
+                                    setOtherText(numericValue);
+                                    if (numericValue.trim().length > 0) setSelected('target');
                                     else if (selected === 'target') setSelected(null);
                                 }}
                                 returnKeyType="done"
-                                multiline
+                                keyboardType="number-pad"
                             />
                         </View>
                     </View>
@@ -124,14 +246,19 @@ const GoalsScreen = () => {
 
                 <View style={styles.buttonContainer}>
                 <AppButton 
-                    title={navigation.getState().routes.some(route => 
-                        route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'
-                    ) ? "Lưu" : "Tiếp tục"}
+                    title={isLoading 
+                        ? (navigation.getState().routes.some(route => 
+                            route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'
+                        ) ? "Đang lưu..." : "Đang tiếp tục...")
+                        : (navigation.getState().routes.some(route => 
+                            route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'
+                        ) ? "Lưu" : "Tiếp tục")
+                    }
                     onPress={handleContinue} 
                     filled 
                     style={StyleSheet.flatten([
                         styles.continueButton,
-                        !canContinue && styles.continueButtonDisabled
+                        (!canContinue || isLoading) && styles.continueButtonDisabled
                     ])}
                 />
             </View>
@@ -236,6 +363,25 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: COLORS.textStrong,
         marginBottom: SPACING.sm,
+    },
+    currentGoalContainer: {
+        backgroundColor: '#F0F9FF',
+        borderWidth: 1,
+        borderColor: '#0EA5E9',
+        borderRadius: RADII.md,
+        padding: SPACING.md,
+        marginBottom: SPACING.lg,
+    },
+    currentGoalLabel: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#0369A1',
+        marginBottom: SPACING.xs,
+    },
+    currentGoalText: {
+        fontSize: 16,
+        fontWeight: '500',
+        color: '#0C4A6E',
     },
     otherInput: {
         minHeight: 50,

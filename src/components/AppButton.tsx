@@ -1,5 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import { COLORS } from '../utils/theme';
 
 interface AppButtonProps {
     title: string;
@@ -7,6 +8,7 @@ interface AppButtonProps {
     filled?: boolean; // true = nút hồng đặc, false = viền hồng
     style?: ViewStyle; // Custom style cho button
     textStyle?: TextStyle; // Custom style cho text
+    disabled?: boolean;
 }
 
 const AppButton: React.FC<AppButtonProps> = ({ 
@@ -14,19 +16,23 @@ const AppButton: React.FC<AppButtonProps> = ({
     onPress, 
     filled = true, 
     style, 
-    textStyle 
+    textStyle,
+    disabled = false,
 }) => {
     return (
         <TouchableOpacity
-            onPress={onPress}
+            onPress={() => { if (!disabled) onPress(); }}
+            activeOpacity={disabled ? 1 : 0.7}
             style={[
                 filled ? styles.filledButton : styles.outlinedButton,
-                style
+                style,
+                disabled && styles.disabledButton,
             ]}
         >
             <Text style={[
                 filled ? styles.filledText : styles.outlinedText,
-                textStyle
+                textStyle,
+                disabled && styles.disabledText,
             ]}>
                 {title}
             </Text>
@@ -38,14 +44,14 @@ export default AppButton;
 
 const styles = StyleSheet.create({
     filledButton: {
-        backgroundColor: '#F63E7C',
+        backgroundColor: COLORS.primary,
         paddingVertical: 16,
         paddingHorizontal: 60,
         borderRadius: 40,
         alignItems: 'center',
     },
     outlinedButton: {
-        borderColor: '#F63E7C',
+        borderColor: COLORS.primary,
         borderWidth: 2,
         paddingVertical: 16,
         paddingHorizontal: 60,
@@ -58,8 +64,14 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
     outlinedText: {
-        color: '#F63E7C',
+        color: COLORS.primary,
         fontWeight: 'bold',
         fontSize: 16,
+    },
+    disabledText: {
+        opacity: 0.7,
+    },
+    disabledButton: {
+        opacity: 0.6,
     },
 });

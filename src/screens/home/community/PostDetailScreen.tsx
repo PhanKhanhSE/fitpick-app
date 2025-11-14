@@ -137,31 +137,26 @@ const PostDetailScreen: React.FC<any> = ({ route, navigation }) => {
         </View>
 
         {/* Comments */}
-        <FlatList
-          data={comments}
-          keyExtractor={(item) => item.id}
-          scrollEnabled={false}
-          renderItem={({ item }) => (
-            <View style={styles.commentItem}>
-              {item.avatarUrl ? (
-                <Image
-                  source={{ uri: item.avatarUrl }}
-                  style={styles.commentAvatar}
-                />
-              ) : (
-                <View style={styles.commentAvatar} />
-              )}
-              <View style={{ flex: 1 }}>
-                <Text style={styles.commentUser}>{item.userName}</Text>
-                <Text style={styles.commentTime}>{item.timeAgo}</Text>
-                <Text style={styles.commentContent}>{item.content}</Text>
-              </View>
-              <TouchableOpacity>
-                <Ionicons name="heart-outline" size={20} color={COLORS.text} />
-              </TouchableOpacity>
+        {comments.map((item) => (
+          <View key={item.id} style={styles.commentItem}>
+            {item.avatarUrl ? (
+              <Image
+                source={{ uri: item.avatarUrl }}
+                style={styles.commentAvatar}
+              />
+            ) : (
+              <View style={styles.commentAvatar} />
+            )}
+            <View style={{ flex: 1 }}>
+              <Text style={styles.commentUser}>{item.userName}</Text>
+              <Text style={styles.commentTime}>{item.timeAgo}</Text>
+              <Text style={styles.commentContent}>{item.content}</Text>
             </View>
-          )}
-        />
+            <TouchableOpacity>
+              <Ionicons name="heart-outline" size={20} color={COLORS.text} />
+            </TouchableOpacity>
+          </View>
+        ))}
 
         <View style={{ height: 80 }} />
       </ScrollView>

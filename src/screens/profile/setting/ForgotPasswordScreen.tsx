@@ -12,14 +12,16 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADII } from '../../../utils/theme';
 import AppButton from '../../../components/AppButton';
+import { userProfileAPI } from '../../../services/userProfileAPI';
 
 type NavigationProp = any;
 
 const ForgotPasswordScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSendCode = () => {
+  const handleSendCode = async () => {
     if (!email.trim()) {
       Alert.alert('Lỗi', 'Vui lòng nhập địa chỉ email');
       return;
@@ -32,11 +34,18 @@ const ForgotPasswordScreen: React.FC = () => {
       return;
     }
 
-    // TODO: Call API to send verification code
-    console.log('Sending verification code to:', email);
-    
-    // Navigate to verification screen
-    navigation.navigate('VerifyCodeScreen', { email });
+    try {
+      setLoading(true);
+      await userProfileAPI.sendForgotPasswordCode(email);
+      Alert.alert('Thành công', 'Mã xác minh đã được gửi đến email của bạn');
+      // Navigate to verification screen
+      navigation.navigate('VerifyCodeScreen', { email });
+    } catch (error: any) {
+
+      Alert.alert('Lỗi', 'Không thể gửi mã xác minh. Vui lòng thử lại.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -56,7 +65,7 @@ const ForgotPasswordScreen: React.FC = () => {
         <Text style={styles.title}>Quên mật khẩu?</Text>
         <Text style={styles.subtitle}>
           Hãy nhập địa chỉ email bạn dùng để đăng ký tài khoản. 
-          Chúng tôi sẽ gửi mã xác minh cho bạn.
+          Chúng tôi sẽ giúp bạn đặt lại mật khẩu.
         </Text>
 
         <View style={styles.form}>
@@ -74,11 +83,12 @@ const ForgotPasswordScreen: React.FC = () => {
         </View>
 
         <AppButton
-          title="Gửi mã"
+          title={loading ? "Đang gửi..." : "Đặt lại mật khẩu"}
           onPress={handleSendCode}
           filled
           style={styles.sendButton}
           textStyle={{ fontWeight: '600', fontSize: 14 }}
+          disabled={loading}
         />
       </View>
     </SafeAreaView>

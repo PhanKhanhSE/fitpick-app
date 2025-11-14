@@ -55,5 +55,22 @@ export type RootStackParamList = {
     CommunityScreen: undefined;
     EditPostScreen: { post: any };
     CreatePostScreen: undefined;
-
+    
+    // Settings screens
+    TermsOfService: undefined;
+    PrivacyPolicy: undefined;
+    EditProfile: undefined;
+    
+    // Search screens
+    FilterResults: {
+        appliedFilters: {
+            nutritionGoal: boolean;
+            mealType: string[];
+            ingredients: string[];
+            cookingTime: string[];
+        };
+    };
+    
+    // Menu screens
+    WeeklyMenuScreen: undefined;
 };

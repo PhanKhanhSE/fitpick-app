@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   Alert,
   TouchableOpacity,
   Modal,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from "@react-navigation/native";
@@ -24,83 +25,219 @@ import {
   TipSection,
   UsedMeals,
 } from "../../components/profile";
+import UsedMealsList from "../../components/profile/UsedMealsList";
 import { CreatePost, PostItem } from "../../components/home/community";
+import { userProfileAPI } from "../../services/userProfileAPI";
+import { useBase64Upload } from "../../hooks/useBase64Upload";
+import { useProUser } from "../../hooks/useProUser";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const ProfileScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
-  const [activeTab, setActiveTab] = useState<"nutrition" | "posts">("nutrition");
+  const [activeTab, setActiveTab] = useState<"nutrition" | "posts">("nutrition"); // Luôn là nutrition, tab posts đã bị ẩn
   const { height } = useWindowDimensions();
+  const { handleChangeAvatar, isUploading } = useBase64Upload();
+  const { isProUser, canViewFutureDates, canPlanFutureMeals } = useProUser();
 
   // State cho post & modal menu
   const [selectedPost, setSelectedPost] = useState<any | null>(null);
   const [menuVisible, setMenuVisible] = useState(false);
 
-  // Sample user data
-  const userData = {
-    name: "Quang Minh",
+  // State cho dữ liệu từ API
+  const [userData, setUserData] = useState({
+    name: "Đang tải...",
     accountType: "FREE",
     avatar: "https://i.pravatar.cc/100?img=1",
+    email: "",
+    fullName: "",
+  });
+
+  const [nutritionData, setNutritionData] = useState({
+    targetCalories: 0,
+    consumedCalories: 0,
+    starch: { current: 0, target: 0 },
+    protein: { current: 0, target: 0 },
+    fat: { current: 0, target: 0 },
+  });
+
+  const [nutritionBars, setNutritionBars] = useState<any[]>([]);
+
+  const [usedMeals, setUsedMeals] = useState<any[]>([]);
+  const [userPosts, setUserPosts] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+
+  // Handle avatar change
+  const handleAvatarChange = () => {
+    handleChangeAvatar((newAvatarUrl) => {
+      setUserData(prev => ({
+        ...prev,
+        avatar: newAvatarUrl
+      }));
+    });
   };
 
-  // Nutrition data
-  const nutritionData = {
-    targetCalories: 1000,
-    consumedCalories: 1000,
-    starch: { current: 90, target: 100 },
-    protein: { current: 110, target: 100 },
-    fat: { current: 90, target: 100 },
+  // Load dữ liệu từ API
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  useEffect(() => {
+    // Luôn load nutrition data vì tab posts đã bị ẩn
+    if (activeTab === 'nutrition') {
+      loadNutritionData();
+    }
+    // Tab posts đã bị ẩn, không load user posts nữa
+    // else if (activeTab === 'posts') {
+    //   loadUserPosts();
+    // }
+  }, [activeTab, selectedDate]);
+
+  const loadUserData = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Load profile từ API trước (ưu tiên API)
+      const profileResponse = await userProfileAPI.getUserProfile();
+      
+      if (profileResponse.success && profileResponse.data) {
+        const profile = profileResponse.data;
+        
+        setUserData({
+          name: profile.fullname || profile.email?.split('@')[0] || "Người dùng",
+          fullName: profile.fullname || "",
+          email: profile.email || "",
+          avatar: profile.avatarUrl || "https://i.pravatar.cc/100?img=1",
+          accountType: profile.accountType || "FREE",
+        });
+        
+        return; // Thoát sớm nếu API thành công
+      }
+      
+      // Fallback: Lấy thông tin user từ AsyncStorage nếu API thất bại
+      const storedUser = await AsyncStorage.getItem('user');
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        
+        setUserData({
+          name: user.fullName || user.fullname || user.email?.split('@')[0] || "Người dùng",
+          accountType: "FREE",
+          avatar: "https://i.pravatar.cc/100?img=1",
+          email: user.email || "",
+          fullName: user.fullName || user.fullname || "",
+        });
+      }
+    } catch (error) {
+
+      // Fallback to stored data
+      const storedUser = await AsyncStorage.getItem('user');
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        setUserData({
+          name: user.fullName || user.fullname || user.email?.split('@')[0] || "Người dùng",
+          accountType: "FREE",
+          avatar: "https://i.pravatar.cc/100?img=1",
+          email: user.email || "",
+          fullName: user.fullName || user.fullname || "",
+        });
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // Nutrition bars data
-  const nutritionBars = [
-    { label: "Đường", current: 0, target: 0, unit: "g", color: COLORS.primary },
-    { label: "Natri (Sodium)", current: 0, target: 0, unit: "mg", color: COLORS.primary },
-    { label: "Chất béo bão hòa", current: 0, target: 0, unit: "g", color: COLORS.primary },
-    { label: "Canxi (Calcium)", current: 0, target: 0, unit: "mg", color: COLORS.primary },
-    { label: "Vitamin D", current: 0, target: 0, unit: "IU", color: COLORS.primary },
-  ];
+  const loadNutritionData = async () => {
+    try {
+      const [nutritionResponse, detailedNutritionResponse, mealsResponse] = await Promise.all([
+        userProfileAPI.getNutritionStats(selectedDate),
+        userProfileAPI.getDetailedNutritionStats(selectedDate),
+        userProfileAPI.getUserMeals(selectedDate)
+      ]);
 
-  // Sample used meals
-  const usedMeals = [
-    {
-      id: "1",
-      title: "Cá hồi sốt tiêu kèm bơ xanh",
-      calories: "0 kcal",
-      time: "0 phút",
-      image: {
-        uri: "https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg",
-      },
-      tag: "Bữa sáng",
-      isLocked: false,
-    },
-  ];
+      if (nutritionResponse.success && nutritionResponse.data) {
+        setNutritionData(nutritionResponse.data);
+      }
 
-  // Posts của user
-  const [userPosts, setUserPosts] = useState([
-    {
-      id: "1",
-      userName: userData.name,
-      timeAgo: "2 giờ",
-      content: "Bài viết đầu tiên trong trang cá nhân!",
-      imageUrl: undefined,
-      likesCount: 2,
-      commentsCount: 1,
-      isLiked: false,
-    },
-    {
-      id: "2",
-      userName: userData.name,
-      timeAgo: "1 ngày",
-      content: "Hôm nay ăn salad bơ rất ngon!",
-      imageUrl:
-        "https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg",
-      likesCount: 5,
-      commentsCount: 0,
-      isLiked: true,
-    },
-  ]);
+      if (detailedNutritionResponse.success && detailedNutritionResponse.data) {
+        const detailedData = detailedNutritionResponse.data;
+        setNutritionBars([
+          { 
+            label: "Đường", 
+            current: detailedData.sugar?.current || 0, 
+            target: detailedData.sugar?.target || 50, 
+            unit: detailedData.sugar?.unit || "g", 
+            color: COLORS.primary 
+          },
+          { 
+            label: "Natri (Sodium)", 
+            current: detailedData.sodium?.current || 0, 
+            target: detailedData.sodium?.target || 2300, 
+            unit: detailedData.sodium?.unit || "mg", 
+            color: COLORS.primary 
+          },
+          { 
+            label: "Chất béo bão hòa", 
+            current: detailedData.saturatedFat?.current || 0, 
+            target: detailedData.saturatedFat?.target || 20, 
+            unit: detailedData.saturatedFat?.unit || "g", 
+            color: COLORS.primary 
+          },
+          { 
+            label: "Canxi (Calcium)", 
+            current: detailedData.calcium?.current || 0, 
+            target: detailedData.calcium?.target || 1000, 
+            unit: detailedData.calcium?.unit || "mg", 
+            color: COLORS.primary 
+          },
+          { 
+            label: "Vitamin D", 
+            current: detailedData.vitaminD?.current || 0, 
+            target: detailedData.vitaminD?.target || 600, 
+            unit: detailedData.vitaminD?.unit || "IU", 
+            color: COLORS.primary 
+          },
+        ]);
+      }
+
+      if (mealsResponse.success && mealsResponse.data) {
+        setUsedMeals(mealsResponse.data);
+      }
+    } catch (error) {
+
+      // Fallback to default data
+      setNutritionData({
+        targetCalories: 2000,
+        consumedCalories: 0,
+        starch: { current: 0, target: 100 },
+        protein: { current: 0, target: 100 },
+        fat: { current: 0, target: 100 },
+      });
+      setUsedMeals([]);
+      
+      // Fallback nutrition bars with default values
+      setNutritionBars([
+        { label: "Đường", current: 0, target: 50, unit: "g", color: COLORS.primary },
+        { label: "Natri (Sodium)", current: 0, target: 2300, unit: "mg", color: COLORS.primary },
+        { label: "Chất béo bão hòa", current: 0, target: 20, unit: "g", color: COLORS.primary },
+        { label: "Canxi (Calcium)", current: 0, target: 1000, unit: "mg", color: COLORS.primary },
+        { label: "Vitamin D", current: 0, target: 600, unit: "IU", color: COLORS.primary },
+      ]);
+    }
+  };
+
+  const loadUserPosts = async () => {
+    try {
+      const response = await userProfileAPI.getUserPosts();
+      if (response.success && response.data) {
+        setUserPosts(response.data);
+      }
+    } catch (error) {
+
+      setUserPosts([]);
+    }
+  };
 
   // ---- Navigation handlers ----
   const handleGoBack = () => navigation.goBack();
@@ -108,8 +245,18 @@ const ProfileScreen: React.FC = () => {
   const handleMealPress = (meal: any) =>
     navigation.navigate("MealDetail", { meal });
   const handleTabChange = (tab: "nutrition" | "posts") => setActiveTab(tab);
-  const handlePreviousDate = () => console.log("Previous date");
-  const handleNextDate = () => console.log("Next date");
+  const handlePersonalNutritionPress = () => navigation.navigate("PersonalNutritionScreen");
+  const handlePreviousDate = () => {
+    const currentDate = new Date(selectedDate);
+    currentDate.setDate(currentDate.getDate() - 1);
+    setSelectedDate(currentDate.toISOString().split('T')[0]);
+  };
+  
+  const handleNextDate = () => {
+    const currentDate = new Date(selectedDate);
+    currentDate.setDate(currentDate.getDate() + 1);
+    setSelectedDate(currentDate.toISOString().split('T')[0]);
+  };
 
   // ---- POST handlers ----
   const handleCreatePost = () => {
@@ -187,49 +334,78 @@ const ProfileScreen: React.FC = () => {
           name={userData.name}
           accountType={userData.accountType}
           avatar={userData.avatar}
+          onAvatarPress={handleAvatarChange}
         />
 
         <StickyTabsWithDate
           activeTab={activeTab}
           onTabChange={handleTabChange}
-          dateText="Thứ Hai, 8 tháng 9"
+          dateText={new Date(selectedDate).toLocaleDateString('vi-VN', { 
+            weekday: 'long', 
+            day: 'numeric', 
+            month: 'long' 
+          })}
           onPreviousDate={handlePreviousDate}
           onNextDate={handleNextDate}
         />
 
-        {activeTab === "nutrition" ? (
-          <>
-            <NutritionStats {...nutritionData} />
-            <NutritionBars nutritionBars={nutritionBars} />
-            <TipSection tipText="Lorem ipsum dolor sit amet..." />
-            <UsedMeals meals={usedMeals} onMealPress={handleMealPress} />
-          </>
-        ) : (
-          <View style={styles.postsContainer}>
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <CreatePost onPress={handleCreatePost} />
-              {userPosts.length > 0 ? (
-                userPosts.map((post) => (
-                  <TouchableOpacity
-                    key={post.id}
-                    activeOpacity={0.9}
-                    onPress={() => handlePostPress(post)}
-                  >
-                    <PostItem
-                      post={post}
-                      onLike={handleLike}
-                      onComment={handleComment}
-                      onMenuPress={() => handleOpenMenu(post)}
-                      currentUserName={userData.name}
-                    />
-                  </TouchableOpacity>
-                ))
-              ) : (
-                <Text style={styles.emptyText}>Chưa có bài viết nào</Text>
-              )}
-              <View style={{ height: SPACING.xxl }} />
-            </ScrollView>
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={COLORS.primary} />
+            <Text style={styles.loadingText}>Đang tải dữ liệu...</Text>
           </View>
+        ) : (
+          <>
+            {/* Luôn hiển thị tab nutrition, ẩn tab posts */}
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <NutritionStats {...nutritionData} onPress={handlePersonalNutritionPress} />
+              <NutritionBars nutritionBars={nutritionBars} />
+              <TipSection tipText="Hãy duy trì chế độ ăn uống cân bằng và tập thể dục đều đặn để có sức khỏe tốt!" />
+              <UsedMealsList 
+                selectedDate={selectedDate} 
+                onMealPress={handleMealPress} 
+              />
+            </ScrollView>
+            
+            {/* Ẩn phần hiển thị posts */}
+            {/* {activeTab === "nutrition" ? (
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <NutritionStats {...nutritionData} onPress={handlePersonalNutritionPress} />
+                <NutritionBars nutritionBars={nutritionBars} />
+                <TipSection tipText="Hãy duy trì chế độ ăn uống cân bằng và tập thể dục đều đặn để có sức khỏe tốt!" />
+                <UsedMealsList 
+                  selectedDate={selectedDate} 
+                  onMealPress={handleMealPress} 
+                />
+              </ScrollView>
+            ) : (
+              <View style={styles.postsContainer}>
+                <ScrollView showsVerticalScrollIndicator={false}>
+                  <CreatePost onPress={handleCreatePost} />
+                  {userPosts.length > 0 ? (
+                    userPosts.map((post) => (
+                      <TouchableOpacity
+                        key={post.id}
+                        activeOpacity={0.9}
+                        onPress={() => handlePostPress(post)}
+                      >
+                        <PostItem
+                          post={post}
+                          onLike={handleLike}
+                          onComment={handleComment}
+                          onMenuPress={() => handleOpenMenu(post)}
+                          currentUserName={userData.name}
+                        />
+                      </TouchableOpacity>
+                    ))
+                  ) : (
+                    <Text style={styles.emptyText}>Chưa có bài viết nào</Text>
+                  )}
+                  <View style={{ height: SPACING.xxl }} />
+                </ScrollView>
+              </View>
+            )} */}
+          </>
         )}
       </ScrollView>
 
@@ -287,6 +463,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: COLORS.text,
     textAlign: "left",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: SPACING.xxl,
+  },
+  loadingText: {
+    marginTop: SPACING.md,
+    fontSize: 16,
+    color: COLORS.textDim,
   },
 });
 

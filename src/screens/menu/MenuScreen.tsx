@@ -1,17 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
   StyleSheet, 
   ScrollView,
   TouchableOpacity,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/navigation';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADII } from '../../utils/theme';
+import { useIngredients } from '../../hooks/useIngredients';
+import { useMealPlans } from '../../hooks/useMealPlans';
+import { useUser } from '../../hooks/useUser';
+import { useProUser } from '../../hooks/useProUser';
+import { useFavorites } from '../../hooks/useFavorites';
+import { TodayMealPlanDto } from '../../services/mealPlanAPI';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 import { 
@@ -22,11 +31,35 @@ import {
   ReplaceSuggestionModal, 
   SuccessModal 
 } from '../../components/menu';
+import ProUpgradeModal from '../../components/common/ProUpgradeModal';
+import { paymentsAPI } from '../../services/paymentAPI';
+import { Linking } from 'react-native';
 
 const MenuScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
+  const { addMealToProducts, isMealInProductList } = useIngredients();
+  const { userInfo } = useUser();
+  const { isProUser, canViewFutureDates, canPlanFutureMeals } = useProUser();
+  const { isFavorite } = useFavorites();
+  const { 
+    todayMealPlans, 
+    loading, 
+    error, 
+    loadTodayMealPlan, 
+    generateMealPlan, 
+    swapMeal, 
+    deleteMealPlan, 
+    replaceMealBySuggestion,
+    replaceMealByFavorites,
+    addMealToProductList,
+    removeMealFromLocalStorage,
+    getMealPlansByTime,
+    getTotalCalories,
+    clearError
+  } = useMealPlans();
+  
   const [selectedMeals, setSelectedMeals] = useState<string[]>([]);
-  const [currentDate, setCurrentDate] = useState('Thứ Hai, 8 tháng 9');
+  const [currentDate, setCurrentDate] = useState(new Date());
   
   // Modal states
   const [selectedMeal, setSelectedMeal] = useState<any>(null);
@@ -35,52 +68,31 @@ const MenuScreen: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showReplaceModal, setShowReplaceModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showProUpgradeModal, setShowProUpgradeModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Sample data
-  const breakfastMeals = [
-    {
-      id: '1',
-      title: 'Cá hồi sốt tiêu kèm bơ xanh',
-      calories: '0 kcal',
-      time: '0 phút',
-      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
-    },
-  ];
+  // Convert TodayMealPlanDto to MealData format for UI
+  const convertToMealData = (mealPlan: TodayMealPlanDto) => ({
+    id: mealPlan.meal.mealid.toString(),
+    title: mealPlan.meal.name,
+    calories: `${mealPlan.meal.calories || 0} kcal`,
+    time: `${mealPlan.meal.cookingtime || 0} phút`,
+    image: { uri: mealPlan.meal.imageUrl || 'https://via.placeholder.com/300x200' },
+  });
 
-  const lunchMeals = [
-    {
-      id: '2',
-      title: 'Cá hồi sốt tiêu kèm bơ xanh',
-      calories: '0 kcal',
-      time: '0 phút',
-      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
-    },
-    {
-      id: '3',
-      title: 'Cá hồi sốt tiêu kèm bơ xanh',
-      calories: '0 kcal',
-      time: '0 phút',
-      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
-    },
-  ];
+  // Get meal plans grouped by time
+  const { breakfast, lunch, dinner } = getMealPlansByTime();
+  
+  // Convert to UI format
+  const buasangMeals = breakfast.map(convertToMealData);
+  const buatruaMeals = lunch.map(convertToMealData);
+  const buatoiMeals = dinner.map(convertToMealData);
 
-  const dinnerMeals = [
-    {
-      id: '4',
-      title: 'Cá hồi sốt tiêu kèm bơ xanh',
-      calories: '0 kcal',
-      time: '0 phút',
-      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
-    },
-    {
-      id: '5',
-      title: 'Cá hồi sốt tiêu kèm bơ xanh',
-      calories: '0 kcal',
-      time: '0 phút',
-      image: { uri: 'https://monngonmoingay.com/wp-content/uploads/2021/04/salad-bi-do-500.jpg' },
-    },
-  ];
+  // Debug logs đã xóa để push git
+  // console.log('🖥️ Debug - MenuScreen render data:');
+  // console.log('  - Breakfast meals:', buasangMeals.length, buasangMeals.map(m => m.title));
+  // console.log('  - Lunch meals:', buatruaMeals.length, buatruaMeals.map(m => m.title));
+  // console.log('  - Dinner meals:', buatoiMeals.length, buatoiMeals.map(m => m.title));
 
   // Convert menu meal to format expected by MealDetailScreen
   const convertMenuMealToMeal = (meal: any) => {
@@ -129,7 +141,24 @@ const MenuScreen: React.FC = () => {
     setShowDeleteModal(false);
     setShowReplaceModal(false);
     setShowSuccessModal(false);
+    setShowProUpgradeModal(false);
     setSelectedMeal(null);
+  };
+
+  const handleUpgradeToPro = async () => {
+    try {
+      setShowProUpgradeModal(false);
+      const res = await paymentsAPI.createPayment({ plan: 'PRO', amount: 29000, returnUrl: 'fitpick://payments/callback' });
+      const url = res?.data?.checkoutUrl || res?.data?.paymentUrl || res?.data?.url || res?.checkoutUrl || res?.paymentUrl || res?.url;
+      if (url) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert('Lỗi', 'Không nhận được link thanh toán.');
+      }
+    } catch (e: any) {
+
+      Alert.alert('Lỗi', 'Không thể khởi tạo thanh toán.');
+    }
   };
 
   const handleAddToFavorites = () => {
@@ -138,10 +167,31 @@ const MenuScreen: React.FC = () => {
     setShowSuccessModal(true);
   };
 
-  const handleAddToProductList = () => {
+  const handleAddToProductList = async () => {
+    if (!selectedMeal) return;
+    
     setShowMealActionModal(false);
-    setSuccessMessage('Đã thêm vào danh sách sản phẩm');
-    setShowSuccessModal(true);
+    
+    try {
+      const success = await addMealToProductList(parseInt(selectedMeal.id), selectedMeal.title);
+      
+      if (success) {
+        setSuccessMessage('Đã thêm vào danh sách sản phẩm');
+        setShowSuccessModal(true);
+        
+        // Navigate to ProductScreen sau khi thêm thành công
+        setTimeout(() => {
+          navigation.navigate('MainTabs' as any, { screen: 'Profile' });
+        }, 1500);
+      } else {
+        setSuccessMessage('Không thể thêm vào danh sách sản phẩm');
+        setShowSuccessModal(true);
+      }
+    } catch (error) {
+
+      setSuccessMessage('Không thể thêm vào danh sách sản phẩm');
+      setShowSuccessModal(true);
+    }
   };
 
   const handleShowReplaceModal = () => {
@@ -160,22 +210,115 @@ const MenuScreen: React.FC = () => {
     setShowDeleteModal(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
+    if (!selectedMeal) return;
+    
     setShowDeleteModal(false);
-    setSuccessMessage('Đã xóa món thành công');
-    setShowSuccessModal(true);
+    
+    try {
+      // Tìm meal plan tương ứng với meal này
+      const mealPlan = todayMealPlans.find(plan => plan.meal.mealid === parseInt(selectedMeal.id));
+      
+      if (mealPlan) {
+        if (mealPlan.planId > 0) {
+          // Backend meal - xóa từ database
+          const success = await deleteMealPlan(mealPlan.planId);
+          
+          if (success) {
+            setSuccessMessage('Đã xóa món ăn khỏi thực đơn');
+            setShowSuccessModal(true);
+          } else {
+            Alert.alert('Lỗi', 'Không thể xóa món ăn');
+          }
+        } else {
+          // Local meal - xóa từ AsyncStorage
+          const success = await removeMealFromLocalStorage(parseInt(selectedMeal.id), mealPlan.date);
+          
+          if (success) {
+            setSuccessMessage('Đã xóa món ăn khỏi thực đơn');
+            setShowSuccessModal(true);
+            // Reload data để cập nhật UI
+            await loadTodayMealPlan(currentDate);
+          } else {
+            Alert.alert('Lỗi', 'Không thể xóa món ăn');
+          }
+        }
+      } else {
+        Alert.alert('Lỗi', 'Không tìm thấy món ăn trong thực đơn');
+      }
+    } catch (error) {
+
+      Alert.alert('Lỗi', 'Không thể xóa món ăn');
+    }
   };
 
-  const handleReplaceByGoal = () => {
+  const handleReplaceByGoal = async () => {
+    if (!selectedMeal) return;
+    
     setShowReplaceModal(false);
-    setSuccessMessage('Đã thay đổi theo gợi ý');
-    setShowSuccessModal(true);
+    
+    try {
+      // Tìm meal plan tương ứng với meal này
+      const mealPlan = todayMealPlans.find(plan => plan.meal.mealid === parseInt(selectedMeal.id));
+      
+      // Debug logs đã xóa để push git
+      
+      if (mealPlan && mealPlan.planId && mealPlan.planId > 0) {
+        // console.log('🔍 Debug - Using planId:', mealPlan.planId);
+        const success = await replaceMealBySuggestion(mealPlan.planId);
+        
+        if (success) {
+          setSuccessMessage('Đã thay đổi món theo gợi ý');
+          setShowSuccessModal(true);
+        } else {
+          Alert.alert('Lỗi', 'Không thể thay đổi món theo gợi ý');
+        }
+      } else {
+        // console.error('❌ Debug - Meal plan not found or planId is invalid:', mealPlan);
+        Alert.alert(
+          'Không thể thay đổi món này', 
+          'Món ăn này được thêm từ local storage. Để sử dụng tính năng thay đổi, hãy tạo thực đơn mới từ hệ thống.',
+          [
+            { text: 'Tạo thực đơn mới', onPress: handleGenerateMealPlan },
+            { text: 'Hủy', style: 'cancel' }
+          ]
+        );
+      }
+    } catch (error) {
+
+      Alert.alert('Lỗi', 'Không thể thay đổi món theo gợi ý');
+    }
   };
 
-  const handleReplaceByFavorites = () => {
+  const handleReplaceByFavorites = async () => {
+    if (!selectedMeal) return;
+    
     setShowReplaceModal(false);
-    setSuccessMessage('Đã thay đổi theo danh sách yêu thích');
-    setShowSuccessModal(true);
+    
+    try {
+      // Tìm meal plan tương ứng với meal này
+      const mealPlan = todayMealPlans.find(plan => plan.meal.mealid === parseInt(selectedMeal.id));
+      
+      // Debug logs đã xóa để push git
+      
+      if (mealPlan && mealPlan.planId && mealPlan.planId > 0) {
+        // console.log('🔍 Debug - Using planId:', mealPlan.planId);
+        const success = await replaceMealByFavorites(mealPlan.planId);
+        
+        if (success) {
+          setSuccessMessage('Đã thay đổi món từ danh sách yêu thích');
+          setShowSuccessModal(true);
+        } else {
+          Alert.alert('Lỗi', 'Không thể thay đổi món từ danh sách yêu thích');
+        }
+      } else {
+        // console.error('❌ Debug - Meal plan not found or planId is invalid:', mealPlan);
+        Alert.alert('Lỗi', 'Không thể thay đổi món này. Món ăn này có thể là món được thêm từ local storage.');
+      }
+    } catch (error) {
+
+      Alert.alert('Lỗi', 'Không thể thay đổi món từ danh sách yêu thích');
+    }
   };
 
   const handleShowDailyView = () => {
@@ -186,31 +329,177 @@ const MenuScreen: React.FC = () => {
 
   const handleShowWeeklyView = () => {
     setShowMenuActionModal(false);
-    setSuccessMessage('Tính năng PRO - vui lòng nâng cấp');
-    setShowSuccessModal(true);
+    if (isProUser()) {
+      navigation.navigate('WeeklyMenuScreen');
+    } else {
+      setShowProUpgradeModal(true);
+    }
   };
 
-  const handleAddAllToShoppingList = () => {
-    setSuccessMessage('Đã thêm tất cả vào danh sách sản phẩm');
-    setShowSuccessModal(true);
+  const handleAddAllToShoppingList = async () => {
+    try {
+      const allMeals = [...buasangMeals, ...buatruaMeals, ...buatoiMeals];
+      let successCount = 0;
+      
+      for (const meal of allMeals) {
+        const success = await addMealToProductList(parseInt(meal.id), meal.title);
+        if (success) successCount++;
+      }
+      
+      if (successCount > 0) {
+        // Ẩn modal trước
+        setShowMenuActionModal(false);
+        setSuccessMessage(`Đã thêm ${successCount}/${allMeals.length} món vào danh sách sản phẩm`);
+        setShowSuccessModal(true);
+        
+        // Navigate to ProductScreen sau khi thêm thành công
+        setTimeout(() => {
+          setShowSuccessModal(false);
+          (navigation as any).jumpTo('Profile');
+        }, 1500);
+      } else {
+        Alert.alert('Lỗi', 'Không thể thêm món ăn nào vào danh sách sản phẩm');
+      }
+    } catch (error) {
+
+      Alert.alert('Lỗi', 'Không thể thêm vào danh sách sản phẩm');
+    }
   };
 
-  const handleClearAll = () => {
-    setSelectedMeals([]);
-    setSuccessMessage('Đã xóa tất cả thành công');
-    setShowSuccessModal(true);
+  const handleClearAll = async () => {
+    try {
+      const allMeals = [...buasangMeals, ...buatruaMeals, ...buatoiMeals];
+      let successCount = 0;
+      
+      for (const meal of allMeals) {
+        const mealPlan = todayMealPlans.find(plan => plan.meal.mealid === parseInt(meal.id));
+        if (mealPlan) {
+          if (mealPlan.planId > 0) {
+            // Backend meal - xóa từ database
+            const success = await deleteMealPlan(mealPlan.planId);
+            if (success) successCount++;
+          } else {
+            // Local meal - xóa từ AsyncStorage
+            const success = await removeMealFromLocalStorage(parseInt(meal.id), mealPlan.date);
+            if (success) successCount++;
+          }
+        }
+      }
+      
+      if (successCount > 0) {
+        setSuccessMessage(`Đã xóa ${successCount}/${allMeals.length} món khỏi thực đơn`);
+        setShowSuccessModal(true);
+        // Reload data để cập nhật UI
+        await loadTodayMealPlan(currentDate);
+      } else {
+        Alert.alert('Lỗi', 'Không thể xóa món ăn nào');
+      }
+    } catch (error) {
+
+      Alert.alert('Lỗi', 'Không thể xóa tất cả');
+    }
+  };
+
+  const handleGenerateMealPlan = async () => {
+    // Kiểm tra quyền tạo meal plan cho ngày tương lai
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const selectedDate = new Date(currentDate);
+    selectedDate.setHours(0, 0, 0, 0);
+    
+    if (selectedDate > today && !canPlanFutureMeals()) {
+      setShowProUpgradeModal(true);
+      return;
+    }
+    
+    try {
+      const success = await generateMealPlan(currentDate);
+      
+      if (success) {
+        setSuccessMessage('Đã tạo thực đơn mới');
+        setShowSuccessModal(true);
+      } else {
+        Alert.alert('Lỗi', 'Không thể tạo thực đơn mới');
+      }
+    } catch (error) {
+
+      Alert.alert('Lỗi', 'Không thể tạo thực đơn mới');
+    }
   };
 
   const handleDateNavigation = (direction: 'prev' | 'next') => {
-    console.log('Navigate date:', direction);
+    const newDate = new Date(currentDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (direction === 'prev') {
+      newDate.setDate(currentDate.getDate() - 1);
+    } else {
+      // Kiểm tra quyền xem ngày tương lai
+      if (!canViewFutureDates()) {
+        // User FREE: chỉ cho phép xem đến hôm nay
+        const tomorrow = new Date(today);
+        tomorrow.setDate(today.getDate() + 1);
+        
+        if (newDate.getTime() >= tomorrow.getTime()) {
+          setShowProUpgradeModal(true);
+          return;
+        }
+      }
+      newDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    setCurrentDate(newDate);
   };
+
+  // Test function để kiểm tra AsyncStorage
+  const testAsyncStorage = async () => {
+    try {
+      const userAddedMeals = await AsyncStorage.getItem('userAddedMeals');
+
+      if (userAddedMeals) {
+        const meals = JSON.parse(userAddedMeals);
+
+        const today = new Date().toISOString().split('T')[0];
+        const todayMeals = meals.filter((m: any) => m.date === today);
+
+      }
+    } catch (error) {
+
+    }
+  };
+
+  // Load data khi component mount và khi currentDate thay đổi
+  useEffect(() => {
+    loadTodayMealPlan(currentDate);
+  }, [currentDate]);
+
+  // Reload data khi quay lại screen (chỉ khi không phải lần đầu mount)
+  useFocusEffect(
+    React.useCallback(() => {
+
+      loadTodayMealPlan(currentDate);
+    }, [currentDate])
+  );
+
+  // Test AsyncStorage chỉ khi mount lần đầu
+  useEffect(() => {
+    testAsyncStorage();
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
       {/* Sticky Header */}
       <View style={styles.stickyHeader}>
         <View style={styles.titleContainer}>
-          <Text style={styles.title}>Thực đơn của tôi</Text>
+          <View style={styles.titleRow}>
+            <Text style={styles.title}>Thực đơn của tôi</Text>
+            {isProUser() && (
+              <View style={styles.proBadge}>
+                <Text style={styles.proText}>PRO</Text>
+              </View>
+            )}
+          </View>
           <TouchableOpacity style={styles.moreButton} onPress={handleMorePress}>
             <Ionicons name="ellipsis-vertical" size={20} color={COLORS.text} />
           </TouchableOpacity>
@@ -223,7 +512,7 @@ const MenuScreen: React.FC = () => {
           >
             <Ionicons name="arrow-back-outline" size={18} color="white" />
           </TouchableOpacity>
-          <Text style={styles.dateText}>{currentDate}</Text>
+          <Text style={styles.dateText}>{currentDate.toLocaleDateString('vi-VN')}</Text>
           <TouchableOpacity 
             style={styles.dateNavButton}
             onPress={() => handleDateNavigation('next')}
@@ -233,34 +522,53 @@ const MenuScreen: React.FC = () => {
         </View>
       </View>
 
-      {/* Scrollable Content */}
-      <ScrollView showsVerticalScrollIndicator={false} style={styles.content}>
-        <MealSection
-          title="Bữa sáng"
-          totalCalories="0 kcal"
-          meals={breakfastMeals}
-          selectedMeals={selectedMeals}
-          showDivider={true}
-          onMealPress={handleMealPress}
-          onToggleSelect={handleToggleSelect}
-          onOptionsPress={handleOptionsPress}
-        />
+      {/* Error Message */}
+      {error && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity onPress={clearError}>
+            <Text style={styles.errorDismiss}>✕</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
-        <MealSection
-          title="Bữa trưa"
-          totalCalories="0 kcal"
-          meals={lunchMeals}
-          selectedMeals={selectedMeals}
-          showDivider={true}
-          onMealPress={handleMealPress}
-          onToggleSelect={handleToggleSelect}
-          onOptionsPress={handleOptionsPress}
-        />
+      {/* Loading State */}
+      {loading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={styles.loadingText}>Đang tải...</Text>
+        </View>
+      )}
+
+      {/* Content */}
+      {!loading && (
+        <ScrollView showsVerticalScrollIndicator={false} style={styles.content}>
+          <MealSection
+            title="Bữa sáng"
+            totalCalories={`${getTotalCalories(breakfast)} kcal`}
+            meals={buasangMeals}
+            selectedMeals={selectedMeals}
+            showDivider={true}
+            onMealPress={handleMealPress}
+            onToggleSelect={handleToggleSelect}
+            onOptionsPress={handleOptionsPress}
+          />
+
+          <MealSection
+            title="Bữa trưa"
+            totalCalories={`${getTotalCalories(lunch)} kcal`}
+            meals={buatruaMeals}
+            selectedMeals={selectedMeals}
+            showDivider={true}
+            onMealPress={handleMealPress}
+            onToggleSelect={handleToggleSelect}
+            onOptionsPress={handleOptionsPress}
+          />
 
         <MealSection
           title="Bữa tối"
-          totalCalories="0 kcal"
-          meals={dinnerMeals}
+          totalCalories={`${getTotalCalories(dinner)} kcal`}
+          meals={buatoiMeals}
           selectedMeals={selectedMeals}
           showDivider={true}
           onMealPress={handleMealPress}
@@ -289,7 +597,8 @@ const MenuScreen: React.FC = () => {
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
-      
+      )}
+
       {/* Modals */}
       <MealItemActionModal
         visible={showMealActionModal}
@@ -300,6 +609,8 @@ const MenuScreen: React.FC = () => {
         onReplaceWithSuggestion={handleShowReplaceModal}
         onReplaceFromFavorites={handleReplaceFromFavorites}
         onDelete={handleShowDeleteModal}
+        isInFavorites={selectedMeal ? isFavorite(parseInt(selectedMeal.id)) : false}
+        isInProductList={selectedMeal ? isMealInProductList(parseInt(selectedMeal.id)) : false}
       />
       
       <MenuActionModal
@@ -327,6 +638,15 @@ const MenuScreen: React.FC = () => {
         onClose={handleCloseModal}
         message={successMessage}
       />
+      
+      {/* Pro Upgrade Modal - Chỉ hiển thị cho tài khoản Free */}
+      {!isProUser() && (
+        <ProUpgradeModal
+          visible={showProUpgradeModal}
+          onClose={handleCloseModal}
+          onUpgrade={handleUpgradeToPro}
+        />
+      )}
     </SafeAreaView>
   );
 };
@@ -348,12 +668,28 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.umd,
     marginTop: -SPACING.sm,
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+  },
   title: {
     fontSize: 20,
     fontWeight: '700',
     color: COLORS.text,
-    flex: 1,
-    textAlign: 'center',
+  },
+  proBadge: {
+    backgroundColor: '#FFD700',
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 2,
+    borderRadius: RADII.sm,
+    marginLeft: SPACING.sm,
+  },
+  proText: {
+    color: '#000',
+    fontSize: 10,
+    fontWeight: 'bold',
   },
   moreButton: {
     padding: SPACING.xs,
@@ -414,6 +750,42 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: SPACING.xl,
+  },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#ffebee',
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    marginHorizontal: SPACING.md,
+    borderRadius: RADII.sm,
+    borderLeftWidth: 4,
+    borderLeftColor: '#f44336',
+  },
+  errorText: {
+    flex: 1,
+    color: '#d32f2f',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  errorDismiss: {
+    color: '#d32f2f',
+    fontSize: 18,
+    fontWeight: 'bold',
+    paddingLeft: SPACING.sm,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: SPACING.xxl,
+  },
+  loadingText: {
+    marginTop: SPACING.md,
+    fontSize: 16,
+    color: COLORS.textDim,
+    fontWeight: '500',
   },
 });
 

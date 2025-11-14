@@ -13,7 +13,11 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "This app needs access to photo library to change avatar.",
+        "NSCameraUsageDescription": "This app needs access to camera to take photos for avatar."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -21,7 +25,12 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.yunct.fitpickapp"
+      "package": "com.yunct.fitpickapp",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "favicon": "./src/assets/favicon.png"
@@ -30,6 +39,9 @@
       "eas": {
         "projectId": "bd904f61-4b95-40f2-a8df-f667f92fcdda"
       }
-    }
+    },
+    "plugins": [
+      "expo-font"
+    ]
   }
 }

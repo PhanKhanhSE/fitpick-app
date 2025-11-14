@@ -8,6 +8,7 @@ import { useNavigation } from '@react-navigation/native';
 import { COLORS, SPACING, RADII } from '../../utils/theme';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/navigation';
+import { profileAPI } from '../../services/profileAPI';
 
 const { width } = Dimensions.get('window');
 
@@ -23,11 +24,12 @@ const UserInfoScreen = () => {
     const [weight, setWeight] = useState('');
     const [targetWeight, setTargetWeight] = useState('');
     const [select, setSelected] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     // Kiểm tra form hợp lệ
     const isFormValid = fullName.trim() && gender && age.trim() && height.trim() && weight.trim() && targetWeight.trim();
     
-    const handleContinue = () => {
+    const handleContinue = async () => {
         // Kiểm tra nếu đang ở trong flow cài đặt (có thể check route params hoặc navigation stack)
         const isSettingsFlow = navigation.getState().routes.some(route => 
             route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'
@@ -35,16 +37,51 @@ const UserInfoScreen = () => {
         
         if (isSettingsFlow) {
             // Nếu đang trong settings, lưu thông tin và quay lại
-            // TODO: Thêm logic lưu thông tin tại đây
-            console.log('Lưu thông tin cá nhân:', { fullName, gender, age, height, weight, targetWeight });
-            navigation.goBack();
+            setIsLoading(true);
+            try {
+                await profileAPI.saveUserProfile({
+                    fullName,
+                    gender,
+                    age: parseInt(age),
+                    height: parseInt(height),
+                    weight: parseInt(weight),
+                    targetWeight: parseInt(targetWeight),
+                });
+                
+                Alert.alert('Thành công', 'Thông tin cá nhân đã được cập nhật');
+                navigation.goBack();
+            } catch (error: any) {
+
+                const errorMessage = error?.message || 'Cập nhật thông tin thất bại. Vui lòng thử lại.';
+                Alert.alert('Lỗi', errorMessage);
+            } finally {
+                setIsLoading(false);
+            }
         } else {
             // Nếu đang trong flow đăng ký, kiểm tra thông tin cần thiết và tiếp tục
-            if (fullName.trim() && age.trim() && height.trim() && weight.trim()) {
-                navigation.navigate('Goals' as never);
-            } else {
-                // Hiển thị thông báo lỗi nếu thiếu thông tin
+            if (!isFormValid) {
                 Alert.alert('Thông báo', 'Vui lòng điền đầy đủ thông tin cá nhân');
+                return;
+            }
+
+            setIsLoading(true);
+            try {
+                await profileAPI.saveUserProfile({
+                    fullName,
+                    gender,
+                    age: parseInt(age),
+                    height: parseInt(height),
+                    weight: parseInt(weight),
+                    targetWeight: parseInt(targetWeight),
+                });
+                
+                navigation.navigate('Goals' as never);
+            } catch (error: any) {
+
+                const errorMessage = error?.message || 'Lưu thông tin thất bại. Vui lòng thử lại.';
+                Alert.alert('Lỗi', errorMessage);
+            } finally {
+                setIsLoading(false);
             }
         }
     };
@@ -203,14 +240,20 @@ const UserInfoScreen = () => {
                 {/* Button */}
                 <View style={styles.buttonContainer}>
                     <AppButton
-                        title={navigation.getState().routes.some(route => 
-                            route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'
-                        ) ? "Lưu" : "Tiếp tục"}
+                        title={isLoading 
+                            ? (navigation.getState().routes.some(route => 
+                                route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'
+                            ) ? "Đang lưu..." : "Đang tiếp tục...")
+                            : (navigation.getState().routes.some(route => 
+                                route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'
+                            ) ? "Lưu" : "Tiếp tục")
+                        }
                         onPress={handleContinue}
                         filled
+                        disabled={isLoading || !isFormValid}
                         style={StyleSheet.flatten([
                             styles.continueButton,
-                            !isFormValid && styles.continueButtonDisabled
+                            (!isFormValid || isLoading) && styles.continueButtonDisabled
                         ])}
                     />
                 </View>

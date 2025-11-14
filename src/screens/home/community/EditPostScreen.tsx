@@ -20,7 +20,6 @@ const EditPostScreen: React.FC<any> = ({ route, navigation }) => {
 
   const handleSave = () => {
     // Xử lý lưu (call API hoặc emit event)
-    console.log("Lưu bài viết:", { content, image });
 
     // Quay lại màn trước + truyền dữ liệu (nếu cần)
     navigation.goBack();

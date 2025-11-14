@@ -18,6 +18,7 @@ interface PopularSectionProps {
   favorites: string[];
   onMealPress: (meal: MealData) => void;
   onFavoritePress: (id: string) => void;
+  isFavorite?: (mealId: number) => boolean;
 }
 
 const PopularSection: React.FC<PopularSectionProps> = ({
@@ -25,25 +26,28 @@ const PopularSection: React.FC<PopularSectionProps> = ({
   favorites,
   onMealPress,
   onFavoritePress,
+  isFavorite,
 }) => {
-  const renderPopularItem = ({ item }: { item: MealData }) => (
-    <View style={styles.popularItem}>
-      <MealCardVertical
-        id={item.id}
-        title={item.title}
-        calories={item.calories}
-        time={item.time}
-        image={item.image}
-        tag={item.tag}
-        isLocked={item.isLocked}
-        isFavorite={favorites.includes(item.id)}
-        onPress={() => onMealPress(item)}
-        onFavoritePress={() => onFavoritePress(item.id)}
-        width={158}
-        height={175}
-      />
-    </View>
-  );
+  const renderPopularItem = ({ item }: { item: MealData }) => {
+    return (
+      <View style={styles.popularItem}>
+        <MealCardVertical
+          id={item.id}
+          title={item.title}
+          calories={item.calories}
+          time={item.time}
+          image={item.image}
+          tag={item.tag}
+          isLocked={item.isLocked}
+          isFavorite={isFavorite ? isFavorite(parseInt(item.id)) : favorites.includes(item.id)}
+          onPress={() => onMealPress(item)}
+          onFavoritePress={() => onFavoritePress(item.id)}
+          width={158}
+          height={175}
+        />
+      </View>
+    );
+  };
 
   return (
     <View style={styles.section}>

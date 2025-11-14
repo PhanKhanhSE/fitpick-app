@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Dimensions } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Dimensions, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AppButton from '../../components/AppButton';
@@ -7,12 +7,28 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/navigation';
 import { COLORS, SPACING, RADII } from '../../utils/theme';
+import { profileAPI } from '../../services/profileAPI';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'EatStyle'>;
 
-type DietPlanKey = 'balanced' | 'low_carb' | 'keto' | 'gluten_free' | 'dairy_free' | null;
+type DietPlanKey = 'balanced' | 'low_carb' | 'keto' | 'gluten_free' | 'dairy_free' | 'paleo' | 'vegetarian' | 'vegan' | 'mediterranean' | 'intermittent_fasting' | null;
+
+// Mapping từ frontend keys sang database names
+const DIET_PLAN_MAPPING: Record<string, string> = {
+    'balanced': 'Balanced',
+    'low_carb': 'Low Carb',
+    'keto': 'Keto',
+    'gluten_free': 'Gluten Free',
+    'dairy_free': 'Dairy Free',
+    'paleo': 'Paleo',
+    'vegetarian': 'Vegetarian',
+    'vegan': 'Vegan',
+    'mediterranean': 'Mediterranean',
+    'intermittent_fasting': 'Intermittent Fasting'
+};
 
 const DIET_PLANS = [
     {
@@ -50,10 +66,69 @@ const DIET_PLANS = [
 const EatStyleScreen = () => {
     const navigation = useNavigation<Nav>();
     const [selected, setSelected] = useState<DietPlanKey>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [currentDietPlan, setCurrentDietPlan] = useState<string>('');
 
-    const handleContinue = () => {
+    // Load current diet plan when component mounts
+    useEffect(() => {
+        loadCurrentDietPlan();
+    }, []);
+
+    const loadCurrentDietPlan = async () => {
+        try {
+            // Check if this is settings flow
+            const isSettingsFlow = navigation.getState().routes.some(route => 
+                route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'
+            );
+
+            if (isSettingsFlow) {
+                // Try to get from API first
+                try {
+                    const profileResponse = await profileAPI.getUserProfile();
+                    if (profileResponse.data?.dietPlan) {
+                        setCurrentDietPlan(profileResponse.data.dietPlan);
+                        // Map diet plan to selected state
+                        const dietPlanKey = mapDietPlanToKey(profileResponse.data.dietPlan);
+                        if (dietPlanKey) {
+                            setSelected(dietPlanKey);
+                        }
+                    }
+                } catch (error) {
+
+                    // Fallback to AsyncStorage
+                    const storedDietPlan = await AsyncStorage.getItem('userDietPlan');
+                    if (storedDietPlan) {
+                        setCurrentDietPlan(storedDietPlan);
+                        const dietPlanKey = mapDietPlanToKey(storedDietPlan);
+                        if (dietPlanKey) {
+                            setSelected(dietPlanKey);
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+
+        }
+    };
+
+    const mapDietPlanToKey = (dietPlan: string): DietPlanKey | null => {
+        const lowerDietPlan = dietPlan.toLowerCase();
+        if (lowerDietPlan.includes('balanced') || lowerDietPlan.includes('cân bằng')) return 'balanced';
+        if (lowerDietPlan.includes('low carb') || lowerDietPlan.includes('ít tinh bột')) return 'low_carb';
+        if (lowerDietPlan.includes('keto')) return 'keto';
+        if (lowerDietPlan.includes('gluten free') || lowerDietPlan.includes('không gluten')) return 'gluten_free';
+        if (lowerDietPlan.includes('dairy free') || lowerDietPlan.includes('không sữa')) return 'dairy_free';
+        if (lowerDietPlan.includes('paleo')) return 'paleo';
+        if (lowerDietPlan.includes('vegetarian')) return 'vegetarian';
+        if (lowerDietPlan.includes('vegan')) return 'vegan';
+        if (lowerDietPlan.includes('mediterranean')) return 'mediterranean';
+        if (lowerDietPlan.includes('intermittent fasting')) return 'intermittent_fasting';
+        return null;
+    };
+
+    const handleContinue = async () => {
         if (!selected) {
-            alert('Vui lòng chọn chế độ ăn để tiếp tục');
+            Alert.alert('Thông báo', 'Vui lòng chọn chế độ ăn để tiếp tục');
             return;
         }
 
@@ -64,11 +139,41 @@ const EatStyleScreen = () => {
         
         if (isSettingsFlow) {
             // Nếu đang trong settings, lưu chế độ ăn và quay lại
-            console.log('Lưu chế độ ăn:', { selected });
-            navigation.goBack();
+            setIsLoading(true);
+            try {
+                const dietPlanName = DIET_PLAN_MAPPING[selected] || 'Balanced';
+                await profileAPI.saveUserDietPlan({ dietPlan: dietPlanName });
+                
+                // Also save to AsyncStorage for fallback
+                await AsyncStorage.setItem('userDietPlan', dietPlanName);
+                
+                Alert.alert('Thành công', 'Chế độ ăn đã được cập nhật');
+                navigation.goBack();
+            } catch (error: any) {
+
+                const errorMessage = error?.message || 'Cập nhật chế độ ăn thất bại. Vui lòng thử lại.';
+                Alert.alert('Lỗi', errorMessage);
+            } finally {
+                setIsLoading(false);
+            }
         } else {
-            // Nếu đang trong flow đăng ký, tiếp tục đến màn hình CookingLevel
-            navigation.navigate('CookingLevel');
+            // Nếu đang trong flow đăng ký, lưu chế độ ăn và tiếp tục đến màn hình CookingLevel
+            setIsLoading(true);
+            try {
+                const dietPlanName = DIET_PLAN_MAPPING[selected] || 'Balanced';
+                await profileAPI.saveUserDietPlan({ dietPlan: dietPlanName });
+                
+                // Also save to AsyncStorage for fallback
+                await AsyncStorage.setItem('userDietPlan', dietPlanName);
+                
+                navigation.navigate('CookingLevel');
+            } catch (error: any) {
+
+                const errorMessage = error?.message || 'Lưu chế độ ăn thất bại. Vui lòng thử lại.';
+                Alert.alert('Lỗi', errorMessage);
+            } finally {
+                setIsLoading(false);
+            }
         }
     };
 
@@ -87,8 +192,23 @@ const EatStyleScreen = () => {
 
             <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
                 <Text style={styles.description}>
-                    Chọn tối đa 2 chế độ ăn phù hợp với bạn, hoặc chọn Tiếp tục để bỏ qua.
+                    Chọn 1 chế độ ăn phù hợp với bạn, hoặc chọn Tiếp tục để bỏ qua.
                 </Text>
+                
+                {/* Selection Counter */}
+                <View style={styles.selectionCounter}>
+                    <Text style={styles.selectionCounterText}>
+                        Đã chọn: {selected ? '1' : '0'} / 1 chế độ ăn
+                    </Text>
+                </View>
+
+                {/* Current Diet Plan Display */}
+                {currentDietPlan && (
+                    <View style={styles.currentDietPlanContainer}>
+                        <Text style={styles.currentDietPlanLabel}>Chế độ ăn hiện tại:</Text>
+                        <Text style={styles.currentDietPlanText}>{currentDietPlan}</Text>
+                    </View>
+                )}
 
                 <View style={styles.dietPlansContainer}>
                     {DIET_PLANS.map(plan => (
@@ -99,7 +219,16 @@ const EatStyleScreen = () => {
                                 selected === plan.key && styles.dietPlanCardSelected
                             ]}
                             activeOpacity={0.7}
-                            onPress={() => setSelected(plan.key)}
+                            onPress={() => {
+                                // Ensure only one diet plan can be selected
+                                if (selected === plan.key) {
+                                    // If clicking the same item, deselect it
+                                    setSelected(null);
+                                } else {
+                                    // Select the new item (automatically deselects previous)
+                                    setSelected(plan.key);
+                                }
+                            }}
                         >
                             <View style={styles.dietPlanContent}>
                                 <Text style={[
@@ -137,12 +266,20 @@ const EatStyleScreen = () => {
 
             <View style={styles.buttonContainer}>
                 <AppButton 
-                    title={navigation.getState().routes.some(route => 
-                        route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'
-                    ) ? "Lưu" : "Tiếp tục"}
+                    title={isLoading 
+                        ? (navigation.getState().routes.some(route => 
+                            route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'
+                        ) ? "Đang lưu..." : "Đang tiếp tục...")
+                        : (navigation.getState().routes.some(route => 
+                            route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'
+                        ) ? "Lưu" : "Tiếp tục")
+                    }
                     onPress={handleContinue} 
-                    filled 
-                    style={styles.continueButton}
+                    filled
+                    style={StyleSheet.flatten([
+                        styles.continueButton,
+                        isLoading && styles.continueButtonDisabled
+                    ])}
                 />
             </View>
         </SafeAreaView>
@@ -178,12 +315,44 @@ const styles = StyleSheet.create({
         paddingTop: SPACING.lg,
         paddingBottom: SPACING.xl,
     },
+    selectionCounter: {
+        backgroundColor: '#F3F4F6',
+        paddingHorizontal: SPACING.md,
+        paddingVertical: SPACING.sm,
+        borderRadius: RADII.sm,
+        marginBottom: SPACING.md,
+        alignSelf: 'flex-start',
+    },
+    selectionCounterText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: COLORS.textStrong,
+    },
     description: {
         fontSize: 16,
         color: COLORS.textStrong,
         marginBottom: SPACING.xl,
         fontWeight: '400',
         lineHeight: 24,
+    },
+    currentDietPlanContainer: {
+        backgroundColor: '#F0F9FF',
+        borderWidth: 1,
+        borderColor: '#0EA5E9',
+        borderRadius: RADII.md,
+        padding: SPACING.md,
+        marginBottom: SPACING.lg,
+    },
+    currentDietPlanLabel: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#0369A1',
+        marginBottom: SPACING.xs,
+    },
+    currentDietPlanText: {
+        fontSize: 16,
+        fontWeight: '500',
+        color: '#0C4A6E',
     },
     dietPlansContainer: {
         flex: 1,
@@ -266,5 +435,10 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.25,
         shadowRadius: 6,
         elevation: 6,
+    },
+    continueButtonDisabled: {
+        opacity: 0.6,
+        shadowOpacity: 0.1,
+        elevation: 2,
     },
 });

@@ -25,6 +25,11 @@ import CreateNewPasswordScreen from '../screens/profile/setting/CreateNewPasswor
 import PostDetailScreen from '../screens/home/community/PostDetailScreen';
 import CreatePostScreen from '../screens/home/community/CreatePostScreen';
 import EditPostScreen from '../screens/home/community/EditPostScreen';
+import TermsOfServiceScreen from '../screens/profile/setting/TermsOfServiceScreen';
+import PrivacyPolicyScreen from '../screens/profile/setting/PrivacyPolicyScreen';
+import EditProfileScreen from '../screens/profile/setting/EditProfileScreen';
+import FilterResultsScreen from '../screens/search/FilterResultsScreen';
+import WeeklyMenuScreen from '../screens/menu/WeeklyMenuScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -135,6 +140,31 @@ export const MainNavigator = () => {
                 <Stack.Screen
                     name="CreatePostScreen"
                     component={CreatePostScreen}
+                    options={{ headerShown: false }} 
+                />
+                <Stack.Screen
+                    name="TermsOfService"
+                    component={TermsOfServiceScreen}
+                    options={{ headerShown: false }} 
+                />
+                <Stack.Screen
+                    name="PrivacyPolicy"
+                    component={PrivacyPolicyScreen}
+                    options={{ headerShown: false }} 
+                />
+                <Stack.Screen
+                    name="EditProfile"
+                    component={EditProfileScreen}
+                    options={{ headerShown: false }} 
+                />
+                <Stack.Screen
+                    name="FilterResults"
+                    component={FilterResultsScreen}
+                    options={{ headerShown: false }} 
+                />
+                <Stack.Screen
+                    name="WeeklyMenuScreen"
+                    component={WeeklyMenuScreen}
                     options={{ headerShown: false }} 
                 />
             </Stack.Navigator>

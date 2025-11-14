@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,10 +14,19 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AppButton from '../../components/AppButton';
 import { COLORS, SPACING, RADII } from '../../utils/theme';
 import { RootStackParamList } from '../../types/navigation';
+import { profileAPI } from '../../services/profileAPI';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type CookingLevelNavigationProp = NativeStackNavigationProp<RootStackParamList, 'CookingLevel'>;
 
 type CookingLevel = 'beginner' | 'intermediate' | 'advanced';
+
+// Mapping từ frontend keys sang database names
+const COOKING_LEVEL_MAPPING: Record<string, string> = {
+    'beginner': 'Beginner',
+    'intermediate': 'Intermediate',
+    'advanced': 'Advanced'
+};
 
 interface CookingLevelOption {
   id: CookingLevel;
@@ -45,14 +55,66 @@ const cookingLevelOptions: CookingLevelOption[] = [
 const CookingLevelScreen: React.FC = () => {
   const navigation = useNavigation<CookingLevelNavigationProp>();
   const [selectedLevel, setSelectedLevel] = useState<CookingLevel | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentCookingLevel, setCurrentCookingLevel] = useState<string>('');
+
+  // Load current cooking level when component mounts
+  useEffect(() => {
+    loadCurrentCookingLevel();
+  }, []);
+
+  const loadCurrentCookingLevel = async () => {
+    try {
+      // Check if this is settings flow
+      const isSettingsFlow = navigation.getState().routes.some(route => 
+        route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'
+      );
+
+      if (isSettingsFlow) {
+        // Try to get from API first
+        try {
+          const profileResponse = await profileAPI.getUserProfile();
+          if (profileResponse.data?.cookingLevel) {
+            setCurrentCookingLevel(profileResponse.data.cookingLevel);
+            // Map cooking level to selected state
+            const cookingLevelKey = mapCookingLevelToKey(profileResponse.data.cookingLevel);
+            if (cookingLevelKey) {
+              setSelectedLevel(cookingLevelKey);
+            }
+          }
+        } catch (error) {
+
+          // Fallback to AsyncStorage
+          const storedCookingLevel = await AsyncStorage.getItem('userCookingLevel');
+          if (storedCookingLevel) {
+            setCurrentCookingLevel(storedCookingLevel);
+            const cookingLevelKey = mapCookingLevelToKey(storedCookingLevel);
+            if (cookingLevelKey) {
+              setSelectedLevel(cookingLevelKey);
+            }
+          }
+        }
+      }
+    } catch (error) {
+
+    }
+  };
+
+  const mapCookingLevelToKey = (cookingLevel: string): CookingLevel | null => {
+    const lowerCookingLevel = cookingLevel.toLowerCase();
+    if (lowerCookingLevel.includes('beginner') || lowerCookingLevel.includes('sơ cấp')) return 'beginner';
+    if (lowerCookingLevel.includes('intermediate') || lowerCookingLevel.includes('trung cấp')) return 'intermediate';
+    if (lowerCookingLevel.includes('advanced') || lowerCookingLevel.includes('nâng cao')) return 'advanced';
+    return null;
+  };
 
   const handleBack = () => {
     navigation.goBack();
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (!selectedLevel) {
-      alert('Vui lòng chọn trình độ nấu ăn để tiếp tục');
+      Alert.alert('Thông báo', 'Vui lòng chọn trình độ nấu ăn để tiếp tục');
       return;
     }
 
@@ -63,11 +125,45 @@ const CookingLevelScreen: React.FC = () => {
     
     if (isSettingsFlow) {
       // Nếu đang trong settings, lưu kỹ năng nấu ăn và quay lại
-      console.log('Lưu kỹ năng nấu ăn:', { selectedLevel });
-      navigation.goBack();
+      setIsLoading(true);
+      try {
+        const cookingLevelName = COOKING_LEVEL_MAPPING[selectedLevel] || 'Beginner';
+        await profileAPI.saveUserCookingLevel({ cookingLevel: cookingLevelName });
+        
+        // Also save to AsyncStorage for fallback
+        await AsyncStorage.setItem('userCookingLevel', cookingLevelName);
+        
+        Alert.alert('Thành công', 'Trình độ nấu ăn đã được cập nhật');
+        navigation.goBack();
+      } catch (error: any) {
+
+        const errorMessage = error?.message || 'Cập nhật trình độ nấu ăn thất bại. Vui lòng thử lại.';
+        Alert.alert('Lỗi', errorMessage);
+      } finally {
+        setIsLoading(false);
+      }
     } else {
-      // Nếu đang trong flow đăng ký, chuyển sang màn hình Home
-      navigation.navigate('MainTabs');
+      // Nếu đang trong flow đăng ký, lưu kỹ năng nấu ăn và hoàn thành onboarding
+      setIsLoading(true);
+      try {
+        const cookingLevelName = COOKING_LEVEL_MAPPING[selectedLevel] || 'Beginner';
+        await profileAPI.saveUserCookingLevel({ cookingLevel: cookingLevelName });
+        
+        // Also save to AsyncStorage for fallback
+        await AsyncStorage.setItem('userCookingLevel', cookingLevelName);
+        
+        // Hoàn thành onboarding
+        await profileAPI.completeOnboarding();
+        
+        // Chuyển sang màn hình Home
+        navigation.navigate('MainTabs');
+      } catch (error: any) {
+
+        const errorMessage = error?.message || 'Lưu trình độ nấu ăn thất bại. Vui lòng thử lại.';
+        Alert.alert('Lỗi', errorMessage);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -117,6 +213,14 @@ const CookingLevelScreen: React.FC = () => {
             Chúng tôi sẽ gợi ý công thức phù hợp với kỹ năng nấu ăn của bạn.
           </Text>
 
+          {/* Current Cooking Level Display */}
+          {currentCookingLevel && (
+            <View style={styles.currentCookingLevelContainer}>
+              <Text style={styles.currentCookingLevelLabel}>Kỹ năng nấu ăn hiện tại:</Text>
+              <Text style={styles.currentCookingLevelText}>{currentCookingLevel}</Text>
+            </View>
+          )}
+
           <View style={styles.optionsContainer}>
             {cookingLevelOptions.map(renderLevelOption)}
           </View>
@@ -127,12 +231,21 @@ const CookingLevelScreen: React.FC = () => {
       <View style={styles.bottomContainer}>
         <View style={!selectedLevel && styles.disabledButton}>
           <AppButton
-            title={navigation.getState().routes.some(route => 
-              route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'
-            ) ? "Lưu" : "Tiếp tục"}
+            title={isLoading 
+              ? (navigation.getState().routes.some(route => 
+                  route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'
+                ) ? "Đang lưu..." : "Đang hoàn thành...")
+              : (navigation.getState().routes.some(route => 
+                  route.name === 'SettingScreen' || route.name === 'PersonalNutritionScreen'
+                ) ? "Lưu" : "Tiếp tục")
+            }
             onPress={handleContinue}
             filled
-            style={styles.continueButton}
+            disabled={isLoading}
+            style={StyleSheet.flatten([
+              styles.continueButton,
+              isLoading && styles.continueButtonDisabled
+            ])}
           />
         </View>
       </View>
@@ -173,6 +286,25 @@ const styles = StyleSheet.create({
     color: COLORS.textDim,
     lineHeight: 24,
     marginBottom: SPACING.xl,
+  },
+  currentCookingLevelContainer: {
+    backgroundColor: '#F0F9FF',
+    borderWidth: 1,
+    borderColor: '#0EA5E9',
+    borderRadius: RADII.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.lg,
+  },
+  currentCookingLevelLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#0369A1',
+    marginBottom: SPACING.xs,
+  },
+  currentCookingLevelText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#0C4A6E',
   },
   optionsContainer: {
     gap: SPACING.md,
@@ -230,6 +362,9 @@ const styles = StyleSheet.create({
   },
   continueButton: {
     width: '100%',
+  },
+  continueButtonDisabled: {
+    opacity: 0.6,
   },
   disabledButton: {
     opacity: 0.5,
