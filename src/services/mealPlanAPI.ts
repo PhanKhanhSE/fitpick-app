@@ -84,7 +84,7 @@ export const mealPlanAPI = {
         message: response.data.message || 'Không thể lấy thực đơn hôm nay' 
       };
     } catch (error: any) {
-      console.error('Error fetching today meal plan:', error);
+
       return { 
         success: false, 
         message: error.response?.data?.message || 'Lỗi khi lấy thực đơn hôm nay' 
@@ -111,7 +111,7 @@ export const mealPlanAPI = {
         message: response.data.message || `Không thể lấy thực đơn ngày ${dateString}` 
       };
     } catch (error: any) {
-      console.error('Error fetching meal plan by date:', error);
+
       return { 
         success: false, 
         message: error.response?.data?.message || 'Lỗi khi lấy thực đơn theo ngày' 
@@ -137,7 +137,7 @@ export const mealPlanAPI = {
         message: response.data.message || 'Không thể thay đổi món theo gợi ý' 
       };
     } catch (error: any) {
-      console.error('Error replacing meal by suggestion:', error);
+
       return { 
         success: false, 
         message: error.response?.data?.message || 'Lỗi khi thay đổi món theo gợi ý' 
@@ -163,7 +163,7 @@ export const mealPlanAPI = {
         message: response.data.message || 'Không thể thay đổi món từ danh sách yêu thích' 
       };
     } catch (error: any) {
-      console.error('Error replacing meal by favorites:', error);
+
       return { 
         success: false, 
         message: error.response?.data?.message || 'Lỗi khi thay đổi món từ danh sách yêu thích' 
@@ -189,7 +189,7 @@ export const mealPlanAPI = {
         message: response.data.message || 'Không thể lấy danh sách thực đơn' 
       };
     } catch (error: any) {
-      console.error('Error fetching user meal plans:', error);
+
       return { 
         success: false, 
         message: error.response?.data?.message || 'Lỗi khi lấy danh sách thực đơn' 
@@ -215,7 +215,7 @@ export const mealPlanAPI = {
         message: response.data.message || 'Không thể tạo thực đơn' 
       };
     } catch (error: any) {
-      console.error('Error generating meal plan:', error);
+
       return { 
         success: false, 
         message: error.response?.data?.message || 'Lỗi khi tạo thực đơn' 
@@ -241,7 +241,7 @@ export const mealPlanAPI = {
         message: response.data.message || 'Không thể thay đổi món ăn' 
       };
     } catch (error: any) {
-      console.error('Error swapping meal:', error);
+
       return { 
         success: false, 
         message: error.response?.data?.message || 'Lỗi khi thay đổi món ăn' 
@@ -266,7 +266,7 @@ export const mealPlanAPI = {
         message: response.data.message || 'Không thể xóa thực đơn' 
       };
     } catch (error: any) {
-      console.error('Error deleting meal plan:', error);
+
       return { 
         success: false, 
         message: error.response?.data?.message || 'Lỗi khi xóa thực đơn' 
@@ -296,7 +296,7 @@ export const mealPlanAPI = {
         message: response.data.message || 'Không thể thêm món ăn vào thực đơn'
       };
     } catch (error: any) {
-      console.error('Error adding meal to menu:', error);
+
       return {
         success: false,
         message: error.response?.data?.message || 'Lỗi khi thêm món ăn vào thực đơn'
@@ -322,7 +322,7 @@ export const mealPlanAPI = {
         message: response.data.message || 'Không thể lấy chi tiết món ăn' 
       };
     } catch (error: any) {
-      console.error('Error fetching meal detail:', error);
+
       return { 
         success: false, 
         message: error.response?.data?.message || 'Lỗi khi lấy chi tiết món ăn' 

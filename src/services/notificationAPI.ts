@@ -36,7 +36,7 @@ export const notificationAPI = {
       const response = await apiClient.get(`/api/notification/user${params}`);
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching notifications:', error);
+
       throw error;
     }
   },
@@ -52,7 +52,7 @@ export const notificationAPI = {
       });
       return response.data;
     } catch (error: any) {
-      console.error('Error sending notification:', error);
+
       throw error;
     }
   },
@@ -63,7 +63,7 @@ export const notificationAPI = {
       const response = await apiClient.put(`/api/notification/mark-read/${notificationId}`);
       return response.data;
     } catch (error: any) {
-      console.error('Error marking notification as read:', error);
+
       throw error;
     }
   },
@@ -74,7 +74,7 @@ export const notificationAPI = {
       const response = await apiClient.delete(`/api/notification/delete/${notificationId}`);
       return response.data;
     } catch (error: any) {
-      console.error('Error deleting notification:', error);
+
       throw error;
     }
   },
@@ -85,7 +85,7 @@ export const notificationAPI = {
       const response = await apiClient.get('/api/notification/types');
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching notification types:', error);
+
       throw error;
     }
   },
@@ -98,7 +98,7 @@ export const notificationAPI = {
       });
       return response.data;
     } catch (error: any) {
-      console.error('Error creating notification type:', error);
+
       throw error;
     }
   },
@@ -109,7 +109,7 @@ export const notificationAPI = {
       const response = await apiClient.delete(`/api/notification/types/delete/${typeId}`);
       return response.data;
     } catch (error: any) {
-      console.error('Error deleting notification type:', error);
+
       throw error;
     }
   }

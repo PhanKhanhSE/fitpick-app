@@ -50,7 +50,6 @@ export const useProUser = () => {
       
       return null;
     } catch (err) {
-      console.error('Error loading Pro user permissions:', err);
       setError('Không thể tải thông tin Pro user');
       
       // Fallback: Check if user is Pro using simple API
@@ -71,7 +70,7 @@ export const useProUser = () => {
           return fallbackPermissions;
         }
       } catch (fallbackError) {
-        console.error('Error in fallback Pro user check:', fallbackError);
+        // Fallback error
       }
       
       return null;

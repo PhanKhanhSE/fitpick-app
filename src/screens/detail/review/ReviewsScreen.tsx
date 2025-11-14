@@ -97,7 +97,7 @@ const ReviewsScreen: React.FC<ReviewsScreenProps> = ({ navigation, route }) => {
       }
       
     } catch (err: any) {
-      console.error('Error loading reviews:', err);
+
       setError(err.message || 'Có lỗi xảy ra khi tải nhận xét');
     } finally {
       setLoading(false);
@@ -156,7 +156,7 @@ const ReviewsScreen: React.FC<ReviewsScreenProps> = ({ navigation, route }) => {
                 Alert.alert('Lỗi', 'Không thể xóa nhận xét');
               }
             } catch (error: any) {
-              console.error('Error deleting review:', error);
+
               Alert.alert('Lỗi', error.message || 'Không thể xóa nhận xét');
             } finally {
               setSubmitting(false);
@@ -203,7 +203,7 @@ const ReviewsScreen: React.FC<ReviewsScreenProps> = ({ navigation, route }) => {
         }
       }
     } catch (err: any) {
-      console.error('Error submitting review:', err);
+
       Alert.alert('Lỗi', err.message || 'Không thể gửi nhận xét. Vui lòng thử lại.');
     } finally {
       setSubmitting(false);

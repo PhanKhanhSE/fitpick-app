@@ -19,7 +19,7 @@ export const useDocumentPicker = () => {
       }
       return null;
     } catch (error) {
-      console.error('Error picking document:', error);
+
       Alert.alert('Lỗi', 'Không thể chọn file. Vui lòng thử lại.');
       return null;
     }
@@ -36,12 +36,12 @@ export const useDocumentPicker = () => {
       };
 
       // Test với test endpoint trước
-      console.log('🧪 Testing avatar upload with Document Picker...');
+
       try {
         await userProfileAPI.testAvatarUpload(avatarFile);
-        console.log('✅ Test upload successful, now trying real upload...');
+
       } catch (testError) {
-        console.error('❌ Test upload failed:', testError);
+
         throw testError;
       }
       
@@ -55,7 +55,7 @@ export const useDocumentPicker = () => {
         return null;
       }
     } catch (error) {
-      console.error('Error uploading avatar:', error);
+
       Alert.alert('Lỗi', 'Có lỗi xảy ra khi cập nhật ảnh đại diện.');
       return null;
     } finally {
@@ -68,20 +68,13 @@ export const useDocumentPicker = () => {
       const document = await pickDocument();
       if (!document) return;
 
-      console.log('📄 Document picked:', {
-        uri: document.uri,
-        name: document.name,
-        mimeType: document.mimeType,
-        size: document.size
-      });
-
       const newAvatarUrl = await uploadAvatar(document.uri, document.name, document.mimeType || 'image/jpeg');
       
       if (newAvatarUrl && onSuccess) {
         onSuccess(newAvatarUrl);
       }
     } catch (error) {
-      console.error('Error in handleChangeAvatar:', error);
+
     }
   };
 

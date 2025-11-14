@@ -17,7 +17,7 @@ export const useFavorites = () => {
         setFavorites(favoriteIds);
       }
     } catch (error) {
-      console.error('Error loading favorites:', error);
+
     } finally {
       setIsLoading(false);
     }
@@ -40,7 +40,7 @@ export const useFavorites = () => {
       }
       return false;
     } catch (error) {
-      console.error('Error toggling favorite:', error);
+
       return false;
     }
   };
@@ -57,7 +57,7 @@ export const useFavorites = () => {
       }
       return false;
     } catch (error) {
-      console.error('Error removing favorite:', error);
+
       return false;
     }
   };
@@ -77,7 +77,7 @@ export const useFavorites = () => {
       }
       return false;
     } catch (error) {
-      console.error('Error removing multiple favorites:', error);
+
       return false;
     }
   };

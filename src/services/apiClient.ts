@@ -5,7 +5,6 @@ import { Alert } from 'react-native';
 
 // Base URL for API
 const API_BASE_URL = 'https://fitpick-be.onrender.com';
-console.log('🌐 Debug - API Base URL:', API_BASE_URL);
 
 // Create axios instance
 const apiClient = axios.create({
@@ -28,10 +27,6 @@ apiClient.interceptors.request.use(
     const isAuthEndpoint = (config.url || '').startsWith('/api/auth');
     if (token && !isAuthEndpoint) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('🔑 Debug - Adding token to request:', config.url);
-    } else {
-      console.log('⚠️ Debug - No token found for request:', config.url);
-      console.log('🔍 Debug - Auth status - Token:', !!token, 'RefreshToken:', !!refreshToken, 'User:', !!user);
     }
     
     // Process request data to convert meal types from Vietnamese to English
@@ -65,22 +60,18 @@ apiClient.interceptors.response.use(
       try {
         const refreshToken = await AsyncStorage.getItem('refreshToken');
         if (refreshToken) {
-          console.log('🔄 Debug - Attempting token refresh...');
           const response = await axios.post(`${API_BASE_URL}/api/auth/refresh-token`, refreshToken, {
             headers: {
               'Content-Type': 'application/json'
             }
           });
 
-          console.log('🔄 Debug - Refresh token response:', response.data);
           const authResult = response.data.data;
           
           // Check if token is valid before saving
           if (authResult?.AccessToken && typeof authResult.AccessToken === 'string' && authResult.AccessToken.trim() !== '') {
             await AsyncStorage.setItem('accessToken', authResult.AccessToken);
-            console.log('✅ Debug - Token refreshed successfully');
           } else {
-            console.error('❌ Debug - Invalid token received:', authResult?.AccessToken);
             throw new Error('Invalid token received from server');
           }
 
@@ -88,7 +79,6 @@ apiClient.interceptors.response.use(
           return apiClient(originalRequest);
         }
       } catch (refreshError) {
-        console.error('❌ Debug - Token refresh failed:', refreshError);
         // Refresh failed, clear all auth data
         await AsyncStorage.multiRemove(['accessToken', 'refreshToken', 'user', 'userInfo']);
         
@@ -101,7 +91,6 @@ apiClient.interceptors.response.use(
               text: 'OK',
               onPress: () => {
                 // TODO: Navigate to login screen
-                console.log('🔐 User needs to login again');
               }
             }
           ]

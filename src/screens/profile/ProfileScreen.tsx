@@ -130,8 +130,7 @@ const ProfileScreen: React.FC = () => {
         });
       }
     } catch (error) {
-      console.error('Error loading user data:', error);
-      
+
       // Fallback to stored data
       const storedUser = await AsyncStorage.getItem('user');
       if (storedUser) {
@@ -206,7 +205,7 @@ const ProfileScreen: React.FC = () => {
         setUsedMeals(mealsResponse.data);
       }
     } catch (error) {
-      console.error('Error loading nutrition data:', error);
+
       // Fallback to default data
       setNutritionData({
         targetCalories: 2000,
@@ -235,7 +234,7 @@ const ProfileScreen: React.FC = () => {
         setUserPosts(response.data);
       }
     } catch (error) {
-      console.error('Error loading user posts:', error);
+
       setUserPosts([]);
     }
   };

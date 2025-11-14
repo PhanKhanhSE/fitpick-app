@@ -82,7 +82,7 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
         setIsInProductList(mealIds.includes(mealId));
       }
     } catch (error) {
-      console.error('Error checking product list:', error);
+      // Error checking product list
     }
   };
 
@@ -98,7 +98,6 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
         Alert.alert('Lỗi', 'Không thể tải thông tin món ăn');
       }
     } catch (error) {
-      console.error('Error loading meal detail:', error);
       Alert.alert('Lỗi', 'Không thể tải thông tin món ăn');
     } finally {
       setIsLoading(false);
@@ -109,7 +108,6 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
   const loadReviews = async (mealId: number) => {
     try {
       setReviewsLoading(true);
-      console.log('🔄 Loading reviews for meal:', mealId);
       
       // Load tất cả reviews, user review và rating stats song song
       const [reviewsResponse, userReviewResponse, ratingStatsResponse] = await Promise.all([
@@ -117,23 +115,6 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
         mealReviewAPI.getUserReview(mealId),
         mealReviewAPI.getMealRatingStats(mealId)
       ]);
-      
-      console.log('📝 Reviews response:', reviewsResponse);
-      console.log('👤 User review response:', userReviewResponse);
-      console.log('📊 Rating stats response:', ratingStatsResponse);
-      
-      // Debug avatar data
-      if (reviewsResponse.success && reviewsResponse.data) {
-        console.log('🔍 Raw reviews from API:', reviewsResponse.data);
-        reviewsResponse.data.forEach((review: MealReview, index: number) => {
-          console.log(`🔍 Review ${index}:`, {
-            reviewId: review.reviewId,
-            userName: review.userName,
-            userAvatar: review.userAvatar,
-            hasAvatar: !!review.userAvatar
-          });
-        });
-      }
       
       // Xử lý reviews
       if (reviewsResponse.success) {
@@ -159,7 +140,6 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
           };
         });
         
-        console.log('✅ Converted reviews:', convertedReviews);
         setReviews(convertedReviews);
       } else {
         setReviews([]);
@@ -200,8 +180,6 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
       }
       
     } catch (error: any) {
-      console.error('❌ Error loading reviews:', error);
-      console.error('❌ Error details:', error.message);
       setReviews([]);
       setUserReview(null);
     } finally {
@@ -354,7 +332,6 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
         ]
       );
     } catch (error) {
-      console.error('Error adding to plan:', error);
       Alert.alert('Lỗi', 'Không thể thêm món ăn vào thực đơn');
     }
   };
@@ -379,13 +356,9 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
       const mealId = parseInt(meal.id);
       const calories = parseInt(meal.calories || '0');
       
-      const success = await markMealAsEaten(mealId, calories, quantity);
-      if (success) {
-        // Có thể thêm logic khác ở đây nếu cần
-        console.log('Meal marked as eaten successfully');
-      }
+      await markMealAsEaten(mealId, calories, quantity);
     } catch (error) {
-      console.error('Error marking meal as eaten:', error);
+      // Error marking meal as eaten
     }
   };
 
@@ -394,12 +367,9 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
     try {
       const mealId = parseInt(meal.id);
       
-      const success = await unmarkMealAsEaten(mealId);
-      if (success) {
-        console.log('Meal unmarked as eaten successfully');
-      }
+      await unmarkMealAsEaten(mealId);
     } catch (error) {
-      console.error('Error unmarking meal as eaten:', error);
+      // Error unmarking meal as eaten
     }
   };
   const increaseQty = async () => {

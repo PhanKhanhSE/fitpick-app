@@ -34,7 +34,7 @@ export const useCameraPicker = () => {
       }
       return null;
     } catch (error) {
-      console.error('Error taking photo:', error);
+
       Alert.alert('Lỗi', 'Không thể chụp ảnh. Vui lòng thử lại.');
       return null;
     }
@@ -51,12 +51,12 @@ export const useCameraPicker = () => {
       };
 
       // Test với test endpoint trước
-      console.log('🧪 Testing avatar upload with Camera...');
+
       try {
         await userProfileAPI.testAvatarUpload(avatarFile);
-        console.log('✅ Test upload successful, now trying real upload...');
+
       } catch (testError) {
-        console.error('❌ Test upload failed:', testError);
+
         throw testError;
       }
       
@@ -70,7 +70,7 @@ export const useCameraPicker = () => {
         return null;
       }
     } catch (error) {
-      console.error('Error uploading avatar:', error);
+
       Alert.alert('Lỗi', 'Có lỗi xảy ra khi cập nhật ảnh đại diện.');
       return null;
     } finally {
@@ -83,13 +83,6 @@ export const useCameraPicker = () => {
       const photo = await takePhoto();
       if (!photo) return;
 
-      console.log('📸 Photo taken:', {
-        uri: photo.uri,
-        width: photo.width,
-        height: photo.height,
-        fileName: photo.fileName
-      });
-
       const fileName = photo.fileName || `camera_${Date.now()}.jpg`;
       const mimeType = 'image/jpeg'; // Camera luôn tạo JPEG
 
@@ -99,7 +92,7 @@ export const useCameraPicker = () => {
         onSuccess(newAvatarUrl);
       }
     } catch (error) {
-      console.error('Error in handleChangeAvatar:', error);
+
     }
   };
 

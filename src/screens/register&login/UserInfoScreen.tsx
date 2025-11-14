@@ -51,7 +51,7 @@ const UserInfoScreen = () => {
                 Alert.alert('Thành công', 'Thông tin cá nhân đã được cập nhật');
                 navigation.goBack();
             } catch (error: any) {
-                console.error('Save profile error:', error);
+
                 const errorMessage = error?.message || 'Cập nhật thông tin thất bại. Vui lòng thử lại.';
                 Alert.alert('Lỗi', errorMessage);
             } finally {
@@ -77,7 +77,7 @@ const UserInfoScreen = () => {
                 
                 navigation.navigate('Goals' as never);
             } catch (error: any) {
-                console.error('Save profile error:', error);
+
                 const errorMessage = error?.message || 'Lưu thông tin thất bại. Vui lòng thử lại.';
                 Alert.alert('Lỗi', errorMessage);
             } finally {

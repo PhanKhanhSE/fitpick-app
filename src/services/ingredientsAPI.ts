@@ -54,7 +54,7 @@ export const ingredientsAPI = {
       
       return { success: false, message: 'Không thể lấy danh sách nguyên liệu' };
     } catch (error: any) {
-      console.error('Error fetching user meal ingredients:', error);
+
       return { 
         success: false, 
         message: error.response?.data?.message || 'Lỗi khi lấy danh sách nguyên liệu' 
@@ -79,7 +79,7 @@ export const ingredientsAPI = {
       
       return { success: false, message: 'Không thể cập nhật trạng thái nguyên liệu' };
     } catch (error: any) {
-      console.error('Error marking ingredient:', error);
+
       return { 
         success: false, 
         message: error.response?.data?.message || 'Lỗi khi cập nhật trạng thái nguyên liệu' 
@@ -109,7 +109,7 @@ export const ingredientsAPI = {
       
       return { success: false, message: 'Không thể thêm món ăn vào danh sách sản phẩm' };
     } catch (error: any) {
-      console.error('Error adding meal to product list:', error);
+
       return { 
         success: false, 
         message: error.response?.data?.message || 'Lỗi khi thêm món ăn vào danh sách sản phẩm' 
@@ -157,14 +157,14 @@ export const ingredientsAPI = {
             });
           }
         } catch (error) {
-          console.error(`Error loading meal ${mealId}:`, error);
+
           // Tiếp tục với meal khác
         }
       }
 
       return { success: true, data: products };
     } catch (error: any) {
-      console.error('Error fetching user product list:', error);
+
       return { 
         success: false, 
         message: error.response?.data?.message || 'Lỗi khi lấy danh sách sản phẩm' 
@@ -207,7 +207,7 @@ export const ingredientsAPI = {
         return { success: false, message: 'Có lỗi khi đánh dấu một số nguyên liệu' };
       }
     } catch (error: any) {
-      console.error('Error marking all ingredients:', error);
+
       return { 
         success: false, 
         message: error.response?.data?.message || 'Lỗi khi đánh dấu tất cả nguyên liệu' 
@@ -231,7 +231,7 @@ export const ingredientsAPI = {
       
       return { success: true, message: 'Đã xóa món ăn khỏi danh sách sản phẩm' };
     } catch (error: any) {
-      console.error('Error removing meal from product list:', error);
+
       return { 
         success: false, 
         message: error.response?.data?.message || 'Lỗi khi xóa món ăn khỏi danh sách sản phẩm' 
@@ -244,7 +244,7 @@ export const ingredientsAPI = {
     try {
       await AsyncStorage.setItem(`mealQuantity_${mealId}`, quantity.toString());
     } catch (error) {
-      console.error('Error saving meal quantity:', error);
+
     }
   },
 
@@ -254,7 +254,7 @@ export const ingredientsAPI = {
       const quantity = await AsyncStorage.getItem(`mealQuantity_${mealId}`);
       return quantity ? parseInt(quantity) : 1;
     } catch (error) {
-      console.error('Error getting meal quantity:', error);
+
       return 1;
     }
   },

@@ -86,15 +86,10 @@ export const searchAPI = {
       if (filters.maxPrice) params.append('maxPrice', filters.maxPrice.toString());
 
       const url = `/api/users/meals?${params.toString()}`;
-      console.log('🔍 Debug - Search API URL:', url);
-      console.log('🔍 Debug - Search filters:', filters);
 
       const response = await apiClient.get(url);
-      console.log('🔍 Debug - Search API Response:', response.data);
       return response.data;
     } catch (error: any) {
-      console.error('Error searching meals:', error);
-      console.error('Error details:', error.response?.data);
       throw error;
     }
   },
@@ -105,7 +100,6 @@ export const searchAPI = {
       const response = await apiClient.get(`/api/users/meals/${mealId}`);
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching meal details:', error);
       throw error;
     }
   },
@@ -116,7 +110,6 @@ export const searchAPI = {
       const response = await apiClient.get('/api/users/meals');
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching popular meals:', error);
       throw error;
     }
   },
@@ -128,7 +121,6 @@ export const searchAPI = {
       const response = await apiClient.get('/api/users/meals');
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching suggested meals:', error);
       throw error;
     }
   },
@@ -139,7 +131,6 @@ export const searchAPI = {
       const response = await apiClient.get('/api/users/meals/premium');
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching premium meals:', error);
       throw error;
     }
   },
@@ -150,7 +141,6 @@ export const searchAPI = {
       const response = await apiClient.get(`/api/users/meals?name=${encodeURIComponent(searchText)}`);
       return response.data;
     } catch (error: any) {
-      console.error('Error searching by text:', error);
       throw error;
     }
   },
@@ -161,7 +151,6 @@ export const searchAPI = {
       const response = await apiClient.get(`/api/mealdetail/${mealId}`);
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching meal detail:', error);
       throw error;
     }
   }

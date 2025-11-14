@@ -26,9 +26,6 @@ export const authAPI = {
   // Login user
   login: async (email: string, password: string) => {
     try {
-      console.log('🔐 Debug - API login called with:', { email, password: '***' });
-      console.log('🌐 Debug - Full URL:', `${API_BASE_URL}/api/auth/login`);
-      
       const doLogin = async () => apiClient.post('/api/auth/login', { email, password });
       let response = await doLogin();
       
@@ -41,27 +38,15 @@ export const authAPI = {
         }
       }
       
-      console.log('🔐 Debug - Raw API response:', response.data);
       const { token, refreshToken, user } = response.data.data;
-      
-      console.log('🔐 Debug - Extracted tokens:', { 
-        hasToken: !!token, 
-        hasRefreshToken: !!refreshToken, 
-        hasUser: !!user 
-      });
       
       // Store tokens
       await AsyncStorage.setItem('accessToken', token);
       await AsyncStorage.setItem('refreshToken', refreshToken);
       await AsyncStorage.setItem('user', JSON.stringify(user));
       
-      console.log('✅ Debug - Tokens stored successfully');
       return response.data;
     } catch (error: any) {
-      console.log('❌ Debug - API login error:', error);
-      console.log('❌ Debug - Error status:', error.response?.status);
-      console.log('❌ Debug - Error data:', error.response?.data);
-      console.log('❌ Debug - Error message:', error.message);
       throw error;
     }
   },
@@ -71,7 +56,7 @@ export const authAPI = {
     try {
       await AsyncStorage.multiRemove(['accessToken', 'refreshToken', 'user']);
     } catch (error) {
-      console.error('Error during logout:', error);
+      // Handle error silently
     }
   },
 };
@@ -83,18 +68,12 @@ export const checkAuthStatus = async () => {
     const refreshToken = await AsyncStorage.getItem('refreshToken');
     const user = await AsyncStorage.getItem('user');
     
-    console.log('🔍 Auth Status Check:');
-    console.log('  - Access Token:', !!token);
-    console.log('  - Refresh Token:', !!refreshToken);
-    console.log('  - User Data:', !!user);
-    
     return {
       isAuthenticated: !!token,
       hasRefreshToken: !!refreshToken,
       hasUserData: !!user
     };
   } catch (error) {
-    console.error('Error checking auth status:', error);
     return {
       isAuthenticated: false,
       hasRefreshToken: false,
@@ -107,9 +86,8 @@ export const checkAuthStatus = async () => {
 export const clearAuthData = async () => {
   try {
     await AsyncStorage.multiRemove(['accessToken', 'refreshToken', 'user', 'userInfo']);
-    console.log('🧹 Auth data cleared');
   } catch (error) {
-    console.error('Error clearing auth data:', error);
+    // Handle error silently
   }
 };
 

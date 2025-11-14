@@ -18,7 +18,6 @@ const CreatePostScreen: React.FC<any> = ({ navigation }) => {
 
   const handleSave = () => {
     // Xử lý tạo mới (call API hoặc emit event)
-    console.log("Tạo bài viết:", { content, image });
 
     // Quay lại màn trước (nếu cần refresh thì emit event hoặc gọi API)
     navigation.goBack();

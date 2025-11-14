@@ -83,7 +83,7 @@ const CookingLevelScreen: React.FC = () => {
             }
           }
         } catch (error) {
-          console.log('API failed, trying AsyncStorage...');
+
           // Fallback to AsyncStorage
           const storedCookingLevel = await AsyncStorage.getItem('userCookingLevel');
           if (storedCookingLevel) {
@@ -96,7 +96,7 @@ const CookingLevelScreen: React.FC = () => {
         }
       }
     } catch (error) {
-      console.error('Error loading current cooking level:', error);
+
     }
   };
 
@@ -136,7 +136,7 @@ const CookingLevelScreen: React.FC = () => {
         Alert.alert('Thành công', 'Trình độ nấu ăn đã được cập nhật');
         navigation.goBack();
       } catch (error: any) {
-        console.error('Save cooking level error:', error);
+
         const errorMessage = error?.message || 'Cập nhật trình độ nấu ăn thất bại. Vui lòng thử lại.';
         Alert.alert('Lỗi', errorMessage);
       } finally {
@@ -158,7 +158,7 @@ const CookingLevelScreen: React.FC = () => {
         // Chuyển sang màn hình Home
         navigation.navigate('MainTabs');
       } catch (error: any) {
-        console.error('Save cooking level error:', error);
+
         const errorMessage = error?.message || 'Lưu trình độ nấu ăn thất bại. Vui lòng thử lại.';
         Alert.alert('Lỗi', errorMessage);
       } finally {

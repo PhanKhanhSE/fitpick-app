@@ -63,12 +63,12 @@ export const useAvatarPicker = () => {
       } as any;
 
       // Test with test endpoint first
-      console.log('🧪 Testing avatar upload...');
+
       try {
         await userProfileAPI.testAvatarUpload(avatarFile);
-        console.log('✅ Test upload successful, now trying real upload...');
+
       } catch (testError) {
-        console.error('❌ Test upload failed:', testError);
+
         throw testError;
       }
       
@@ -82,7 +82,7 @@ export const useAvatarPicker = () => {
         return null;
       }
     } catch (error) {
-      console.error('Error uploading avatar:', error);
+
       Alert.alert('Lỗi', 'Có lỗi xảy ra khi cập nhật ảnh đại diện.');
       return null;
     } finally {
@@ -100,7 +100,7 @@ export const useAvatarPicker = () => {
         }
       }
     } catch (error) {
-      console.error('Error in handleChangeAvatar:', error);
+
       Alert.alert('Lỗi', 'Có lỗi xảy ra khi chọn ảnh.');
     }
   };

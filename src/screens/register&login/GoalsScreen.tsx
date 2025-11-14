@@ -62,7 +62,7 @@ const GoalsScreen = () => {
                         }
                     }
                 } catch (error) {
-                    console.log('API failed, trying AsyncStorage...');
+
                     // Fallback to AsyncStorage
                     const storedGoal = await AsyncStorage.getItem('userGoal');
                     if (storedGoal) {
@@ -78,7 +78,7 @@ const GoalsScreen = () => {
                 }
             }
         } catch (error) {
-            console.error('Error loading current goal:', error);
+
         }
     };
 
@@ -130,7 +130,7 @@ const GoalsScreen = () => {
                 Alert.alert('Thành công', 'Mục tiêu đã được cập nhật');
                 navigation.goBack();
             } catch (error: any) {
-                console.error('Save goals error:', error);
+
                 const errorMessage = error?.message || 'Cập nhật mục tiêu thất bại. Vui lòng thử lại.';
                 Alert.alert('Lỗi', errorMessage);
             } finally {
@@ -154,7 +154,7 @@ const GoalsScreen = () => {
                 
                 navigation.navigate('Lifestyle');
             } catch (error: any) {
-                console.error('Save goals error:', error);
+
                 const errorMessage = error?.message || 'Lưu mục tiêu thất bại. Vui lòng thử lại.';
                 Alert.alert('Lỗi', errorMessage);
             } finally {

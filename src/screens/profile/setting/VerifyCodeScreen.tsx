@@ -73,7 +73,7 @@ const VerifyCodeScreen: React.FC = () => {
       // Navigate to create new password screen
       navigation.navigate('CreateNewPasswordScreen', { email, code: verificationCode });
     } catch (error: any) {
-      console.error('Error verifying code:', error);
+
       Alert.alert('Lỗi', 'Mã xác minh không đúng. Vui lòng thử lại.');
     } finally {
       setLoading(false);
@@ -90,7 +90,7 @@ const VerifyCodeScreen: React.FC = () => {
       setCode(['', '', '', '', '', '']);
       Alert.alert('Thành công', 'Mã xác minh đã được gửi lại');
     } catch (error: any) {
-      console.error('Error resending code:', error);
+
       Alert.alert('Lỗi', 'Không thể gửi lại mã xác minh. Vui lòng thử lại.');
     } finally {
       setLoading(false);

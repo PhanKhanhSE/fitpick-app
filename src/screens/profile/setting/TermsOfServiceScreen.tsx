@@ -31,7 +31,6 @@ const TermsOfServiceScreen: React.FC = () => {
       const response = await settingsAPI.getTermsOfService();
       setContent(response.data);
     } catch (error) {
-      console.error('Error loading terms of service:', error);
       Alert.alert('Lỗi', 'Không thể tải điều khoản dịch vụ. Vui lòng thử lại.');
       // Fallback content
       setContent('Điều khoản dịch vụ đang được cập nhật...');

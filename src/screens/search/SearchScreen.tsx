@@ -49,6 +49,10 @@ const SearchScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const insets = useSafeAreaInsets();
   const { isProUser } = useProUser();
+  
+  // Get Pro status as a value for dependencies
+  const isPro = isProUser();
+  
   const [searchText, setSearchText] = useState("");
   const [showPremiumModal, setShowPremiumModal] = useState(false);
 
@@ -82,17 +86,16 @@ const SearchScreen: React.FC = () => {
   useEffect(() => {
     const checkAuth = async () => {
       const authStatus = await checkAuthStatus();
-      console.log("🔐 SearchScreen - Auth Status:", authStatus);
 
       if (!authStatus.isAuthenticated) {
-        console.log("⚠️ User not authenticated, some features may not work");
+        // User not authenticated, some features may not work
       }
     };
 
     checkAuth();
     loadInitialData();
     loadSearchHistory();
-  }, []);
+  }, [isPro]); // Use isPro value instead of function call
 
   // Get filter parameters for API calls
   const getFilterParams = () => {
@@ -132,10 +135,7 @@ const SearchScreen: React.FC = () => {
         ...getFilterParams(),
       });
 
-      // console.log('🔍 Debug - Popular Response:', popularResponse);
-
       if (popularResponse.success) {
-        // console.log('🔍 Debug - Popular Data:', popularResponse.data);
         const popularData = popularResponse.data.map(
           (meal: MealData, index: number) => convertMealData(meal, index)
         );
@@ -150,10 +150,7 @@ const SearchScreen: React.FC = () => {
         ...getFilterParams(),
       });
 
-      // console.log('🔍 Debug - Suggested Response:', suggestedResponse);
-
       if (suggestedResponse.success) {
-        // console.log('🔍 Debug - Suggested Data:', suggestedResponse.data);
         const suggestedData = suggestedResponse.data.map(
           (meal: MealData, index: number) => convertMealData(meal, index)
         );
@@ -161,7 +158,6 @@ const SearchScreen: React.FC = () => {
         setDefaultSuggestedMeals(suggestedData);
       }
     } catch (error) {
-      console.error("Error loading initial data:", error);
       Alert.alert("Lỗi", "Không thể tải dữ liệu. Vui lòng thử lại.");
     } finally {
       setIsLoading(false);
@@ -176,7 +172,7 @@ const SearchScreen: React.FC = () => {
         setSearchHistory(JSON.parse(history));
       }
     } catch (error) {
-      console.error("Error loading search history:", error);
+      // Error loading search history
     }
   };
 
@@ -185,7 +181,7 @@ const SearchScreen: React.FC = () => {
     try {
       await AsyncStorage.setItem("searchHistory", JSON.stringify(history));
     } catch (error) {
-      console.error("Error saving search history:", error);
+      // Error saving search history
     }
   };
 
@@ -204,7 +200,7 @@ const SearchScreen: React.FC = () => {
       image: { uri: meal.imageUrl || "https://via.placeholder.com/150" },
       tag: convertCategoryToVietnamese(meal.categoryName || "Món ăn"),
       // Premium/Pro users can view all meals, only Free users are restricted
-      isLocked: (meal.isPremium || false) && !isProUser(),
+      isLocked: (meal.isPremium || false) && !isPro,
       isFavorite: meal.mealid ? isFavorite(meal.mealid) : false,
       description: meal.description || "",
       price: meal.price || 0,
@@ -222,23 +218,16 @@ const SearchScreen: React.FC = () => {
 
     try {
       setIsLoading(true);
-      console.log("🔍 Debug - Searching for:", text.trim());
 
       // Search for meals by name
       const searchResponse = await searchAPI.searchMeals({
         name: text.trim(),
       });
 
-      console.log("🔍 Debug - Search Response:", searchResponse);
-
       if (searchResponse.success && searchResponse.data) {
         const searchData = Array.isArray(searchResponse.data)
           ? searchResponse.data
           : [];
-        console.log(
-          "🔍 Debug - Found meals before filtering:",
-          searchData.length
-        );
 
         // Filter and sort results for more accurate matches
         const searchTerm = text.trim().toLowerCase();
@@ -284,22 +273,15 @@ const SearchScreen: React.FC = () => {
           .slice(0, 20) // Limit to top 20 results
           .map((item: { meal: MealData; score: number }) => item.meal); // Extract just the meal objects
 
-        console.log(
-          "🔍 Debug - Filtered and sorted meals:",
-          filteredAndSortedData.length
-        );
-
         // Convert to display format
         const convertedData = filteredAndSortedData.map(
           (meal: MealData, index: number) => convertMealData(meal, index)
         );
-        console.log("🔍 Debug - Converted data:", convertedData);
 
         // Set search results (converted UI shape) — cast to MealData[] to satisfy existing state typing
         setSearchResults(convertedData as unknown as MealData[]);
         setSuggestedMeals([]); // Clear suggested meals when searching
       } else {
-        console.log("🔍 Debug - No search results found");
         setSearchResults([]);
         setSuggestedMeals([]);
       }
@@ -311,7 +293,6 @@ const SearchScreen: React.FC = () => {
         await saveSearchHistory(newHistory);
       }
     } catch (error) {
-      console.error("Error searching:", error);
       Alert.alert("Lỗi", "Không thể tìm kiếm. Vui lòng thử lại.");
       setSearchResults([]);
       setSuggestedMeals([]);
@@ -343,9 +324,7 @@ const SearchScreen: React.FC = () => {
         pageSize: 20,
       };
 
-      // console.log('🔍 Debug - Filter request:', filterRequest);
       const response = await filterAPI.searchWithFilters(filterRequest);
-      // console.log('🔍 Debug - Filter response:', response);
 
       if (response.success && response.data) {
         const searchData = Array.isArray(response.data)
@@ -367,7 +346,6 @@ const SearchScreen: React.FC = () => {
         );
       }
     } catch (error) {
-      console.error("Error searching with filters:", error);
       Alert.alert("Lỗi", "Không thể áp dụng bộ lọc. Vui lòng thử lại.");
       setSearchResults([]);
     }
@@ -425,7 +403,6 @@ const SearchScreen: React.FC = () => {
         );
       }
     } catch (error) {
-      console.error("Error searching with personal nutrition:", error);
       Alert.alert(
         "Lỗi",
         "Không thể tìm kiếm với dinh dưỡng cá nhân. Vui lòng thử lại."
@@ -438,10 +415,7 @@ const SearchScreen: React.FC = () => {
     const mealId = parseInt(id);
     if (!isNaN(mealId)) {
       const success = await toggleFavorite(mealId);
-      if (success) {
-        // Update local state if needed
-        console.log(`Meal ${mealId} favorite status updated`);
-      } else {
+      if (!success) {
         Alert.alert(
           "Lỗi",
           "Không thể cập nhật trạng thái yêu thích. Vui lòng thử lại."
@@ -452,7 +426,7 @@ const SearchScreen: React.FC = () => {
 
   const handleMealPress = (meal: any) => {
     // Premium/Pro users can view all meals, only Free users are restricted
-    if (meal.isLocked && !isProUser()) {
+    if (meal.isLocked && !isPro) {
       setShowPremiumModal(true);
     } else {
       navigation.navigate("MealDetail", { meal });
@@ -488,7 +462,6 @@ const SearchScreen: React.FC = () => {
         Alert.alert("Lỗi", "Không nhận được link thanh toán.");
       }
     } catch (e: any) {
-      console.error("Upgrade error:", e);
       Alert.alert("Lỗi", "Không thể khởi tạo thanh toán.");
     }
   };
@@ -528,8 +501,6 @@ const SearchScreen: React.FC = () => {
 
   const handleApplyFilters = async () => {
     setShowFilterModal(false);
-
-    // console.log('🔍 Debug - Applied filters:', appliedFilters);
 
     // Navigate to FilterResultsScreen
     navigation.navigate("FilterResults", { appliedFilters });

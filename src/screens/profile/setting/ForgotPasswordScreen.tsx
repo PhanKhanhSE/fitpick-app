@@ -41,7 +41,7 @@ const ForgotPasswordScreen: React.FC = () => {
       // Navigate to verification screen
       navigation.navigate('VerifyCodeScreen', { email });
     } catch (error: any) {
-      console.error('Error sending forgot password code:', error);
+
       Alert.alert('Lỗi', 'Không thể gửi mã xác minh. Vui lòng thử lại.');
     } finally {
       setLoading(false);

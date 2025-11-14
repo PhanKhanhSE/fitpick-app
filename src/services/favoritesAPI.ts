@@ -39,7 +39,7 @@ export const favoritesAPI = {
       const response = await apiClient.get('/api/favorites');
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching favorites:', error);
+
       throw error;
     }
   },
@@ -50,7 +50,7 @@ export const favoritesAPI = {
       const response = await apiClient.post(`/api/favorites/${mealId}`);
       return response.data;
     } catch (error: any) {
-      console.error('Error adding favorite:', error);
+
       throw error;
     }
   },
@@ -61,7 +61,7 @@ export const favoritesAPI = {
       const response = await apiClient.delete(`/api/favorites/${mealId}`);
       return response.data;
     } catch (error: any) {
-      console.error('Error removing favorite:', error);
+
       throw error;
     }
   },
@@ -75,7 +75,7 @@ export const favoritesAPI = {
         return await favoritesAPI.addFavorite(mealId);
       }
     } catch (error: any) {
-      console.error('Error toggling favorite:', error);
+
       throw error;
     }
   },
@@ -89,7 +89,7 @@ export const favoritesAPI = {
       }
       return false;
     } catch (error: any) {
-      console.error('Error checking favorite status:', error);
+
       return false;
     }
   },
@@ -131,7 +131,7 @@ export const favoritesAPI = {
             } as FavoriteMealWithDetails;
           }
         } catch (error) {
-          console.error(`Error fetching details for meal ${fav.mealId}:`, error);
+
           // Return basic info if detail fetch fails
           return {
             mealId: fav.mealId,
@@ -152,7 +152,7 @@ export const favoritesAPI = {
       
       return { success: true, data: validMealDetails };
     } catch (error: any) {
-      console.error('Error fetching favorites with details:', error);
+
       throw error;
     }
   },

@@ -78,7 +78,7 @@ const FavoritesScreen: React.FC = () => {
         setFavoriteDetails([]);
       }
     } catch (error) {
-      console.error('Error loading favorites:', error);
+
       Alert.alert('Lỗi', 'Không thể tải danh sách yêu thích. Vui lòng thử lại.');
       setFavoriteItems([]);
       setFavoriteDetails([]);
@@ -148,12 +148,7 @@ const FavoritesScreen: React.FC = () => {
 
   const handleMealPlannerSave = (selectedDays: string[], mealType: string) => {
     // Xử lý lưu vào meal planner
-    console.log("Saving to meal planner:", {
-      selectedDays,
-      mealType,
-      item: actionItem,
-    });
-    
+
     // TODO: Implement save to meal planner logic
     Alert.alert('Thành công', 'Đã thêm vào thực đơn');
     setShowMealPlanner(false);
@@ -168,7 +163,6 @@ const FavoritesScreen: React.FC = () => {
       monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
       
       // TODO: Gọi API để sinh thực đơn cả tuần
-      console.log('Generating weekly meal plan for week starting:', monday.toISOString().split('T')[0]);
       
       Alert.alert(
         'AI Sinh thực đơn', 
@@ -176,7 +170,7 @@ const FavoritesScreen: React.FC = () => {
         [{ text: 'OK' }]
       );
     } catch (error) {
-      console.error('Error generating weekly plan:', error);
+
       Alert.alert('Lỗi', 'Không thể sinh thực đơn cả tuần');
     }
   };
@@ -200,7 +194,7 @@ const FavoritesScreen: React.FC = () => {
           }
         }
       } catch (error) {
-        console.error('Error removing favorite:', error);
+
         Alert.alert('Lỗi', 'Không thể xóa món ăn. Vui lòng thử lại.');
       }
     }
@@ -232,7 +226,7 @@ const FavoritesScreen: React.FC = () => {
         Alert.alert('Lỗi', 'Một số món ăn không thể xóa. Vui lòng thử lại.');
       }
     } catch (error) {
-      console.error('Error removing multiple favorites:', error);
+
       Alert.alert('Lỗi', 'Không thể xóa món ăn. Vui lòng thử lại.');
     }
   };

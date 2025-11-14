@@ -83,7 +83,7 @@ const RegisterScreen = () => {
             throw new Error('Auto-login failed');
           }
         } catch (loginError) {
-          console.error('❌ Auto-login failed:', loginError);
+
           // Nếu auto-login thất bại, vẫn cho phép người dùng tiếp tục
           Alert.alert(
             "Đăng ký thành công", 
@@ -98,7 +98,7 @@ const RegisterScreen = () => {
         }
       }
     } catch (error: any) {
-      console.error("Register error:", error);
+
       const errorMessage = error?.message || "Đăng ký thất bại. Vui lòng thử lại.";
       Alert.alert("Lỗi đăng ký", errorMessage);
     } finally {

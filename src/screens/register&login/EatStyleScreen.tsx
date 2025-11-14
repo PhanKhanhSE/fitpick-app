@@ -94,7 +94,7 @@ const EatStyleScreen = () => {
                         }
                     }
                 } catch (error) {
-                    console.log('API failed, trying AsyncStorage...');
+
                     // Fallback to AsyncStorage
                     const storedDietPlan = await AsyncStorage.getItem('userDietPlan');
                     if (storedDietPlan) {
@@ -107,7 +107,7 @@ const EatStyleScreen = () => {
                 }
             }
         } catch (error) {
-            console.error('Error loading current diet plan:', error);
+
         }
     };
 
@@ -150,7 +150,7 @@ const EatStyleScreen = () => {
                 Alert.alert('Thành công', 'Chế độ ăn đã được cập nhật');
                 navigation.goBack();
             } catch (error: any) {
-                console.error('Save diet plan error:', error);
+
                 const errorMessage = error?.message || 'Cập nhật chế độ ăn thất bại. Vui lòng thử lại.';
                 Alert.alert('Lỗi', errorMessage);
             } finally {
@@ -168,7 +168,7 @@ const EatStyleScreen = () => {
                 
                 navigation.navigate('CookingLevel');
             } catch (error: any) {
-                console.error('Save diet plan error:', error);
+
                 const errorMessage = error?.message || 'Lưu chế độ ăn thất bại. Vui lòng thử lại.';
                 Alert.alert('Lỗi', errorMessage);
             } finally {

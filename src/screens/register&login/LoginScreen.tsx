@@ -41,12 +41,9 @@ const LoginScreen = () => {
 
     setIsLoading(true);
     try {
-      console.log('🔐 Debug - Attempting login with:', { email, password: '***' });
       const response = await authAPI.login(email, password);
-      console.log('🔐 Debug - Login response:', response);
       
       if (response.success) {
-        console.log('✅ Debug - Login successful, navigating to MainTabs');
         Alert.alert("Thành công", "Đăng nhập thành công!", [
           {
             text: "OK",
@@ -54,11 +51,9 @@ const LoginScreen = () => {
           },
         ]);
       } else {
-        console.log('❌ Debug - Login failed, response:', response);
         Alert.alert("Lỗi", response.message || "Đăng nhập thất bại");
       }
     } catch (error: any) {
-      console.log('❌ Debug - Login error:', error);
       let errorMessage = "Đăng nhập thất bại. Vui lòng thử lại.";
       
       if (error?.type === 'network') {

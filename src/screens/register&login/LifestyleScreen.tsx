@@ -53,7 +53,7 @@ const LifestyleScreen = () => {
                         }
                     }
                 } catch (error) {
-                    console.log('API failed, trying AsyncStorage...');
+
                     // Fallback to AsyncStorage
                     const storedActivityLevel = await AsyncStorage.getItem('userActivityLevel');
                     if (storedActivityLevel) {
@@ -66,7 +66,7 @@ const LifestyleScreen = () => {
                 }
             }
         } catch (error) {
-            console.error('Error loading current activity level:', error);
+
         }
     };
 
@@ -102,7 +102,7 @@ const LifestyleScreen = () => {
                 Alert.alert('Thành công', 'Mức độ vận động đã được cập nhật');
                 navigation.goBack();
             } catch (error: any) {
-                console.error('Save lifestyle error:', error);
+
                 const errorMessage = error?.message || 'Cập nhật mức độ vận động thất bại. Vui lòng thử lại.';
                 Alert.alert('Lỗi', errorMessage);
             } finally {
@@ -119,7 +119,7 @@ const LifestyleScreen = () => {
                 
                 navigation.navigate('EatStyle');
             } catch (error: any) {
-                console.error('Save lifestyle error:', error);
+
                 const errorMessage = error?.message || 'Lưu mức độ vận động thất bại. Vui lòng thử lại.';
                 Alert.alert('Lỗi', errorMessage);
             } finally {

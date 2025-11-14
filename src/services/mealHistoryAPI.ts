@@ -90,7 +90,7 @@ export const mealHistoryAPI = {
       const response = await apiClient.get('/api/meal-histories');
       return response.data.data;
     } catch (error) {
-      console.error('Error getting meal history:', error);
+
       throw error;
     }
   },
@@ -101,7 +101,7 @@ export const mealHistoryAPI = {
       const response = await apiClient.post('/api/meal-histories', mealData);
       return response.data.data;
     } catch (error) {
-      console.error('Error creating meal history:', error);
+
       throw error;
     }
   },
@@ -111,7 +111,7 @@ export const mealHistoryAPI = {
     try {
       await apiClient.delete(`/api/meal-histories/${historyId}`);
     } catch (error) {
-      console.error('Error deleting meal history:', error);
+
       throw error;
     }
   },
@@ -122,7 +122,7 @@ export const mealHistoryAPI = {
       const response = await apiClient.get(`/api/meal-histories/stats?date=${date}`);
       return response.data.data;
     } catch (error) {
-      console.error('Error getting daily stats:', error);
+
       throw error;
     }
   },
@@ -133,7 +133,7 @@ export const mealHistoryAPI = {
       const response = await apiClient.get(`/api/meal-histories/by-date?date=${date}`);
       return response.data.data;
     } catch (error) {
-      console.error('Error getting meal history by date:', error);
+
       throw error;
     }
   },
@@ -144,7 +144,7 @@ export const mealHistoryAPI = {
       const response = await apiClient.get(`/api/meal-histories/detailed-stats?date=${date}`);
       return response.data.data;
     } catch (error) {
-      console.error('Error getting detailed daily stats:', error);
+
       throw error;
     }
   },
@@ -156,7 +156,7 @@ export const mealHistoryAPI = {
       const response = await apiClient.get(`/api/meal-histories/check-eaten?mealId=${mealId}&date=${targetDate}`);
       return response.data.data;
     } catch (error) {
-      console.error('Error checking if meal eaten:', error);
+
       return { isEaten: false, mealHistory: null };
     }
   },
@@ -172,7 +172,7 @@ export const mealHistoryAPI = {
         h.date === targetDate
       );
     } catch (error) {
-      console.error('Error checking if meal eaten:', error);
+
       return false;
     }
   },
@@ -199,7 +199,7 @@ export const mealHistoryAPI = {
 
       return await mealHistoryAPI.createMealHistory(mealHistoryData);
     } catch (error) {
-      console.error('Error marking meal as eaten:', error);
+
       throw error;
     }
   },

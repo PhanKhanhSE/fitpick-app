@@ -41,21 +41,14 @@ const PersonalNutritionScreen: React.FC = () => {
       setLoading(true);
       
       // Load user profile
-      console.log('🔄 Loading user profile...');
+
       const profileResponse = await userProfileAPI.getUserProfile();
-      console.log('📊 Full profile response:', JSON.stringify(profileResponse, null, 2));
       
       if (profileResponse.success && profileResponse.data) {
         setUserProfile(profileResponse.data);
-        console.log('✅ User profile loaded:', {
-          goal: profileResponse.data.goal,
-          dietPlan: profileResponse.data.dietPlan,
-          cookingLevel: profileResponse.data.cookingLevel,
-          activityLevel: profileResponse.data.activityLevel,
-          fullData: profileResponse.data
-        });
+
       } else {
-        console.log('⚠️ Profile response not successful:', profileResponse);
+
         // Don't throw error, just use fallback
       }
       
@@ -64,9 +57,9 @@ const PersonalNutritionScreen: React.FC = () => {
       
       if (nutritionResponse.success && nutritionResponse.data) {
         setNutritionData(nutritionResponse.data);
-        console.log('✅ Nutrition stats loaded:', nutritionResponse.data);
+
       } else {
-        console.log('⚠️ Nutrition response not successful, using mock data');
+
         setNutritionData({
           targetCalories: 2000,
           consumedCalories: 0,
@@ -77,25 +70,16 @@ const PersonalNutritionScreen: React.FC = () => {
       }
       
     } catch (error) {
-      console.error('❌ Error loading nutrition data:', error);
-      
+
       // Fallback to stored data
       try {
-        console.log('🔄 Falling back to AsyncStorage...');
+
         const storedProfile = await AsyncStorage.getItem('userProfile');
         const storedGoal = await AsyncStorage.getItem('userGoal');
         const storedDietPlan = await AsyncStorage.getItem('userDietPlan');
         const storedCookingLevel = await AsyncStorage.getItem('userCookingLevel');
         const storedActivityLevel = await AsyncStorage.getItem('userActivityLevel');
-        
-        console.log('📱 Stored data:', {
-          profile: storedProfile ? 'EXISTS' : 'NULL',
-          goal: storedGoal,
-          dietPlan: storedDietPlan,
-          cookingLevel: storedCookingLevel,
-          activityLevel: storedActivityLevel
-        });
-        
+
         if (storedProfile) {
           const parsedProfile = JSON.parse(storedProfile);
           setUserProfile({
@@ -125,7 +109,7 @@ const PersonalNutritionScreen: React.FC = () => {
         });
         
       } catch (storageError) {
-        console.error('Error loading stored data:', storageError);
+
         Alert.alert('Lỗi', 'Không thể tải dữ liệu dinh dưỡng. Vui lòng thử lại.');
       }
     } finally {
@@ -163,7 +147,7 @@ const PersonalNutritionScreen: React.FC = () => {
         Alert.alert('Lỗi', result.message || 'Không thể tạo hồ sơ dinh dưỡng');
       }
     } catch (error) {
-      console.error('Error creating health profile:', error);
+
       Alert.alert('Lỗi', 'Có lỗi xảy ra khi tạo hồ sơ dinh dưỡng');
     }
   };

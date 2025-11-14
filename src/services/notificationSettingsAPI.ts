@@ -26,7 +26,7 @@ export const notificationSettingsAPI = {
       const response = await apiClient.get('/api/notification-settings');
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching notification settings:', error);
+
       throw error;
     }
   },
@@ -37,7 +37,7 @@ export const notificationSettingsAPI = {
       const response = await apiClient.put('/api/notification-settings', settings);
       return response.data;
     } catch (error: any) {
-      console.error('Error updating notification settings:', error);
+
       throw error;
     }
   }

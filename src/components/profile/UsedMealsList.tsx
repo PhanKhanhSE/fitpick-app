@@ -40,7 +40,7 @@ const UsedMealsList: React.FC<UsedMealsListProps> = ({
       const meals = await loadMealHistoryByDate(selectedDate);
       setDayMeals(meals);
     } catch (error) {
-      console.error('Error loading day meals:', error);
+
     }
   };
 

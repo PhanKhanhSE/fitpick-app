@@ -50,6 +50,10 @@ interface DayMealData {
 const WeeklyMenuScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const { isProUser } = useProUser();
+  
+  // Get Pro status as a value for dependencies
+  const isPro = isProUser();
+  
   const { isFavorite } = useFavorites();
   const { 
     isMealEatenOnDate,
@@ -114,7 +118,7 @@ const WeeklyMenuScreen: React.FC = () => {
       time: `${mealPlan.meal.cookingtime || 0} phút`,
       image: { uri: mealPlan.meal.imageUrl || 'https://via.placeholder.com/300x200' },
       tag: mealPlan.meal.categoryName || 'Món ăn',
-      isLocked: (mealPlan.meal.isPremium || false) && !isProUser(),
+      isLocked: (mealPlan.meal.isPremium || false) && !isPro,
       isEaten,
       caloriesNumber,
       mealTimeId,
@@ -174,7 +178,7 @@ const WeeklyMenuScreen: React.FC = () => {
               allMeals.push(todayMealPlan);
             }
           } catch (error) {
-            console.error('Error fetching meal detail for local meal:', error);
+
           }
         }
       }
@@ -213,7 +217,7 @@ const WeeklyMenuScreen: React.FC = () => {
         totalCalories,
       };
     } catch (error) {
-      console.error('Error loading day meal plans:', error);
+
       return {
         date: new Date(date),
         dateString: date.toISOString().split('T')[0],
@@ -240,7 +244,7 @@ const WeeklyMenuScreen: React.FC = () => {
       
       setWeeklyData(weeklyMealData);
     } catch (error) {
-      console.error('Error loading weekly data:', error);
+
       Alert.alert('Lỗi', 'Không thể tải dữ liệu thực đơn tuần');
     } finally {
       setIsLoading(false);
@@ -300,7 +304,7 @@ const WeeklyMenuScreen: React.FC = () => {
         await loadWeeklyData();
       }
     } catch (error) {
-      console.error('Error eating meal:', error);
+
     }
   };
 
@@ -313,7 +317,7 @@ const WeeklyMenuScreen: React.FC = () => {
         await loadWeeklyData();
       }
     } catch (error) {
-      console.error('Error unmarking meal as eaten:', error);
+
     }
   };
 
@@ -386,7 +390,7 @@ const WeeklyMenuScreen: React.FC = () => {
         Alert.alert('Lỗi', 'Không thể thay đổi món ăn');
       }
     } catch (error) {
-      console.error('Error replacing meal:', error);
+
       Alert.alert('Lỗi', 'Không thể thay đổi món ăn');
     }
   };
@@ -436,7 +440,6 @@ const WeeklyMenuScreen: React.FC = () => {
                   }
                 }
               } catch (error) {
-                console.error(`Error replacing meals for ${day.toISOString().split('T')[0]}:`, error);
                 failCount++;
               }
             }
@@ -469,7 +472,7 @@ const WeeklyMenuScreen: React.FC = () => {
   // Load data khi component mount và khi currentWeekStart thay đổi
   useEffect(() => {
     loadWeeklyData();
-  }, [currentWeekStart]);
+  }, [currentWeekStart, isPro]); // Add isPro to dependencies
 
   // Debug data khi weeklyData thay đổi - đã xóa để push git
   // useEffect(() => {
@@ -698,7 +701,6 @@ const WeeklyMenuScreen: React.FC = () => {
           <Ionicons name="chevron-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Thực đơn tuần</Text>
-        <View style={styles.headerSpacer} />
       </View>
 
       {/* Week Navigation */}
@@ -784,7 +786,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.md,
+    paddingVertical: SPACING.umd,
     backgroundColor: COLORS.background,
   },
   backButton: {
@@ -796,16 +798,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.text,
     textAlign: 'center',
-  },
-  headerSpacer: {
-    width: 40,
+    marginRight: 40,
   },
   weekNavigation: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-around',
     backgroundColor: COLORS.primary,
-    paddingVertical: SPACING.md,
+    paddingVertical: SPACING.sm,
     gap: SPACING.xl,
   },
   navButton: {

@@ -9,7 +9,7 @@ export const userProfileAPI = {
       const response = await apiClient.get('/api/users/me');
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching user profile:', error);
+
       throw error;
     }
   },
@@ -21,7 +21,7 @@ export const userProfileAPI = {
       const response = await apiClient.get('/api/user/nutrition-stats', { params });
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching nutrition stats:', error);
+
       // Return mock data if API not available
       if (error.response?.status === 404) {
         return {
@@ -46,7 +46,7 @@ export const userProfileAPI = {
       const response = await apiClient.get('/api/user/meals', { params });
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching user meals:', error);
+
       // Return empty array if API not available
       if (error.response?.status === 404) {
         return {
@@ -66,7 +66,7 @@ export const userProfileAPI = {
       });
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching user posts:', error);
+
       // Return empty array if API not available
       if (error.response?.status === 404) {
         return {
@@ -85,7 +85,7 @@ export const userProfileAPI = {
       const response = await apiClient.get('/api/user/detailed-nutrition-stats', { params });
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching detailed nutrition stats:', error);
+
       // Return mock data if API not available
       if (error.response?.status === 404) {
         return {
@@ -109,7 +109,7 @@ export const userProfileAPI = {
       const response = await apiClient.get('/api/user/nutrition-goals');
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching nutrition goals:', error);
+
       throw error;
     }
   },
@@ -120,7 +120,7 @@ export const userProfileAPI = {
       const response = await apiClient.put('/api/user/nutrition-goals', goals);
       return response.data;
     } catch (error: any) {
-      console.error('Error updating nutrition goals:', error);
+
       throw error;
     }
   },
@@ -131,7 +131,7 @@ export const userProfileAPI = {
       const response = await apiClient.put('/api/users/me/update-profile', profileData);
       return response.data;
     } catch (error: any) {
-      console.error('Error updating profile:', error);
+
       throw error;
     }
   },
@@ -145,7 +145,7 @@ export const userProfileAPI = {
       });
       return response.data;
     } catch (error: any) {
-      console.error('Error changing password:', error);
+
       throw error;
     }
   },
@@ -158,7 +158,7 @@ export const userProfileAPI = {
       });
       return response.data;
     } catch (error: any) {
-      console.error('Error sending forgot password code:', error);
+
       throw error;
     }
   },
@@ -172,7 +172,7 @@ export const userProfileAPI = {
       });
       return response.data;
     } catch (error: any) {
-      console.error('Error verifying forgot password code:', error);
+
       throw error;
     }
   },
@@ -187,7 +187,7 @@ export const userProfileAPI = {
       });
       return response.data;
     } catch (error: any) {
-      console.error('Error resetting password:', error);
+
       throw error;
     }
   },
@@ -198,7 +198,7 @@ export const userProfileAPI = {
       const response = await apiClient.get('/api/users/me');
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching current user profile:', error);
+
       throw error;
     }
   },
@@ -209,7 +209,7 @@ export const userProfileAPI = {
       const response = await apiClient.put('/api/users/me/update-profile', profileData);
       return response.data;
     } catch (error: any) {
-      console.error('Error updating user profile:', error);
+
       throw error;
     }
   },
@@ -224,7 +224,7 @@ export const userProfileAPI = {
       });
       return response.data;
     } catch (error: any) {
-      console.error('Error changing password:', error);
+
       throw error;
     }
   },
@@ -232,12 +232,7 @@ export const userProfileAPI = {
   // Test avatar upload function using axios with different config
   testAvatarUpload: async (avatarFile: any) => {
     try {
-      console.log('🔍 Test Avatar file info:', {
-        uri: avatarFile.uri,
-        type: avatarFile.type,
-        name: avatarFile.name
-      });
-      
+
       // Create FormData for React Native
       const formData = new FormData();
       
@@ -245,20 +240,16 @@ export const userProfileAPI = {
       const fileUri = avatarFile.uri.startsWith('file://') 
         ? avatarFile.uri.replace('file://', '') 
         : avatarFile.uri;
-      
-      console.log('🔍 File URI:', fileUri);
-      console.log('🔍 File type:', avatarFile.type);
-      console.log('🔍 File name:', avatarFile.name);
-      
+
+
+
       // Append file with proper format for React Native
       formData.append('Avatar', {
         uri: fileUri,
         type: avatarFile.type || 'image/jpeg',
         name: avatarFile.name || 'avatar.jpg',
       } as any);
-      
-      console.log('🔍 FormData created, sending test request with axios...');
-      
+
       // Use axios with different config
       const response = await apiClient.post('/api/users/me/avatar-test', formData, {
         headers: {
@@ -268,13 +259,12 @@ export const userProfileAPI = {
         maxContentLength: Infinity,
         maxBodyLength: Infinity,
       });
-      
-      console.log('✅ Test upload response:', response.data);
+
       return response.data;
     } catch (error: any) {
-      console.error('❌ Error in test upload:', error);
-      console.error('❌ Error response:', error.response?.data);
-      console.error('❌ Error status:', error.response?.status);
+
+
+
       throw error;
     }
   },
@@ -282,15 +272,10 @@ export const userProfileAPI = {
   // Simple avatar upload function using fetch
   changeUserAvatar: async (avatarFile: any) => {
     try {
-      console.log('🔍 Avatar file info:', {
-        uri: avatarFile.uri,
-        type: avatarFile.type,
-        name: avatarFile.name
-      });
-      
+
       // Get token
       const token = await AsyncStorage.getItem('accessToken');
-      console.log('🔑 Token found:', token ? 'Yes' : 'No');
+
       if (!token) {
         throw new Error('No token found');
       }
@@ -302,20 +287,16 @@ export const userProfileAPI = {
       const fileUri = avatarFile.uri.startsWith('file://') 
         ? avatarFile.uri.replace('file://', '') 
         : avatarFile.uri;
-      
-      console.log('🔍 File URI:', fileUri);
-      console.log('🔍 File type:', avatarFile.type);
-      console.log('🔍 File name:', avatarFile.name);
-      
+
+
+
       // Append file with proper format for React Native
       formData.append('Avatar', {
         uri: fileUri,
         type: avatarFile.type || 'image/jpeg',
         name: avatarFile.name || 'avatar.jpg',
       } as any);
-      
-      console.log('🔍 FormData created, sending request with fetch...');
-      
+
       // Use fetch instead of axios
       const response = await fetch('https://fitpick-be.onrender.com/api/users/me/avatar-simple', {
         method: 'PUT',
@@ -328,15 +309,15 @@ export const userProfileAPI = {
       
       if (!response.ok) {
         const errorData = await response.text();
-        console.error('❌ Fetch error response:', errorData);
+
         throw new Error(`HTTP ${response.status}: ${errorData}`);
       }
       
       const data = await response.json();
-      console.log('✅ Avatar upload response:', data);
+
       return data;
     } catch (error: any) {
-      console.error('❌ Error changing avatar:', error);
+
       throw error;
     }
   },
@@ -347,7 +328,7 @@ export const userProfileAPI = {
       const response = await apiClient.delete('/api/users/me');
       return response.data;
     } catch (error: any) {
-      console.error('Error deactivating account:', error);
+
       throw error;
     }
   },
@@ -359,7 +340,7 @@ export const userProfileAPI = {
       const response = await apiClient.get('/api/users/me/is-pro');
       return response.data;
     } catch (error: any) {
-      console.error('Error checking Pro user status:', error);
+
       throw error;
     }
   },
@@ -370,7 +351,7 @@ export const userProfileAPI = {
       const response = await apiClient.get('/api/users/me/pro-permissions');
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching Pro user permissions:', error);
+
       throw error;
     }
   }
@@ -384,7 +365,7 @@ export const settingsAPI = {
       const response = await apiClient.get('/api/settings/privacy-policy');
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching privacy policy:', error);
+
       throw error;
     }
   },
@@ -395,7 +376,7 @@ export const settingsAPI = {
       const response = await apiClient.get('/api/settings/terms-of-service');
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching terms of service:', error);
+
       throw error;
     }
   },
@@ -406,7 +387,7 @@ export const settingsAPI = {
       const response = await apiClient.put('/api/settings/update-profile', profileData);
       return response.data;
     } catch (error: any) {
-      console.error('Error updating profile:', error);
+
       throw error;
     }
   },
@@ -420,7 +401,7 @@ export const settingsAPI = {
       });
       return response.data;
     } catch (error: any) {
-      console.error('Error changing password:', error);
+
       throw error;
     }
   }

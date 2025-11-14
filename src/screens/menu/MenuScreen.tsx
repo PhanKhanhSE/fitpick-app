@@ -156,7 +156,7 @@ const MenuScreen: React.FC = () => {
         Alert.alert('Lỗi', 'Không nhận được link thanh toán.');
       }
     } catch (e: any) {
-      console.error('Upgrade error:', e);
+
       Alert.alert('Lỗi', 'Không thể khởi tạo thanh toán.');
     }
   };
@@ -188,7 +188,7 @@ const MenuScreen: React.FC = () => {
         setShowSuccessModal(true);
       }
     } catch (error) {
-      console.error('Error adding to product list:', error);
+
       setSuccessMessage('Không thể thêm vào danh sách sản phẩm');
       setShowSuccessModal(true);
     }
@@ -247,7 +247,7 @@ const MenuScreen: React.FC = () => {
         Alert.alert('Lỗi', 'Không tìm thấy món ăn trong thực đơn');
       }
     } catch (error) {
-      console.error('Error deleting meal:', error);
+
       Alert.alert('Lỗi', 'Không thể xóa món ăn');
     }
   };
@@ -285,7 +285,7 @@ const MenuScreen: React.FC = () => {
         );
       }
     } catch (error) {
-      console.error('Error replacing meal by suggestion:', error);
+
       Alert.alert('Lỗi', 'Không thể thay đổi món theo gợi ý');
     }
   };
@@ -316,7 +316,7 @@ const MenuScreen: React.FC = () => {
         Alert.alert('Lỗi', 'Không thể thay đổi món này. Món ăn này có thể là món được thêm từ local storage.');
       }
     } catch (error) {
-      console.error('Error replacing meal by favorites:', error);
+
       Alert.alert('Lỗi', 'Không thể thay đổi món từ danh sách yêu thích');
     }
   };
@@ -361,7 +361,7 @@ const MenuScreen: React.FC = () => {
         Alert.alert('Lỗi', 'Không thể thêm món ăn nào vào danh sách sản phẩm');
       }
     } catch (error) {
-      console.error('Error adding all to shopping list:', error);
+
       Alert.alert('Lỗi', 'Không thể thêm vào danh sách sản phẩm');
     }
   };
@@ -395,7 +395,7 @@ const MenuScreen: React.FC = () => {
         Alert.alert('Lỗi', 'Không thể xóa món ăn nào');
       }
     } catch (error) {
-      console.error('Error clearing all:', error);
+
       Alert.alert('Lỗi', 'Không thể xóa tất cả');
     }
   };
@@ -422,7 +422,7 @@ const MenuScreen: React.FC = () => {
         Alert.alert('Lỗi', 'Không thể tạo thực đơn mới');
       }
     } catch (error) {
-      console.error('Error generating meal plan:', error);
+
       Alert.alert('Lỗi', 'Không thể tạo thực đơn mới');
     }
   };
@@ -450,38 +450,34 @@ const MenuScreen: React.FC = () => {
     }
     
     setCurrentDate(newDate);
-    console.log('Navigate date:', direction, 'to:', newDate.toISOString().split('T')[0]);
   };
 
   // Test function để kiểm tra AsyncStorage
   const testAsyncStorage = async () => {
     try {
       const userAddedMeals = await AsyncStorage.getItem('userAddedMeals');
-      console.log('🧪 Debug - Test AsyncStorage data:', userAddedMeals);
-      
+
       if (userAddedMeals) {
         const meals = JSON.parse(userAddedMeals);
-        console.log('🧪 Debug - Parsed meals:', meals);
-        
+
         const today = new Date().toISOString().split('T')[0];
         const todayMeals = meals.filter((m: any) => m.date === today);
-        console.log('🧪 Debug - Today meals:', todayMeals);
+
       }
     } catch (error) {
-      console.error('Error testing AsyncStorage:', error);
+
     }
   };
 
   // Load data khi component mount và khi currentDate thay đổi
   useEffect(() => {
-    console.log('🔄 Debug - Loading data for date:', currentDate.toISOString().split('T')[0]);
     loadTodayMealPlan(currentDate);
   }, [currentDate]);
 
   // Reload data khi quay lại screen (chỉ khi không phải lần đầu mount)
   useFocusEffect(
     React.useCallback(() => {
-      console.log('🔄 Debug - MenuScreen focused, reloading data...');
+
       loadTodayMealPlan(currentDate);
     }, [currentDate])
   );

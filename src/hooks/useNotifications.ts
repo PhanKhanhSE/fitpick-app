@@ -23,7 +23,7 @@ export const useNotifications = () => {
         setUnreadCount(unreadNotifications.length);
       }
     } catch (err: any) {
-      console.error('Error loading notifications:', err);
+
       setError(err.message || 'Có lỗi xảy ra khi tải thông báo');
     } finally {
       setLoading(false);
@@ -59,7 +59,7 @@ export const useNotifications = () => {
         setUnreadCount(prev => Math.max(0, prev - 1));
       }
     } catch (err: any) {
-      console.error('Error marking notification as read:', err);
+
       setError(err.message || 'Có lỗi xảy ra khi đánh dấu thông báo');
     }
   }, []);
@@ -84,7 +84,7 @@ export const useNotifications = () => {
         });
       }
     } catch (err: any) {
-      console.error('Error deleting notification:', err);
+
       setError(err.message || 'Có lỗi xảy ra khi xóa thông báo');
     }
   }, []);
@@ -108,7 +108,7 @@ export const useNotifications = () => {
       
       setUnreadCount(0);
     } catch (err: any) {
-      console.error('Error marking all notifications as read:', err);
+
       setError(err.message || 'Có lỗi xảy ra khi đánh dấu tất cả thông báo');
     }
   }, [notifications]);

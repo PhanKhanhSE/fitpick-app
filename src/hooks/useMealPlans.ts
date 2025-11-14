@@ -77,15 +77,15 @@ export const useMealPlans = () => {
                 // console.log('✅ Debug - Added local meal to merged plans:', todayMealPlan);
               }
             } catch (error) {
-              console.error('Error fetching meal detail for local meal:', error);
+
             }
           }
         }
         
         // Remove duplicates based on mealid and mealTime
-        console.log('🔍 Debug - Before deduplication, checking for duplicates...');
+
         mergedPlans.forEach((plan, index) => {
-          console.log(`🔍 Debug - Plan ${index}: mealid=${plan.meal.mealid}, mealTime=${plan.mealTime}, planId=${plan.planId}`);
+
         });
         
         const uniquePlans = mergedPlans.filter((plan, index, self) => {
@@ -95,22 +95,19 @@ export const useMealPlans = () => {
           ) !== index;
           
           if (isDuplicate) {
-            console.log(`🚫 Debug - Removing duplicate: mealid=${plan.meal.mealid}, mealTime=${plan.mealTime}, planId=${plan.planId}`);
+
           }
           
           return !isDuplicate;
         });
-        
-        console.log('🎯 Debug - Final merged plans (before deduplication):', mergedPlans.length);
-        console.log('🎯 Debug - Final merged plans (after deduplication):', uniquePlans.length);
-        console.log('🔄 Debug - Setting todayMealPlans state with', uniquePlans.length, 'meals');
+
         setTodayMealPlans(uniquePlans);
       } else {
         setError(response.message || `Không thể tải thực đơn ngày ${targetDateString}`);
       }
     } catch (err) {
       setError(`Lỗi khi tải thực đơn ngày ${currentSelectedDate.toISOString().split('T')[0]}`);
-      console.error('Error loading meal plan by date:', err);
+
     } finally {
       setLoading(false);
     }
@@ -131,7 +128,7 @@ export const useMealPlans = () => {
       }
     } catch (err) {
       setError('Lỗi khi tải danh sách thực đơn');
-      console.error('Error loading user meal plans:', err);
+
     } finally {
       setLoading(false);
     }
@@ -155,7 +152,7 @@ export const useMealPlans = () => {
       }
     } catch (err) {
       setError('Lỗi khi tạo thực đơn');
-      console.error('Error generating meal plan:', err);
+
       return false;
     } finally {
       setLoading(false);
@@ -180,7 +177,7 @@ export const useMealPlans = () => {
       }
     } catch (err) {
       setError('Lỗi khi thay đổi món ăn');
-      console.error('Error swapping meal:', err);
+
       return false;
     } finally {
       setLoading(false);
@@ -206,7 +203,7 @@ export const useMealPlans = () => {
       }
     } catch (err) {
       setError('Lỗi khi thay đổi món theo gợi ý');
-      console.error('Error replacing meal by suggestion:', err);
+
       return false;
     } finally {
       setLoading(false);
@@ -232,7 +229,7 @@ export const useMealPlans = () => {
       }
     } catch (err) {
       setError('Lỗi khi thay đổi món từ danh sách yêu thích');
-      console.error('Error replacing meal by favorites:', err);
+
       return false;
     } finally {
       setLoading(false);
@@ -256,7 +253,7 @@ export const useMealPlans = () => {
       }
     } catch (err) {
       setError('Lỗi khi xóa món ăn khỏi thực đơn');
-      console.error('Error deleting meal plan:', err);
+
       return false;
     } finally {
       setLoading(false);
@@ -281,7 +278,7 @@ export const useMealPlans = () => {
       }
     } catch (err) {
       setError('Lỗi khi thêm món ăn vào thực đơn');
-      console.error('Error adding meal to menu:', err);
+
       return false;
     } finally {
       setLoading(false);
@@ -294,7 +291,7 @@ export const useMealPlans = () => {
       const success = await addMealToProducts(mealId, mealName);
       return success;
     } catch (err) {
-      console.error('Error adding meal to product list:', err);
+
       return false;
     }
   };
@@ -310,7 +307,7 @@ export const useMealPlans = () => {
       
       return null;
     } catch (err) {
-      console.error('Error fetching meal detail:', err);
+
       return null;
     }
   };
@@ -374,7 +371,7 @@ export const useMealPlans = () => {
       // console.log('✅ Debug - Removed meal from local storage:', { mealId, date });
       return true;
     } catch (error) {
-      console.error('Error removing meal from local storage:', error);
+
       return false;
     }
   };

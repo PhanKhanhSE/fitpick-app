@@ -61,7 +61,7 @@ const CreateNewPasswordScreen: React.FC = () => {
         ]
       );
     } catch (error: any) {
-      console.error('Error resetting password:', error);
+
       Alert.alert('Lỗi', 'Không thể đặt lại mật khẩu. Vui lòng thử lại.');
     } finally {
       setLoading(false);

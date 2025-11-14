@@ -15,7 +15,7 @@ export const useIngredients = () => {
         setUserProducts(response.data);
       }
     } catch (error) {
-      console.error('Error loading user products:', error);
+
     } finally {
       setIsLoading(false);
     }
@@ -32,7 +32,7 @@ export const useIngredients = () => {
       
       return [];
     } catch (error) {
-      console.error('Error loading meal ingredients:', error);
+
       return [];
     }
   };
@@ -63,7 +63,7 @@ export const useIngredients = () => {
       
       return false;
     } catch (error) {
-      console.error('Error toggling ingredient:', error);
+
       return false;
     }
   };
@@ -91,7 +91,7 @@ export const useIngredients = () => {
       
       return false;
     } catch (error) {
-      console.error('Error adding meal to products:', error);
+
       return false;
     }
   };
@@ -109,7 +109,7 @@ export const useIngredients = () => {
       
       return false;
     } catch (error) {
-      console.error('Error removing meal from products:', error);
+
       return false;
     }
   };
@@ -160,7 +160,7 @@ export const useIngredients = () => {
       
       return false;
     } catch (error) {
-      console.error('Error marking all ingredients:', error);
+
       return false;
     }
   };

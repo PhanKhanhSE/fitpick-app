@@ -21,7 +21,7 @@ export const filterAPI = {
       const response = await apiClient.get('/api/filter/categories');
       return response.data;
     } catch (error) {
-      console.error('Error fetching categories:', error);
+
       return {
         success: false,
         data: [],
@@ -36,7 +36,7 @@ export const filterAPI = {
       const response = await apiClient.get('/api/filter/ingredients');
       return response.data;
     } catch (error) {
-      console.error('Error fetching ingredients:', error);
+
       return {
         success: false,
         data: [],
@@ -51,7 +51,7 @@ export const filterAPI = {
       const response = await apiClient.get('/api/filter/diet-types');
       return response.data;
     } catch (error) {
-      console.error('Error fetching diet types:', error);
+
       return {
         success: false,
         data: [],
@@ -66,7 +66,7 @@ export const filterAPI = {
       const response = await apiClient.get('/api/filter/cooking-times');
       return response.data;
     } catch (error) {
-      console.error('Error fetching cooking times:', error);
+
       return {
         success: false,
         data: [],
@@ -81,7 +81,7 @@ export const filterAPI = {
       const response = await apiClient.get('/api/filter/meal-types');
       return response.data;
     } catch (error) {
-      console.error('Error fetching meal types:', error);
+
       return {
         success: false,
         data: [],
@@ -96,7 +96,7 @@ export const filterAPI = {
       const response = await apiClient.post('/api/filter/search-with-nutrition', filters);
       return response.data;
     } catch (error) {
-      console.error('Error searching with personal nutrition:', error);
+
       return {
         success: false,
         data: [],
@@ -111,7 +111,7 @@ export const filterAPI = {
       const response = await apiClient.post('/api/filter/search', filters);
       return response.data;
     } catch (error) {
-      console.error('Error searching with filters:', error);
+
       return {
         success: false,
         data: [],

@@ -44,6 +44,10 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 const FilterResultsScreen: React.FC<FilterResultsScreenProps> = ({ route }) => {
   const navigation = useNavigation<NavigationProp>();
   const { isProUser } = useProUser();
+  
+  // Get Pro status as a value for dependencies
+  const isPro = isProUser();
+  
   const { appliedFilters } = route.params;
   
   const [searchResults, setSearchResults] = useState<MealData[]>([]);
@@ -54,7 +58,7 @@ const FilterResultsScreen: React.FC<FilterResultsScreenProps> = ({ route }) => {
 
   useEffect(() => {
     loadFilterResults();
-  }, []);
+  }, [isPro]); // Add isPro to dependencies
 
   const loadFilterResults = async () => {
     try {
@@ -70,7 +74,7 @@ const FilterResultsScreen: React.FC<FilterResultsScreenProps> = ({ route }) => {
         await handleSearchWithFilters();
       }
     } catch (error) {
-      console.error('Error loading filter results:', error);
+
       Alert.alert('Lỗi', 'Không thể tải kết quả bộ lọc');
     } finally {
       setIsLoading(false);
@@ -104,7 +108,7 @@ const FilterResultsScreen: React.FC<FilterResultsScreenProps> = ({ route }) => {
         setResultCount(0);
       }
     } catch (error) {
-      console.error('Error searching with filters:', error);
+
       setSearchResults([]);
       setResultCount(0);
     }
@@ -142,7 +146,7 @@ const FilterResultsScreen: React.FC<FilterResultsScreenProps> = ({ route }) => {
         setResultCount(0);
       }
     } catch (error) {
-      console.error('Error searching with personal nutrition:', error);
+
       setSearchResults([]);
       setResultCount(0);
     }
@@ -165,7 +169,7 @@ const FilterResultsScreen: React.FC<FilterResultsScreenProps> = ({ route }) => {
       image: { uri: meal.imageUrl || 'https://via.placeholder.com/150' },
       tag: convertCategoryToVietnamese(meal.categoryName || 'Món ăn'),
       // Premium/Pro users can view all meals, only Free users are restricted
-      isLocked: (meal.isPremium || false) && !isProUser(),
+      isLocked: (meal.isPremium || false) && !isPro,
       isFavorite: meal.mealid ? isFavorite(meal.mealid) : false,
       description: meal.description || '',
       price: meal.price || 0,

@@ -33,7 +33,7 @@ export const useBase64Upload = () => {
       }
       return null;
     } catch (error) {
-      console.error('Error picking and converting file:', error);
+
       Alert.alert('Lỗi', 'Không thể chọn file. Vui lòng thử lại.');
       return null;
     }
@@ -42,9 +42,7 @@ export const useBase64Upload = () => {
   const uploadAvatarAsBase64 = async (base64Data: string, fileName: string, mimeType: string) => {
     try {
       setIsUploading(true);
-      
-      console.log('🧪 Testing base64 upload...');
-      
+
       // Get token
       const token = await AsyncStorage.getItem('accessToken');
       if (!token) {
@@ -67,13 +65,12 @@ export const useBase64Upload = () => {
       
       if (!response.ok) {
         const errorData = await response.text();
-        console.error('❌ Base64 upload error:', errorData);
+
         throw new Error(`HTTP ${response.status}: ${errorData}`);
       }
       
       const data = await response.json();
-      console.log('✅ Base64 upload response:', data);
-      
+
       if (data.success) {
         Alert.alert('Thành công', 'Ảnh đại diện đã được cập nhật thành công!');
         return data.data?.avatarUrl;
@@ -82,7 +79,7 @@ export const useBase64Upload = () => {
         return null;
       }
     } catch (error) {
-      console.error('Error uploading avatar as base64:', error);
+
       Alert.alert('Lỗi', 'Có lỗi xảy ra khi cập nhật ảnh đại diện.');
       return null;
     } finally {
@@ -95,13 +92,6 @@ export const useBase64Upload = () => {
       const fileData = await pickAndConvertToBase64();
       if (!fileData) return;
 
-      console.log('📄 File converted to base64:', {
-        fileName: fileData.fileName,
-        mimeType: fileData.mimeType,
-        size: fileData.size,
-        base64Length: fileData.base64.length
-      });
-
       const newAvatarUrl = await uploadAvatarAsBase64(
         fileData.base64, 
         fileData.fileName, 
@@ -112,7 +102,7 @@ export const useBase64Upload = () => {
         onSuccess(newAvatarUrl);
       }
     } catch (error) {
-      console.error('Error in handleChangeAvatar:', error);
+
     }
   };
 

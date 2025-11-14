@@ -54,12 +54,12 @@ const SettingsScreen: React.FC = () => {
           setNotify(notificationSettings.data.notificationsEnabled);
         }
       } catch (error) {
-        console.error('Error loading notification settings:', error);
+
         // Fallback to default value
         setNotify(true);
       }
     } catch (error) {
-      console.error('Error loading user data:', error);
+
       // Fallback to stored data
       try {
         const storedProfile = await AsyncStorage.getItem('userProfile');
@@ -79,7 +79,7 @@ const SettingsScreen: React.FC = () => {
           setNotify(settings.notificationsEnabled ?? true);
         }
       } catch (storageError) {
-        console.error('Error loading stored data:', storageError);
+
       }
     } finally {
       setLoading(false);
@@ -99,10 +99,9 @@ const SettingsScreen: React.FC = () => {
       await AsyncStorage.setItem('notificationSettings', JSON.stringify({
         notificationsEnabled: value
       }));
-      
-      console.log(`Notification settings updated: ${value ? 'enabled' : 'disabled'}`);
+
     } catch (error) {
-      console.error('Error updating notification settings:', error);
+
       // Revert the change if API call failed
       setNotify(!value);
       Alert.alert(
@@ -124,7 +123,7 @@ const SettingsScreen: React.FC = () => {
         Alert.alert('Lỗi', 'Không nhận được link thanh toán.');
       }
     } catch (e: any) {
-      console.error('Upgrade error:', e);
+
       Alert.alert('Lỗi', 'Không thể khởi tạo thanh toán.');
     }
   };
@@ -135,7 +134,7 @@ const SettingsScreen: React.FC = () => {
       await settingsAPI.changePassword(oldPassword, newPassword);
       Alert.alert('Thành công', 'Mật khẩu đã được thay đổi thành công!');
     } catch (error) {
-      console.error('Error changing password:', error);
+
       Alert.alert('Lỗi', 'Không thể thay đổi mật khẩu. Vui lòng thử lại.');
     } finally {
       setLoading(false);
@@ -187,7 +186,7 @@ const SettingsScreen: React.FC = () => {
                         Alert.alert('Thành công', 'Tài khoản đã được vô hiệu hóa thành công!');
                       }, 500);
                     } catch (error) {
-                      console.error('Error deleting account:', error);
+
                       Alert.alert('Lỗi', 'Không thể vô hiệu hóa tài khoản. Vui lòng thử lại.');
                     } finally {
                       setLoading(false);
@@ -257,7 +256,7 @@ const SettingsScreen: React.FC = () => {
         [{ text: 'OK' }]
       );
     } catch (error: any) {
-      console.error('Error testing notifications:', error);
+
       Alert.alert(
         'Lỗi',
         `Không thể gửi thông báo test: ${error.message || 'Có lỗi xảy ra'}`,
@@ -289,14 +288,14 @@ const SettingsScreen: React.FC = () => {
                 'userProfile',
                 'userEmail'
               ]);
-              console.log('User logged out successfully');
+
               // Navigate to AuthLanding screen
               navigation.reset({
                 index: 0,
                 routes: [{ name: 'AuthLanding' }],
               });
             } catch (error) {
-              console.error('Error during logout:', error);
+
               // Still navigate even if clearing storage fails
               navigation.reset({
                 index: 0,

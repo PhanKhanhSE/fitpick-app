@@ -28,7 +28,7 @@ export const useMealHistory = () => {
       );
       setEatenMeals(todayEatenMeals);
     } catch (error) {
-      console.error('Error loading meal history:', error);
+
     } finally {
       setLoading(false);
     }
@@ -41,7 +41,7 @@ export const useMealHistory = () => {
       const history = await mealHistoryAPI.getMealHistoryByDate(date);
       return history;
     } catch (error) {
-      console.error('Error loading meal history by date:', error);
+
       return [];
     } finally {
       setLoading(false);
@@ -97,7 +97,7 @@ export const useMealHistory = () => {
       Alert.alert('Thành công', 'Đã đánh dấu món ăn đã ăn!');
       return true;
     } catch (error) {
-      console.error('Error marking meal as eaten:', error);
+
       Alert.alert('Lỗi', 'Không thể đánh dấu món ăn đã ăn. Vui lòng thử lại.');
       return false;
     } finally {
@@ -140,7 +140,7 @@ export const useMealHistory = () => {
       Alert.alert('Thành công', 'Đã bỏ đánh dấu món ăn đã ăn!');
       return true;
     } catch (error) {
-      console.error('Error unmarking meal as eaten:', error);
+
       Alert.alert('Lỗi', 'Không thể bỏ đánh dấu món ăn đã ăn. Vui lòng thử lại.');
       return false;
     } finally {
@@ -161,7 +161,7 @@ export const useMealHistory = () => {
       Alert.alert('Thành công', 'Đã xóa món ăn khỏi lịch sử!');
       return true;
     } catch (error) {
-      console.error('Error deleting meal history:', error);
+
       Alert.alert('Lỗi', 'Không thể xóa món ăn khỏi lịch sử. Vui lòng thử lại.');
       return false;
     } finally {
@@ -175,7 +175,7 @@ export const useMealHistory = () => {
       const today = new Date().toISOString().split('T')[0];
       return await mealHistoryAPI.getDailyStats(today);
     } catch (error) {
-      console.error('Error getting today nutrition stats:', error);
+
       return null;
     }
   };
@@ -185,7 +185,7 @@ export const useMealHistory = () => {
     try {
       return await mealHistoryAPI.getDetailedDailyStats(date);
     } catch (error) {
-      console.error('Error getting detailed daily stats:', error);
+
       return null;
     }
   };
@@ -195,7 +195,7 @@ export const useMealHistory = () => {
     try {
       return await mealHistoryAPI.checkMealEaten(mealId, date);
     } catch (error) {
-      console.error('Error checking meal eaten:', error);
+
       return { isEaten: false, mealHistory: null };
     }
   };

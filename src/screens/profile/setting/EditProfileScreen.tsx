@@ -73,7 +73,7 @@ const EditProfileScreen: React.FC = () => {
         country: profile.country || '',
       });
     } catch (error) {
-      console.error('Error loading user profile:', error);
+
       // Fallback to stored data
       try {
         const storedProfile = await AsyncStorage.getItem('userProfile');
@@ -93,7 +93,7 @@ const EditProfileScreen: React.FC = () => {
           });
         }
       } catch (storageError) {
-        console.error('Error loading stored profile:', storageError);
+
       }
     } finally {
       setLoading(false);
@@ -134,7 +134,7 @@ const EditProfileScreen: React.FC = () => {
       Alert.alert('Thành công', 'Thông tin đã được cập nhật thành công!');
       navigation.goBack();
     } catch (error) {
-      console.error('Error updating profile:', error);
+
       Alert.alert('Lỗi', 'Không thể cập nhật thông tin. Vui lòng thử lại.');
     } finally {
       setLoading(false);

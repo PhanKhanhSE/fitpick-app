@@ -31,7 +31,7 @@ const PrivacyPolicyScreen: React.FC = () => {
       const response = await settingsAPI.getPrivacyPolicy();
       setContent(response.data);
     } catch (error) {
-      console.error('Error loading privacy policy:', error);
+
       Alert.alert('Lỗi', 'Không thể tải chính sách bảo mật. Vui lòng thử lại.');
       // Fallback content
       setContent('Chính sách bảo mật đang được cập nhật...');

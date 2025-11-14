@@ -48,6 +48,9 @@ const HomeScreen: React.FC = () => {
 
   // Use Pro user hook for permissions
   const { isProUser, canViewFutureDates, canPlanFutureMeals } = useProUser();
+  
+  // Get Pro status as a value for dependencies
+  const isPro = isProUser();
 
   // State cho dữ liệu từ API
   const [nutritionData, setNutritionData] = useState({
@@ -60,19 +63,6 @@ const HomeScreen: React.FC = () => {
 
   const [suggestedMeals, setSuggestedMeals] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
-  // Debug logging for meal plans
-  useEffect(() => {
-    console.log('🔄 Debug - HomeScreen todayMealPlans updated:', todayMealPlans?.length || 0, 'meals');
-    if (todayMealPlans && todayMealPlans.length > 0) {
-      console.log('✅ Debug - Meal plans data:', todayMealPlans.map(plan => ({
-        id: plan.meal.mealid,
-        name: plan.meal.name,
-        calories: plan.meal.calories,
-        mealTime: plan.mealTime
-      })));
-    }
-  }, [todayMealPlans]);
 
   // Load dữ liệu từ API
   useEffect(() => {
@@ -81,7 +71,7 @@ const HomeScreen: React.FC = () => {
       // Load today's meal plan
       loadTodayMealPlan();
     }
-  }, [selectedTab]);
+  }, [selectedTab, isPro]); // Use isPro value instead of function call
 
   // Reload data when screen comes into focus (after eating meals)
   useFocusEffect(
@@ -90,7 +80,7 @@ const HomeScreen: React.FC = () => {
         loadPersonalData();
         loadTodayMealPlan();
       }
-    }, [selectedTab])
+    }, [selectedTab, isPro]) // Use isPro value instead of function call
   );
 
   const loadSuggestedMeals = async () => {
@@ -111,7 +101,7 @@ const HomeScreen: React.FC = () => {
           image: { uri: meal.imageUrl || meal.image || 'https://via.placeholder.com/200x150' },
           tag: convertCategoryToVietnamese(meal.categoryName || 'Gợi ý'),
           // Premium/Pro users can view all meals, only Free users are restricted
-          isLocked: (meal.isPremium || false) && !isProUser(),
+          isLocked: (meal.isPremium || false) && !isPro,
         }));
         setSuggestedMeals(suggestedData);
       } else {
@@ -138,7 +128,6 @@ const HomeScreen: React.FC = () => {
         ]);
       }
     } catch (error) {
-      console.error('Error loading suggested meals:', error);
       // Set default data on error
       setSuggestedMeals([
         {
@@ -176,7 +165,6 @@ const HomeScreen: React.FC = () => {
       // Load suggested meals from API
       await loadSuggestedMeals();
     } catch (error) {
-      console.error('Error loading personal data:', error);
       // Fallback to default data
       setNutritionData({
         targetCalories: 2000,
@@ -196,7 +184,7 @@ const HomeScreen: React.FC = () => {
 
   const handleMealPress = (meal: any) => {
     // Premium/Pro users can view all meals, only Free users are restricted
-    if (meal.isLocked && !isProUser()) {
+    if (meal.isLocked && !isPro) {
       setShowPremiumModal(true);
     } else {
       navigation.navigate('MealDetail', { meal });
@@ -222,7 +210,6 @@ const HomeScreen: React.FC = () => {
         Alert.alert('Lỗi', 'Không nhận được link thanh toán.');
       }
     } catch (e: any) {
-      console.error('Upgrade error:', e);
       Alert.alert('Lỗi', 'Không thể khởi tạo thanh toán.');
     }
   };
@@ -255,10 +242,7 @@ const HomeScreen: React.FC = () => {
 
   // Convert todayMealPlans to MyMenuSection format
   const convertMealPlansToMenuData = () => {
-    console.log('🔄 Debug - convertMealPlansToMenuData called with:', todayMealPlans?.length || 0, 'meals');
-    
     if (!todayMealPlans || todayMealPlans.length === 0) {
-      console.log('⚠️ Debug - No meal plans available, returning empty array');
       return [];
     }
 
@@ -270,10 +254,9 @@ const HomeScreen: React.FC = () => {
       image: { uri: mealPlan.meal.imageUrl || 'https://via.placeholder.com/200x150' },
       tag: mealPlan.meal.categoryName || 'Thực đơn',
       // Premium/Pro users can view all meals, only Free users are restricted
-      isLocked: (mealPlan.meal.isPremium || false) && !isProUser(),
+      isLocked: (mealPlan.meal.isPremium || false) && !isPro,
     }));
     
-    console.log('✅ Debug - Converted meal data:', convertedData);
     return convertedData;
   };
 

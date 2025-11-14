@@ -49,7 +49,7 @@ export const mealReviewAPI = {
       const response = await apiClient.get(`/api/meal-reviews/meal/${mealId}`);
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching meal reviews:', error);
+
       throw new Error(error.response?.data?.message || 'Failed to fetch reviews');
     }
   },
@@ -88,7 +88,7 @@ export const mealReviewAPI = {
       
       return { success: true, data: null, message: 'No reviews found' };
     } catch (error: any) {
-      console.error('Error fetching user review:', error);
+
       // Nếu không tìm thấy review (404), trả về null
       if (error.response?.status === 404) {
         return { success: true, data: null, message: 'No review found' };
@@ -103,7 +103,7 @@ export const mealReviewAPI = {
       const response = await apiClient.post('/api/meal-reviews', data);
       return response.data;
     } catch (error: any) {
-      console.error('Error creating review:', error);
+
       throw new Error(error.response?.data?.message || 'Failed to create review');
     }
   },
@@ -114,7 +114,7 @@ export const mealReviewAPI = {
       const response = await apiClient.put(`/api/meal-reviews/${mealId}`, data);
       return response.data;
     } catch (error: any) {
-      console.error('Error updating review:', error);
+
       throw new Error(error.response?.data?.message || 'Failed to update review');
     }
   },
@@ -125,7 +125,7 @@ export const mealReviewAPI = {
       const response = await apiClient.delete(`/api/meal-reviews/${mealId}`);
       return response.data;
     } catch (error: any) {
-      console.error('Error deleting review:', error);
+
       throw new Error(error.response?.data?.message || 'Failed to delete review');
     }
   },
@@ -142,7 +142,7 @@ export const mealReviewAPI = {
       );
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching paginated reviews:', error);
+
       throw new Error(error.response?.data?.message || 'Failed to fetch paginated reviews');
     }
   },
@@ -157,7 +157,7 @@ export const mealReviewAPI = {
       const response = await apiClient.get(`/api/meal-reviews/meal/${mealId}/stats`);
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching rating stats:', error);
+
       throw new Error(error.response?.data?.message || 'Failed to fetch rating stats');
     }
   }

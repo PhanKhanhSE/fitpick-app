@@ -97,7 +97,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
         setMealTypes(mealTypesRes.data);
       }
     } catch (error) {
-      console.error('Error loading filter data:', error);
+
     } finally {
       setIsLoading(false);
     }

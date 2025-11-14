@@ -61,7 +61,7 @@ export const useUser = () => {
           return user;
         }
       } catch (oldApiError) {
-        console.log('Old API not available, trying fallback...');
+
       }
       
       // Fallback: Load từ AsyncStorage
@@ -87,7 +87,7 @@ export const useUser = () => {
       
       return null;
     } catch (err) {
-      console.error('Error loading user info:', err);
+
       setError('Không thể tải thông tin người dùng');
       
       // Fallback to stored data
@@ -99,7 +99,7 @@ export const useUser = () => {
           return user;
         }
       } catch (storageError) {
-        console.error('Error loading stored user info:', storageError);
+
       }
       
       return null;
