@@ -82,7 +82,6 @@ export const useAvatarPicker = () => {
       }
       
       const data = await response.json();
-      console.log('Avatar upload success response:', JSON.stringify(data, null, 2));
 
       if (data.success) {
         Alert.alert('Thành công', 'Ảnh đại diện đã được cập nhật thành công!');

@@ -169,7 +169,6 @@ const SearchScreen: React.FC = () => {
       // Load popular meals using the correct API - load more but display only 6 initially
       try {
         const popularResponse = await searchAPI.getPopularMeals(20);
-        console.log('📊 Popular meals response:', JSON.stringify(popularResponse, null, 2));
 
         // Handle different response structures
         let dataArray: any[] = [];
@@ -185,18 +184,12 @@ const SearchScreen: React.FC = () => {
           dataArray = Array.isArray(popularResponse.data) ? popularResponse.data : [];
         }
         
-        console.log('📊 Popular meals data array length:', dataArray.length);
-        
         if (dataArray.length > 0) {
           const popularData = dataArray.map(
             (meal: any, index: number) => convertMealData(meal, index)
           );
           setPopularMeals(popularData);
           setDefaultPopularMeals(popularData);
-          console.log('✅ Loaded popular meals:', popularData.length);
-        } else {
-          console.warn('⚠️ Popular meals response is empty or invalid');
-          console.warn('⚠️ Response structure:', popularResponse);
         }
       } catch (popularError: any) {
         console.error('❌ Error loading popular meals:', popularError);
@@ -207,7 +200,6 @@ const SearchScreen: React.FC = () => {
       // Load suggested meals using the correct API - load more (50) but display only 6 initially
       try {
         const suggestedResponse = await searchAPI.getSuggestedMeals(50);
-        console.log('💡 Suggested meals response:', suggestedResponse);
 
         if (suggestedResponse && (suggestedResponse.success || suggestedResponse.data)) {
           const responseData = suggestedResponse.data || suggestedResponse;
@@ -220,12 +212,7 @@ const SearchScreen: React.FC = () => {
             setSuggestedMeals(suggestedData);
             setDefaultSuggestedMeals(suggestedData);
             defaultSuggestedMealsRef.current = suggestedData; // Update ref
-            console.log('✅ Loaded suggested meals:', suggestedData.length);
-          } else {
-            console.warn('⚠️ Suggested meals response is empty');
           }
-        } else {
-          console.warn('⚠️ Suggested meals response format is invalid:', suggestedResponse);
         }
       } catch (suggestedError: any) {
         console.error('❌ Error loading suggested meals:', suggestedError);
@@ -311,7 +298,6 @@ const SearchScreen: React.FC = () => {
     }
 
     try {
-      console.log('🔍 Starting search for:', text);
       setIsLoading(true);
       setIsSearchActive(true);
 
@@ -320,22 +306,17 @@ const SearchScreen: React.FC = () => {
         name: text.trim(),
       });
 
-      console.log('🔍 Search response:', searchResponse);
-
       // Handle different response structures
       let searchData: MealData[] = [];
       if (Array.isArray(searchResponse)) {
         // Response is directly an array
         searchData = searchResponse;
-        console.log('📊 Search data (array):', searchData.length, 'items');
       } else if (searchResponse && searchResponse.data) {
         // Response has data property
         searchData = Array.isArray(searchResponse.data) ? searchResponse.data : [];
-        console.log('📊 Search data (data prop):', searchData.length, 'items');
       } else if (searchResponse && searchResponse.success && searchResponse.data) {
         // Response has success and data
         searchData = Array.isArray(searchResponse.data) ? searchResponse.data : [];
-        console.log('📊 Search data (success+data):', searchData.length, 'items');
       }
 
       if (searchData.length > 0) {
@@ -620,7 +601,6 @@ const SearchScreen: React.FC = () => {
     searchTimeoutRef.current = setTimeout(() => {
       if (text.trim().length >= 2) {
         // Only search if text is at least 2 characters
-        console.log('🔍 Auto-searching for:', text.trim());
         handleSearch(text.trim()).catch((err) => {
           console.error('❌ Auto-search error:', err);
         });
@@ -648,7 +628,6 @@ const SearchScreen: React.FC = () => {
     }
     
     if (searchText.trim()) {
-      console.log('🔍 Submit search for:', searchText.trim());
       handleSearch(searchText.trim()).catch((err) => {
         console.error('❌ Submit search error:', err);
       });
@@ -708,11 +687,9 @@ const SearchScreen: React.FC = () => {
   const onRefresh = async () => {
     try {
       setRefreshing(true);
-      console.log('🔄 Refreshing suggested meals...');
       
       // Only refresh suggested meals to get new recommendations
       const suggestedResponse = await searchAPI.getSuggestedMeals(50);
-      console.log('💡 Refreshed suggested meals response:', suggestedResponse);
 
       if (suggestedResponse && (suggestedResponse.success || suggestedResponse.data)) {
         const responseData = suggestedResponse.data || suggestedResponse;
@@ -725,7 +702,6 @@ const SearchScreen: React.FC = () => {
           setSuggestedMeals(suggestedData);
           setDefaultSuggestedMeals(suggestedData);
           defaultSuggestedMealsRef.current = suggestedData; // Update ref
-          console.log('✅ Refreshed suggested meals:', suggestedData.length);
         }
       }
     } catch (error: any) {

@@ -193,7 +193,6 @@ const WeeklyMenuScreen: React.FC = () => {
                 try {
                   // Format date to YYYY-MM-DD (date only, no time)
                   const dateString = day.toISOString().split('T')[0];
-                  console.log(`Generating meal plan for ${dateString}...`);
                   
                   // Create a new Date object with just the date (no time)
                   const dateOnly = new Date(day);
@@ -201,11 +200,9 @@ const WeeklyMenuScreen: React.FC = () => {
                   
                   // Generate meal plan for this day
                   const generateResponse = await mealPlanAPI.generateMealPlan(dateOnly);
-                  console.log(`Response for ${dateString}:`, generateResponse);
                   
                   if (generateResponse.success) {
                     successCount++;
-                    console.log(`✓ Successfully generated meal plan for ${dateString}`);
                   } else {
                     failCount++;
                     const errorMsg = generateResponse.message || 'Không thể tạo thực đơn';

@@ -42,33 +42,24 @@ const UsedMealsList: React.FC<UsedMealsListProps> = ({
       const meals = await loadMealHistoryByDate(selectedDate);
       setDayMeals(meals);
       
-      console.log('Loaded meals:', meals.length);
-      console.log('First meal data:', meals[0] ? JSON.stringify(meals[0], null, 2) : 'No meals');
-      
       // Load images for meals
       const imagesMap: Record<number, string> = {};
       
       // First, use imageUrl from API response if available
       meals.forEach((meal) => {
         const mealImageUrl = (meal.meal as any)?.imageUrl || meal.meal?.imageUrl;
-        console.log(`Meal ${meal.mealid} - imageUrl from API:`, mealImageUrl);
         if (mealImageUrl && meal.mealid) {
           imagesMap[meal.mealid] = mealImageUrl;
         }
       });
       
-      console.log('Images from API response:', imagesMap);
-      
       // Then, fetch missing images from meal detail API
       const mealsNeedingImages = meals.filter(meal => !imagesMap[meal.mealid] && meal.mealid);
-      console.log('Meals needing image fetch:', mealsNeedingImages.length);
       
       const missingImagePromises = mealsNeedingImages.map(async (meal) => {
         try {
-          console.log(`Fetching image for meal ${meal.mealid}...`);
           const mealDetail = await searchAPI.getMealDetail(meal.mealid!);
           if (mealDetail.success && mealDetail.data?.imageUrl) {
-            console.log(`Got image for meal ${meal.mealid}:`, mealDetail.data.imageUrl);
             return { mealId: meal.mealid!, imageUrl: mealDetail.data.imageUrl };
           }
         } catch (error) {
@@ -84,7 +75,6 @@ const UsedMealsList: React.FC<UsedMealsListProps> = ({
         }
       });
       
-      console.log('Final images map:', imagesMap);
       setMealImages(imagesMap);
     } catch (error) {
       console.error('Error loading day meals:', error);

@@ -104,10 +104,8 @@ export const searchAPI = {
       }
 
       const url = `/api/users/meals?${params.toString()}`;
-      console.log('🔍 Search meals URL:', url);
 
       const response = await apiClient.get(url);
-      console.log('🔍 Search meals response:', response.data);
       
       // Handle different response structures
       if (Array.isArray(response.data)) {
@@ -164,7 +162,6 @@ export const searchAPI = {
   getPopularMeals: async (limit: number = 20) => {
     try {
       const response = await apiClient.get(`/api/Filter/popular-meals?limit=${limit}`);
-      console.log('📊 Popular meals API response:', response.data);
       return response.data;
     } catch (error: any) {
       console.error('❌ Popular meals API error:', error.response?.data || error.message);
@@ -181,13 +178,11 @@ export const searchAPI = {
   getSuggestedMeals: async (limit: number = 10) => {
     try {
       const response = await apiClient.get(`/api/Filter/suggested-meals?limit=${limit}`);
-      console.log('💡 Suggested meals API response:', response.data);
       return response.data;
     } catch (error: any) {
       console.error('❌ Suggested meals API error:', error.response?.data || error.message);
       // Try fallback to popular meals if suggested-meals API fails
       try {
-        console.log('🔄 Trying fallback to popular meals...');
         const fallbackResponse = await apiClient.get(`/api/Filter/popular-meals?limit=${limit}`);
         return fallbackResponse.data;
       } catch (fallbackError: any) {

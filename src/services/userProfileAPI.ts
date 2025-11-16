@@ -312,7 +312,6 @@ export const userProfileAPI = {
       }
       
       const data = await response.json();
-      console.log('Avatar upload success response:', JSON.stringify(data, null, 2));
 
       return data;
     } catch (error: any) {
