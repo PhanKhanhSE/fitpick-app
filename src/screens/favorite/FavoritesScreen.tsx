@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -37,7 +37,15 @@ const FavoritesScreen: React.FC = () => {
   const { removeFavorite, removeMultipleFavorites } = useFavorites();
   const { addMealToProducts } = useIngredients();
   const { isMealInPlan } = useMealPlans();
-  const { isProUser } = useProUser();
+  const { isProUser: checkIsProUser, permissions } = useProUser();
+  
+  // Get Pro status as a value using useMemo to avoid calling class as function
+  const isPro = useMemo(() => {
+    if (checkIsProUser && typeof checkIsProUser === 'function') {
+      return checkIsProUser();
+    }
+    return permissions?.isProUser || false;
+  }, [checkIsProUser, permissions]);
   
   const [multiSelect, setMultiSelect] = useState(false);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
@@ -368,7 +376,7 @@ const FavoritesScreen: React.FC = () => {
         item={actionItem}
         onClose={() => setShowMealPlanner(false)}
         onSave={handleMealPlannerSave}
-        isProUser={isProUser()}
+        isProUser={isPro}
         onGenerateWeeklyPlan={handleGenerateWeeklyPlan}
       />
     </View>

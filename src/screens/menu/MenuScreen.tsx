@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   View, 
   Text, 
@@ -37,9 +37,17 @@ import { Linking } from 'react-native';
 
 const MenuScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
-  const { addMealToProducts, isMealInProductList } = useIngredients();
+  const { addMealToProducts, isMealInProductList, loadUserProducts } = useIngredients();
   const { userInfo } = useUser();
-  const { isProUser, canViewFutureDates, canPlanFutureMeals } = useProUser();
+  const { isProUser: checkIsProUser, permissions, canViewFutureDates, canPlanFutureMeals } = useProUser();
+  
+  // Get Pro status as a value using useMemo to avoid calling class as function
+  const isPro = useMemo(() => {
+    if (typeof checkIsProUser === 'function') {
+      return checkIsProUser();
+    }
+    return permissions?.isProUser || false;
+  }, [checkIsProUser, permissions]);
   const { isFavorite } = useFavorites();
   const { 
     todayMealPlans, 
@@ -173,9 +181,20 @@ const MenuScreen: React.FC = () => {
     setShowMealActionModal(false);
     
     try {
-      const success = await addMealToProductList(parseInt(selectedMeal.id), selectedMeal.title);
+      // Ensure mealId is a valid number
+      const mealId = parseInt(selectedMeal.id);
+      if (isNaN(mealId)) {
+        setSuccessMessage('Lỗi: Không tìm thấy ID món ăn');
+        setShowSuccessModal(true);
+        return;
+      }
+      
+      // Use addMealToProducts from useIngredients hook directly for better reliability
+      const success = await addMealToProducts(mealId, selectedMeal.title, selectedMeal.image?.uri);
       
       if (success) {
+        // Reload user products to sync state
+        await loadUserProducts();
         setSuccessMessage('Đã thêm vào danh sách sản phẩm');
         setShowSuccessModal(true);
         
@@ -188,7 +207,7 @@ const MenuScreen: React.FC = () => {
         setShowSuccessModal(true);
       }
     } catch (error) {
-
+      console.error('Error adding meal to product list:', error);
       setSuccessMessage('Không thể thêm vào danh sách sản phẩm');
       setShowSuccessModal(true);
     }
@@ -329,7 +348,7 @@ const MenuScreen: React.FC = () => {
 
   const handleShowWeeklyView = () => {
     setShowMenuActionModal(false);
-    if (isProUser()) {
+    if (isPro) {
       navigation.navigate('WeeklyMenuScreen');
     } else {
       setShowProUpgradeModal(true);
@@ -494,7 +513,7 @@ const MenuScreen: React.FC = () => {
         <View style={styles.titleContainer}>
           <View style={styles.titleRow}>
             <Text style={styles.title}>Thực đơn của tôi</Text>
-            {isProUser() && (
+            {isPro && (
               <View style={styles.proBadge}>
                 <Text style={styles.proText}>PRO</Text>
               </View>
@@ -640,7 +659,7 @@ const MenuScreen: React.FC = () => {
       />
       
       {/* Pro Upgrade Modal - Chỉ hiển thị cho tài khoản Free */}
-      {!isProUser() && (
+      {!isPro && (
         <ProUpgradeModal
           visible={showProUpgradeModal}
           onClose={handleCloseModal}

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AppButton from "../../components/AppButton";
+import ForgotPasswordModal from "../../components/ForgotPasswordModal";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../../types/navigation";
@@ -20,10 +21,17 @@ import { COLORS, SPACING, RADII, FONTS } from "../../utils/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { authAPI } from "../../services/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type Nav = NativeStackNavigationProp<RootStackParamList, "Login">;
 
 const PINK = COLORS.primary;
+
+const STORAGE_KEYS = {
+  REMEMBER_ME: 'rememberMe',
+  SAVED_EMAIL: 'savedEmail',
+  SAVED_PASSWORD: 'savedPassword',
+};
 
 const LoginScreen = () => {
   const navigation = useNavigation<Nav>();
@@ -32,6 +40,64 @@ const LoginScreen = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
+
+  // Load saved credentials on mount
+  useEffect(() => {
+    loadSavedCredentials();
+  }, []);
+
+  const loadSavedCredentials = async () => {
+    try {
+      const [rememberMe, savedEmail, savedPassword] = await Promise.all([
+        AsyncStorage.getItem(STORAGE_KEYS.REMEMBER_ME),
+        AsyncStorage.getItem(STORAGE_KEYS.SAVED_EMAIL),
+        AsyncStorage.getItem(STORAGE_KEYS.SAVED_PASSWORD),
+      ]);
+
+      if (rememberMe === 'true' && savedEmail && savedPassword) {
+        setEmail(savedEmail);
+        setPassword(savedPassword);
+        setRemember(true);
+      }
+    } catch (error) {
+      // Handle error silently
+    }
+  };
+
+  const saveCredentials = async (email: string, password: string) => {
+    try {
+      await Promise.all([
+        AsyncStorage.setItem(STORAGE_KEYS.REMEMBER_ME, 'true'),
+        AsyncStorage.setItem(STORAGE_KEYS.SAVED_EMAIL, email),
+        AsyncStorage.setItem(STORAGE_KEYS.SAVED_PASSWORD, password),
+      ]);
+    } catch (error) {
+      // Handle error silently
+    }
+  };
+
+  const clearSavedCredentials = async () => {
+    try {
+      await AsyncStorage.multiRemove([
+        STORAGE_KEYS.REMEMBER_ME,
+        STORAGE_KEYS.SAVED_EMAIL,
+        STORAGE_KEYS.SAVED_PASSWORD,
+      ]);
+    } catch (error) {
+      // Handle error silently
+    }
+  };
+
+  const handleRememberChange = async () => {
+    const newRemember = !remember;
+    setRemember(newRemember);
+    
+    if (!newRemember) {
+      // Clear saved credentials if user unchecks remember me
+      await clearSavedCredentials();
+    }
+  };
 
   const onLogin = async () => {
     if (!email || !password) {
@@ -44,6 +110,13 @@ const LoginScreen = () => {
       const response = await authAPI.login(email, password);
       
       if (response.success) {
+        // Save credentials if remember me is checked
+        if (remember) {
+          await saveCredentials(email, password);
+        } else {
+          await clearSavedCredentials();
+        }
+
         Alert.alert("Thành công", "Đăng nhập thành công!", [
           {
             text: "OK",
@@ -68,6 +141,10 @@ const LoginScreen = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleForgotPassword = () => {
+    setShowForgotPasswordModal(true);
   };
 
   return (
@@ -139,7 +216,7 @@ const LoginScreen = () => {
             <View style={styles.optionsRow}>
               <TouchableOpacity
                 style={styles.rememberContainer}
-                onPress={() => setRemember(!remember)}
+                onPress={handleRememberChange}
               >
                 <View
                   style={[styles.checkbox, remember && styles.checkboxChecked]}
@@ -151,11 +228,7 @@ const LoginScreen = () => {
                 <Text style={styles.rememberText}>Lưu mật khẩu</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                onPress={() => {
-                  /* handle forgot password */
-                }}
-              >
+              <TouchableOpacity onPress={handleForgotPassword}>
                 <Text style={styles.forgotText}>Quên mật khẩu?</Text>
               </TouchableOpacity>
             </View>
@@ -185,6 +258,12 @@ const LoginScreen = () => {
           </View>
         </View>
       </KeyboardAwareScrollView>
+
+      {/* Forgot Password Modal */}
+      <ForgotPasswordModal
+        visible={showForgotPasswordModal}
+        onClose={() => setShowForgotPasswordModal(false)}
+      />
     </SafeAreaView>
   );
 };

@@ -17,6 +17,7 @@ export interface MealHistoryDto {
     protein?: number;
     carbs?: number;
     fat?: number;
+    imageUrl?: string;
   };
   mealtime?: {
     id: number;

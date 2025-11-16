@@ -22,8 +22,9 @@ export const useCameraPicker = () => {
     if (!hasPermission) return null;
 
     try {
+      // Sửa deprecated warning: dùng array của MediaType thay vì MediaTypeOptions
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.8,
@@ -62,16 +63,27 @@ export const useCameraPicker = () => {
       
       const response = await userProfileAPI.changeUserAvatar(avatarFile);
       
-      if (response.success) {
-        Alert.alert('Thành công', 'Ảnh đại diện đã được cập nhật thành công!');
-        return response.data?.avatarUrl || imageUri;
+      console.log('Upload avatar response:', response);
+      
+      if (response && response.success) {
+        const avatarUrl = response.data?.avatarUrl;
+        if (avatarUrl) {
+          Alert.alert('Thành công', 'Ảnh đại diện đã được cập nhật thành công!');
+          return avatarUrl;
+        } else {
+          console.warn('No avatarUrl in response:', response);
+          Alert.alert('Thành công', 'Ảnh đại diện đã được cập nhật, nhưng không nhận được URL mới.');
+          return imageUri; // Return original URI as fallback
+        }
       } else {
-        Alert.alert('Lỗi', 'Không thể cập nhật ảnh đại diện. Vui lòng thử lại.');
+        console.error('Upload failed:', response);
+        Alert.alert('Lỗi', response?.message || 'Không thể cập nhật ảnh đại diện. Vui lòng thử lại.');
         return null;
       }
-    } catch (error) {
-
-      Alert.alert('Lỗi', 'Có lỗi xảy ra khi cập nhật ảnh đại diện.');
+    } catch (error: any) {
+      console.error('Upload avatar error:', error);
+      const errorMessage = error?.message || 'Có lỗi xảy ra khi cập nhật ảnh đại diện.';
+      Alert.alert('Lỗi', errorMessage);
       return null;
     } finally {
       setIsUploading(false);

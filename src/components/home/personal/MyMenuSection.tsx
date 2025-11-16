@@ -7,6 +7,7 @@ const { width } = Dimensions.get('window');
 
 interface MealData {
   id: string;
+  mealId?: number; // Real mealId for API calls and favorites
   title: string;
   calories: string;
   time: string;
@@ -47,24 +48,33 @@ const MyMenuSection: React.FC<MyMenuSectionProps> = ({
           style={styles.mealScrollView}
           contentContainerStyle={styles.mealScrollContent}
         >
-          {mealData.map((meal, index) => (
-            <View key={meal.id || `meal-${index}`} style={styles.mealCardWrapper}>
-              <MealCardVertical
-                id={meal.id}
-                title={meal.title}
-                calories={meal.calories}
-                time={meal.time}
-                image={meal.image}
-                tag={meal.tag}
-                isLocked={meal.isLocked}
-                isFavorite={isFavorite ? isFavorite(parseInt(meal.id)) : false}
-                onFavoritePress={() => onFavoritePress ? onFavoritePress(parseInt(meal.id)) : undefined}
-                onPress={() => onMealPress(meal)}
-                width={158}
-                height={175}
-              />
-            </View>
-          ))}
+          {mealData.map((meal, index) => {
+            // Use real mealId if available, otherwise try to parse id
+            const realMealId = meal.mealId || (meal.id ? parseInt(meal.id.split('-')[1] || meal.id) : null);
+            
+            return (
+              <View key={meal.id || `meal-${index}`} style={styles.mealCardWrapper}>
+                <MealCardVertical
+                  id={meal.id}
+                  title={meal.title}
+                  calories={meal.calories}
+                  time={meal.time}
+                  image={meal.image}
+                  tag={meal.tag}
+                  isLocked={meal.isLocked}
+                  isFavorite={isFavorite && realMealId ? isFavorite(realMealId) : false}
+                  onFavoritePress={() => {
+                    if (onFavoritePress && realMealId) {
+                      onFavoritePress(realMealId);
+                    }
+                  }}
+                  onPress={() => onMealPress(meal)}
+                  width={158}
+                  height={175}
+                />
+              </View>
+            );
+          })}
         </ScrollView>
       ) : (
         <View style={styles.emptyState}>

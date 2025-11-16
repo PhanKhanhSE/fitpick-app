@@ -126,10 +126,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
           <ScrollView style={styles.filterContent}>
           {/* Áp dụng Dinh dưỡng cá nhân */}
           <View style={styles.filterSection}>
-            <View style={styles.filterSectionHeader}>
-              <Text style={styles.filterSectionTitle}>Áp dụng Dinh dưỡng cá nhân</Text>
-              <Text style={styles.editText}>Sửa</Text>
-            </View>
+            <Text style={styles.filterSectionTitle}>Áp dụng Dinh dưỡng cá nhân</Text>
             <TouchableOpacity 
               style={[styles.toggleButton, appliedFilters.nutritionGoal && styles.toggleButtonActive]}
               onPress={() => setAppliedFilters(prev => ({ ...prev, nutritionGoal: !prev.nutritionGoal }))}

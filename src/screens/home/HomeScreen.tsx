@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -38,7 +38,7 @@ const HomeScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   
   // Use favorites hook for global state management
-  const { isFavorite, toggleFavorite } = useFavorites();
+  const { isFavorite, toggleFavorite, loadFavorites } = useFavorites();
   
   // Use meal plans hook for today's meals
   const { todayMealPlans, loadTodayMealPlan, loading: mealPlansLoading } = useMealPlans();
@@ -47,10 +47,15 @@ const HomeScreen: React.FC = () => {
   const { unreadCount } = useNotifications();
 
   // Use Pro user hook for permissions
-  const { isProUser, canViewFutureDates, canPlanFutureMeals } = useProUser();
+  const { isProUser: checkIsProUser, permissions, canViewFutureDates, canPlanFutureMeals } = useProUser();
   
-  // Get Pro status as a value for dependencies
-  const isPro = isProUser();
+  // Get Pro status as a value using useMemo to avoid calling class as function
+  const isPro = useMemo(() => {
+    if (typeof checkIsProUser === 'function') {
+      return checkIsProUser();
+    }
+    return permissions?.isProUser || false;
+  }, [checkIsProUser, permissions]);
 
   // State cho dữ liệu từ API
   const [nutritionData, setNutritionData] = useState({
@@ -79,6 +84,8 @@ const HomeScreen: React.FC = () => {
       if (selectedTab === 'personal') {
         loadPersonalData();
         loadTodayMealPlan();
+        // Reload favorites to sync state across screens
+        loadFavorites();
       }
     }, [selectedTab, isPro]) // Use isPro value instead of function call
   );
@@ -187,7 +194,20 @@ const HomeScreen: React.FC = () => {
     if (meal.isLocked && !isPro) {
       setShowPremiumModal(true);
     } else {
-      navigation.navigate('MealDetail', { meal });
+      // Use real mealId for navigation - MealDetailScreen expects meal.id to be parseable to mealId
+      const mealId = meal.mealId || (meal.id ? parseInt(meal.id.split('-')[1] || meal.id) : null);
+      
+      if (!mealId) {
+        Alert.alert('Lỗi', 'Không tìm thấy thông tin món ăn');
+        return;
+      }
+      
+      navigation.navigate('MealDetail', { 
+        meal: {
+          ...meal,
+          id: mealId.toString(), // Ensure id is string for MealDetailScreen
+        }
+      });
     }
   };
 
@@ -247,7 +267,8 @@ const HomeScreen: React.FC = () => {
     }
 
     const convertedData = todayMealPlans.map((mealPlan, index) => ({
-      id: `${mealPlan.planId}-${mealPlan.meal.mealid}-${mealPlan.mealTime}-${index}`,
+      id: `${mealPlan.planId}-${mealPlan.meal.mealid}-${mealPlan.mealTime}-${index}`, // Keep for unique key
+      mealId: mealPlan.meal.mealid, // Add real mealId for API calls and favorites
       title: mealPlan.meal.name,
       calories: `${mealPlan.meal.calories || 0} kcal`,
       time: `${mealPlan.meal.cookingtime || 0} phút`,
@@ -328,7 +349,7 @@ const HomeScreen: React.FC = () => {
           />
 
           {/* Premium Upgrade - Chỉ hiển thị cho tài khoản Free */}
-          {!isProUser && (
+          {!isPro && (
             <View style={styles.premiumSection}>
               <Text style={styles.premiumText}>Có ngày thực đơn mới, gợi ý riêng cho bạn mỗi tuần.</Text>
               <TouchableOpacity style={styles.premiumButton} onPress={handlePremiumPress}>

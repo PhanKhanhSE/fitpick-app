@@ -236,15 +236,14 @@ export const userProfileAPI = {
       // Create FormData for React Native
       const formData = new FormData();
       
-      // Handle iOS file URI (remove file:// prefix)
-      const fileUri = avatarFile.uri.startsWith('file://') 
-        ? avatarFile.uri.replace('file://', '') 
-        : avatarFile.uri;
+      // Keep file:// prefix for React Native FormData
+      // React Native FormData needs the full URI including file://
+      const fileUri = avatarFile.uri;
 
 
 
       // Append file with proper format for React Native
-      formData.append('Avatar', {
+      formData.append('avatar', {
         uri: fileUri,
         type: avatarFile.type || 'image/jpeg',
         name: avatarFile.name || 'avatar.jpg',
@@ -283,15 +282,14 @@ export const userProfileAPI = {
       // Create FormData for React Native
       const formData = new FormData();
       
-      // Handle iOS file URI (remove file:// prefix)
-      const fileUri = avatarFile.uri.startsWith('file://') 
-        ? avatarFile.uri.replace('file://', '') 
-        : avatarFile.uri;
+      // Keep file:// prefix for React Native FormData
+      // React Native FormData needs the full URI including file://
+      const fileUri = avatarFile.uri;
 
 
 
       // Append file with proper format for React Native
-      formData.append('Avatar', {
+      formData.append('avatar', {
         uri: fileUri,
         type: avatarFile.type || 'image/jpeg',
         name: avatarFile.name || 'avatar.jpg',
@@ -309,11 +307,12 @@ export const userProfileAPI = {
       
       if (!response.ok) {
         const errorData = await response.text();
-
+        console.error('Avatar upload error:', response.status, errorData);
         throw new Error(`HTTP ${response.status}: ${errorData}`);
       }
       
       const data = await response.json();
+      console.log('Avatar upload success response:', JSON.stringify(data, null, 2));
 
       return data;
     } catch (error: any) {

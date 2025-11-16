@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   StyleSheet,
@@ -54,7 +55,7 @@ interface MealDetailScreenProps {
 
 const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }) => {
   const { meal } = route.params;
-  const { isFavorite: isMealFavorite, toggleFavorite } = useFavorites();
+  const { isFavorite: isMealFavorite, toggleFavorite, loadFavorites } = useFavorites();
   const { addMealToProducts, getMealQuantity, saveMealQuantity } = useIngredients();
   const { addMealToMenu, isMealInPlan } = useMealPlans();
   const { isMealEatenToday, markMealAsEaten, unmarkMealAsEaten, loading: _mealHistoryLoading } = useMealHistory();
@@ -217,6 +218,13 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
       loadSavedQuantity();
     }
   }, [route.params?.meal?.id]);
+
+  // Reload favorites when screen comes into focus to sync state
+  useFocusEffect(
+    React.useCallback(() => {
+      loadFavorites();
+    }, [loadFavorites])
+  );
 
   // Theo dõi thay đổi số lượng từ ProductScreen (đồng bộ 2 chiều)
   useEffect(() => {

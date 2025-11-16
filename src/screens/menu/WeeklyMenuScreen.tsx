@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   View, 
   Text, 
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -19,6 +20,7 @@ import { useProUser } from '../../hooks/useProUser';
 import { useFavorites } from '../../hooks/useFavorites';
 import { useMealHistory } from '../../hooks/useMealHistory';
 import { TodayMealPlanDto, mealPlanAPI } from '../../services/mealPlanAPI';
+import { searchAPI } from '../../services/searchAPI';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -47,12 +49,36 @@ interface DayMealData {
   totalCalories: number;
 }
 
+interface SuggestedMeal {
+  mealid: number;
+  name: string;
+  calories: number;
+  imageUrl?: string;
+  cookingtime?: number;
+  categoryName?: string;
+  isPremium?: boolean;
+}
+
+interface DaySuggestions {
+  date: Date;
+  dateString: string;
+  dayName: string;
+  breakfast: SuggestedMeal[];
+  lunch: SuggestedMeal[];
+  dinner: SuggestedMeal[];
+}
+
 const WeeklyMenuScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
-  const { isProUser } = useProUser();
+  const { isProUser: checkIsProUser, permissions } = useProUser();
   
-  // Get Pro status as a value for dependencies
-  const isPro = isProUser();
+  // Get Pro status as a value using useMemo to avoid calling class as function
+  const isPro = useMemo(() => {
+    if (typeof checkIsProUser === 'function') {
+      return checkIsProUser();
+    }
+    return permissions?.isProUser || false;
+  }, [checkIsProUser, permissions]);
   
   const { isFavorite } = useFavorites();
   const { 
@@ -83,6 +109,9 @@ const WeeklyMenuScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedMeal, setSelectedMeal] = useState<{ meal: WeeklyMealData; dateString: string } | null>(null);
   const [showMealActionModal, setShowMealActionModal] = useState(false);
+  const [weeklySuggestions, setWeeklySuggestions] = useState<DaySuggestions[]>([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   // Tạo danh sách 7 ngày trong tuần
   const getWeekDays = (startDate: Date): Date[] => {
@@ -93,6 +122,238 @@ const WeeklyMenuScreen: React.FC = () => {
       days.push(day);
     }
     return days;
+  };
+
+  // Tính toán ngày từ hôm nay đến Chủ nhật theo GMT+7 (Vietnam timezone)
+  const getTodayToSunday = (): Date[] => {
+    // Get current date in Vietnam timezone (GMT+7)
+    // JavaScript Date uses local timezone, so we need to adjust for GMT+7
+    const now = new Date();
+    // Get UTC time and add 7 hours for Vietnam timezone
+    const utcTime = now.getTime() + (now.getTimezoneOffset() * 60 * 1000);
+    const vietnamTime = new Date(utcTime + (7 * 60 * 60 * 1000));
+    
+    // Set to start of day
+    const today = new Date(vietnamTime);
+    today.setHours(0, 0, 0, 0);
+    
+    // Get current day of week (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
+    const dayOfWeek = today.getDay();
+    
+    // Calculate days until Sunday (0)
+    // If today is Sunday, return only today (1 day)
+    // Otherwise, return from today to Sunday (including both)
+    const daysUntilSunday = dayOfWeek === 0 ? 0 : 7 - dayOfWeek;
+    
+    const days: Date[] = [];
+    // Loop from 0 to daysUntilSunday (inclusive)
+    // If today is Sunday: i = 0 only (1 day)
+    // If today is Monday: i = 0 to 6 (7 days)
+    // If today is Saturday: i = 0 to 1 (2 days)
+    for (let i = 0; i <= daysUntilSunday; i++) {
+      const day = new Date(today);
+      day.setDate(today.getDate() + i);
+      days.push(day);
+    }
+    
+    return days;
+  };
+
+  // Tự động tạo meal plan cho tuần (từ hôm nay đến Chủ nhật)
+  const handleAutoGenerateWeeklyMealPlan = async () => {
+    // Kiểm tra Pro user
+    if (!isPro) {
+      Alert.alert(
+        'Yêu cầu tài khoản Pro',
+        'Tính năng tạo thực đơn tự động chỉ dành cho tài khoản Pro. Vui lòng nâng cấp để sử dụng tính năng này.',
+        [{ text: 'Đóng' }]
+      );
+      return;
+    }
+
+    const days = getTodayToSunday();
+    const dayCount = days.length;
+    const dayNames = days.map(day => day.toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'numeric' })).join(', ');
+    
+    Alert.alert(
+      'Xác nhận',
+      `Bạn có muốn hệ thống tự động tạo thực đơn cho ${dayCount} ngày từ hôm nay đến Chủ nhật không?\n(${dayNames})`,
+      [
+        { text: 'Hủy', style: 'cancel' },
+        {
+          text: 'Đồng ý',
+          onPress: async () => {
+            setIsLoadingSuggestions(true);
+            try {
+              let successCount = 0;
+              let failCount = 0;
+              const errors: string[] = [];
+              
+              for (const day of days) {
+                try {
+                  // Format date to YYYY-MM-DD (date only, no time)
+                  const dateString = day.toISOString().split('T')[0];
+                  console.log(`Generating meal plan for ${dateString}...`);
+                  
+                  // Create a new Date object with just the date (no time)
+                  const dateOnly = new Date(day);
+                  dateOnly.setHours(0, 0, 0, 0);
+                  
+                  // Generate meal plan for this day
+                  const generateResponse = await mealPlanAPI.generateMealPlan(dateOnly);
+                  console.log(`Response for ${dateString}:`, generateResponse);
+                  
+                  if (generateResponse.success) {
+                    successCount++;
+                    console.log(`✓ Successfully generated meal plan for ${dateString}`);
+                  } else {
+                    failCount++;
+                    const errorMsg = generateResponse.message || 'Không thể tạo thực đơn';
+                    errors.push(`${day.toLocaleDateString('vi-VN')}: ${errorMsg}`);
+                    console.error(`✗ Failed to generate meal plan for ${dateString}:`, errorMsg);
+                  }
+                } catch (error: any) {
+                  failCount++;
+                  const errorMsg = error.response?.data?.message || 
+                                  error.response?.data?.errors?.join(', ') ||
+                                  error.message || 
+                                  'Lỗi không xác định';
+                  errors.push(`${day.toLocaleDateString('vi-VN')}: ${errorMsg}`);
+                  console.error(`✗ Error generating meal plan for ${day.toISOString().split('T')[0]}:`, {
+                    error,
+                    response: error.response?.data,
+                    status: error.response?.status
+                  });
+                }
+              }
+              
+              setIsLoadingSuggestions(false);
+              
+              if (successCount > 0) {
+                Alert.alert(
+                  'Thành công',
+                  `Đã tạo thực đơn cho ${successCount} ngày${failCount > 0 ? `, ${failCount} ngày thất bại` : ''}${errors.length > 0 ? `\n\nLỗi:\n${errors.slice(0, 3).join('\n')}${errors.length > 3 ? '...' : ''}` : ''}`,
+                  [{ text: 'OK' }]
+                );
+                // Reload weekly data to show new meal plans
+                await loadWeeklyData();
+              } else {
+                Alert.alert(
+                  'Lỗi', 
+                  `Không thể tạo thực đơn cho bất kỳ ngày nào.${errors.length > 0 ? `\n\nChi tiết lỗi:\n${errors.slice(0, 5).join('\n')}${errors.length > 5 ? '...' : ''}` : ''}`,
+                  [{ text: 'OK' }]
+                );
+              }
+            } catch (error: any) {
+              console.error('Error auto-generating weekly meal plan:', error);
+              const errorMsg = error.response?.data?.message || error.message || 'Lỗi không xác định';
+              Alert.alert('Lỗi', `Không thể tạo thực đơn tự động: ${errorMsg}`);
+              setIsLoadingSuggestions(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // Load gợi ý món ăn cho tuần (từ hôm nay đến Chủ nhật) - để hiển thị
+  const loadWeeklySuggestions = async () => {
+    setIsLoadingSuggestions(true);
+    try {
+      const days = getTodayToSunday();
+      const suggestions: DaySuggestions[] = [];
+      
+      // Get suggested meals
+      const suggestedMealsResponse = await searchAPI.getSuggestedMeals();
+      const allMeals: SuggestedMeal[] = suggestedMealsResponse.data || [];
+      
+      // Shuffle meals for variety
+      const shuffledMeals = [...allMeals].sort(() => Math.random() - 0.5);
+      
+      for (const day of days) {
+        const dateString = day.toISOString().split('T')[0];
+        const dayName = day.toLocaleDateString('vi-VN', { weekday: 'long' });
+        
+        // Select 3 meals for each meal time (breakfast, lunch, dinner)
+        const breakfastMeals = shuffledMeals
+          .filter(meal => !meal.isPremium || isPro)
+          .slice(0, 3)
+          .map(meal => ({ ...meal }));
+        
+        const lunchMeals = shuffledMeals
+          .filter(meal => !meal.isPremium || isPro)
+          .slice(3, 6)
+          .map(meal => ({ ...meal }));
+        
+        const dinnerMeals = shuffledMeals
+          .filter(meal => !meal.isPremium || isPro)
+          .slice(6, 9)
+          .map(meal => ({ ...meal }));
+        
+        suggestions.push({
+          date: new Date(day),
+          dateString,
+          dayName,
+          breakfast: breakfastMeals,
+          lunch: lunchMeals,
+          dinner: dinnerMeals,
+        });
+      }
+      
+      setWeeklySuggestions(suggestions);
+    } catch (error) {
+      console.error('Error loading weekly suggestions:', error);
+      Alert.alert('Lỗi', 'Không thể tải gợi ý món ăn');
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+  };
+
+  // Apply suggested meal to meal plan
+  const handleApplySuggestion = async (meal: SuggestedMeal, dateString: string, mealTime: 'breakfast' | 'lunch' | 'dinner') => {
+    try {
+      const date = new Date(dateString);
+      const mealTimeId = mealTime === 'breakfast' ? 1 : mealTime === 'lunch' ? 2 : 3;
+      
+      // Generate meal plan for this date and meal time
+      const generateResponse = await mealPlanAPI.generateMealPlan(date);
+      
+      if (generateResponse.success) {
+        // Try to swap the meal
+        // First, get existing meal plans for this date
+        const existingPlans = await mealPlanAPI.getMealPlanByDate(date);
+        
+        if (existingPlans.success && existingPlans.data) {
+          // Find plan for this meal time
+          const planToSwap = existingPlans.data.find(
+            plan => plan.mealTime.toLowerCase().includes(mealTime)
+          );
+          
+          if (planToSwap && planToSwap.planId) {
+            // Swap meal
+            const swapResponse = await mealPlanAPI.swapMeal(planToSwap.planId, meal.mealid);
+            if (swapResponse.success) {
+              Alert.alert('Thành công', 'Đã thêm món ăn vào thực đơn');
+              await loadWeeklyData();
+            } else {
+              Alert.alert('Lỗi', 'Không thể thêm món ăn vào thực đơn');
+            }
+          } else {
+            // Create new meal plan
+            const createResponse = await mealPlanAPI.generateMealPlan(date);
+            if (createResponse.success) {
+              Alert.alert('Thành công', 'Đã tạo thực đơn mới');
+              await loadWeeklyData();
+            }
+          }
+        }
+      } else {
+        Alert.alert('Lỗi', 'Không thể tạo thực đơn');
+      }
+    } catch (error) {
+      console.error('Error applying suggestion:', error);
+      Alert.alert('Lỗi', 'Không thể thêm món ăn vào thực đơn');
+    }
   };
 
   // Convert TodayMealPlanDto to WeeklyMealData format
@@ -714,8 +975,23 @@ const WeeklyMenuScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Auto Replace Button */}
+      {/* Action Buttons */}
       <View style={styles.actionButtons}>
+        <TouchableOpacity 
+          style={[styles.autoReplaceButton, styles.suggestionsButton]}
+          onPress={handleAutoGenerateWeeklyMealPlan}
+          disabled={isLoadingSuggestions}
+        >
+          {isLoadingSuggestions ? (
+            <ActivityIndicator size="small" color="white" />
+          ) : (
+            <Ionicons name="bulb" size={18} color="white" />
+          )}
+          <Text style={styles.autoReplaceButtonText}>
+            {isLoadingSuggestions ? 'Đang tạo thực đơn...' : 'Gợi ý món ăn cho tuần'}
+          </Text>
+        </TouchableOpacity>
+        
         <TouchableOpacity 
           style={styles.autoReplaceButton}
           onPress={handleAutoReplaceWeekMeals}
@@ -725,17 +1001,6 @@ const WeeklyMenuScreen: React.FC = () => {
             Tự động đổi món từ hôm nay
           </Text>
         </TouchableOpacity>
-        
-        {/* Debug Button - Đã xóa để push git */}
-        {/* <TouchableOpacity 
-          style={[styles.autoReplaceButton, { backgroundColor: '#666', marginTop: 8 }]}
-          onPress={debugData}
-        >
-          <Ionicons name="bug" size={18} color="white" />
-          <Text style={styles.autoReplaceButtonText}>
-            Debug Data
-          </Text>
-        </TouchableOpacity> */}
       </View>
 
       {/* Error Message */}
@@ -759,6 +1024,130 @@ const WeeklyMenuScreen: React.FC = () => {
       {/* Content */}
       {!isLoading && (
         <ScrollView showsVerticalScrollIndicator={false} style={styles.content}>
+          {/* Weekly Suggestions Section */}
+          {showSuggestions && (
+            <View style={styles.suggestionsContainer}>
+              <View style={styles.suggestionsHeader}>
+                <Ionicons name="bulb" size={20} color={COLORS.primary} />
+                <Text style={styles.suggestionsTitle}>Gợi ý món ăn cho tuần</Text>
+                <Text style={styles.suggestionsSubtitle}>(Từ hôm nay đến Chủ nhật)</Text>
+              </View>
+              
+              {isLoadingSuggestions ? (
+                <View style={styles.suggestionsLoading}>
+                  <ActivityIndicator size="small" color={COLORS.primary} />
+                  <Text style={styles.suggestionsLoadingText}>Đang tải gợi ý...</Text>
+                </View>
+              ) : weeklySuggestions.length > 0 ? (
+                weeklySuggestions.map((daySuggestion) => (
+                  <View key={daySuggestion.dateString} style={styles.suggestionDayContainer}>
+                    <View style={styles.suggestionDayHeader}>
+                      <Text style={styles.suggestionDayName}>{daySuggestion.dayName}</Text>
+                      <Text style={styles.suggestionDayDate}>
+                        {daySuggestion.date.getDate()}/{daySuggestion.date.getMonth() + 1}
+                      </Text>
+                    </View>
+                    
+                    {/* Breakfast Suggestions */}
+                    <View style={styles.suggestionMealSection}>
+                      <Text style={styles.suggestionMealTitle}>Bữa sáng</Text>
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                        {daySuggestion.breakfast.map((meal, index) => (
+                          <TouchableOpacity
+                            key={`${meal.mealid}-${index}`}
+                            style={styles.suggestionMealCard}
+                            onPress={() => handleApplySuggestion(meal, daySuggestion.dateString, 'breakfast')}
+                          >
+                            {meal.imageUrl ? (
+                              <Image source={{ uri: meal.imageUrl }} style={styles.suggestionMealImage} />
+                            ) : (
+                              <View style={styles.suggestionMealImagePlaceholder}>
+                                <Ionicons name="restaurant" size={24} color={COLORS.textDim} />
+                              </View>
+                            )}
+                            <Text style={styles.suggestionMealName} numberOfLines={2}>
+                              {meal.name}
+                            </Text>
+                            <Text style={styles.suggestionMealCalories}>{meal.calories} kcal</Text>
+                            <View style={styles.suggestionApplyButton}>
+                              <Ionicons name="add-circle" size={16} color="white" />
+                              <Text style={styles.suggestionApplyText}>Thêm</Text>
+                            </View>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                    
+                    {/* Lunch Suggestions */}
+                    <View style={styles.suggestionMealSection}>
+                      <Text style={styles.suggestionMealTitle}>Bữa trưa</Text>
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                        {daySuggestion.lunch.map((meal, index) => (
+                          <TouchableOpacity
+                            key={`${meal.mealid}-${index}`}
+                            style={styles.suggestionMealCard}
+                            onPress={() => handleApplySuggestion(meal, daySuggestion.dateString, 'lunch')}
+                          >
+                            {meal.imageUrl ? (
+                              <Image source={{ uri: meal.imageUrl }} style={styles.suggestionMealImage} />
+                            ) : (
+                              <View style={styles.suggestionMealImagePlaceholder}>
+                                <Ionicons name="restaurant" size={24} color={COLORS.textDim} />
+                              </View>
+                            )}
+                            <Text style={styles.suggestionMealName} numberOfLines={2}>
+                              {meal.name}
+                            </Text>
+                            <Text style={styles.suggestionMealCalories}>{meal.calories} kcal</Text>
+                            <View style={styles.suggestionApplyButton}>
+                              <Ionicons name="add-circle" size={16} color="white" />
+                              <Text style={styles.suggestionApplyText}>Thêm</Text>
+                            </View>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                    
+                    {/* Dinner Suggestions */}
+                    <View style={styles.suggestionMealSection}>
+                      <Text style={styles.suggestionMealTitle}>Bữa tối</Text>
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                        {daySuggestion.dinner.map((meal, index) => (
+                          <TouchableOpacity
+                            key={`${meal.mealid}-${index}`}
+                            style={styles.suggestionMealCard}
+                            onPress={() => handleApplySuggestion(meal, daySuggestion.dateString, 'dinner')}
+                          >
+                            {meal.imageUrl ? (
+                              <Image source={{ uri: meal.imageUrl }} style={styles.suggestionMealImage} />
+                            ) : (
+                              <View style={styles.suggestionMealImagePlaceholder}>
+                                <Ionicons name="restaurant" size={24} color={COLORS.textDim} />
+                              </View>
+                            )}
+                            <Text style={styles.suggestionMealName} numberOfLines={2}>
+                              {meal.name}
+                            </Text>
+                            <Text style={styles.suggestionMealCalories}>{meal.calories} kcal</Text>
+                            <View style={styles.suggestionApplyButton}>
+                              <Ionicons name="add-circle" size={16} color="white" />
+                              <Text style={styles.suggestionApplyText}>Thêm</Text>
+                            </View>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  </View>
+                ))
+              ) : (
+                <View style={styles.suggestionsEmpty}>
+                  <Text style={styles.suggestionsEmptyText}>Không có gợi ý món ăn</Text>
+                </View>
+              )}
+            </View>
+          )}
+          
+          {/* Weekly Meal Plans */}
           {weeklyData.length > 0 ? (
             weeklyData.map(renderDayMeals)
           ) : (
@@ -945,6 +1334,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
     backgroundColor: COLORS.background,
+    gap: SPACING.sm,
   },
   autoReplaceButton: {
     flexDirection: 'row',
@@ -955,6 +1345,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
     borderRadius: RADII.md,
     gap: SPACING.xs,
+  },
+  suggestionsButton: {
+    backgroundColor: '#FF9800', // Orange color for suggestions button
+    marginBottom: SPACING.sm,
   },
   autoReplaceButtonText: {
     color: 'white',
@@ -1026,6 +1420,130 @@ const styles = StyleSheet.create({
     color: COLORS.textDim,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  suggestionsContainer: {
+    backgroundColor: COLORS.white,
+    marginHorizontal: SPACING.md,
+    marginBottom: SPACING.lg,
+    borderRadius: RADII.md,
+    padding: SPACING.md,
+  },
+  suggestionsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.md,
+    gap: SPACING.xs,
+  },
+  suggestionsTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.text,
+    flex: 1,
+  },
+  suggestionsSubtitle: {
+    fontSize: 12,
+    color: COLORS.textDim,
+    fontStyle: 'italic',
+  },
+  suggestionsLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: SPACING.lg,
+    gap: SPACING.sm,
+  },
+  suggestionsLoadingText: {
+    fontSize: 14,
+    color: COLORS.textDim,
+  },
+  suggestionsEmpty: {
+    paddingVertical: SPACING.lg,
+    alignItems: 'center',
+  },
+  suggestionsEmptyText: {
+    fontSize: 14,
+    color: COLORS.textDim,
+    fontStyle: 'italic',
+  },
+  suggestionDayContainer: {
+    marginBottom: SPACING.lg,
+    paddingBottom: SPACING.md,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.muted,
+  },
+  suggestionDayHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: SPACING.sm,
+    paddingHorizontal: SPACING.sm,
+  },
+  suggestionDayName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  suggestionDayDate: {
+    fontSize: 14,
+    color: COLORS.textDim,
+  },
+  suggestionMealSection: {
+    marginBottom: SPACING.md,
+  },
+  suggestionMealTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.text,
+    marginBottom: SPACING.sm,
+    paddingHorizontal: SPACING.sm,
+  },
+  suggestionMealCard: {
+    backgroundColor: COLORS.background,
+    borderRadius: RADII.sm,
+    width: 140,
+    marginRight: SPACING.sm,
+    overflow: 'hidden',
+  },
+  suggestionMealImage: {
+    width: '100%',
+    height: 100,
+    resizeMode: 'cover',
+  },
+  suggestionMealImagePlaceholder: {
+    width: '100%',
+    height: 100,
+    backgroundColor: COLORS.muted,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  suggestionMealName: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: COLORS.text,
+    paddingHorizontal: SPACING.xs,
+    paddingTop: SPACING.xs,
+    minHeight: 32,
+  },
+  suggestionMealCalories: {
+    fontSize: 10,
+    color: COLORS.textDim,
+    paddingHorizontal: SPACING.xs,
+    paddingTop: SPACING.xs / 2,
+  },
+  suggestionApplyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primary,
+    paddingVertical: SPACING.xs,
+    margin: SPACING.xs,
+    borderRadius: RADII.sm,
+    gap: SPACING.xs / 2,
+  },
+  suggestionApplyText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: 'white',
   },
 });
 
