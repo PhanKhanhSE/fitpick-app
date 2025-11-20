@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -21,6 +21,7 @@ import { useIngredients } from '../../hooks/useIngredients';
 import { useMealPlans } from '../../hooks/useMealPlans';
 import { useUser } from '../../hooks/useUser';
 import { useProUser } from '../../hooks/useProUser';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 import {
@@ -35,8 +36,8 @@ const FavoritesScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const insets = useSafeAreaInsets();
   const { removeFavorite, removeMultipleFavorites } = useFavorites();
-  const { addMealToProducts } = useIngredients();
-  const { isMealInPlan } = useMealPlans();
+  const { addMealToProducts, addMultipleMealsToProducts, loadUserProducts, isMealInProductList } = useIngredients();
+  const { isMealInPlan, addMealToMenu, loadTodayMealPlan } = useMealPlans();
   const { isProUser: checkIsProUser, permissions } = useProUser();
   
   // Get Pro status as a value using useMemo to avoid calling class as function
@@ -59,8 +60,22 @@ const FavoritesScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Load favorites from API
-  const loadFavorites = async () => {
+  // Ref để tránh reload không cần thiết
+  const isReloadingRef = useRef(false);
+  const lastLoadTimeRef = useRef(0);
+  const CACHE_DURATION = 2000; // Cache 2 giây
+
+  // Load favorites from API - wrap trong useCallback để tránh infinite loop
+  const loadFavorites = useCallback(async () => {
+    // Tránh reload quá nhanh (ít nhất 2 giây giữa các lần reload)
+    const now = Date.now();
+    if (isReloadingRef.current || (now - lastLoadTimeRef.current < CACHE_DURATION)) {
+      return;
+    }
+    
+    isReloadingRef.current = true;
+    lastLoadTimeRef.current = now;
+    
     try {
       setIsLoading(true);
       const response = await favoritesAPI.getFavoritesWithDetails();
@@ -92,8 +107,12 @@ const FavoritesScreen: React.FC = () => {
       setFavoriteDetails([]);
     } finally {
       setIsLoading(false);
+      // Reset flag sau một chút
+      setTimeout(() => {
+        isReloadingRef.current = false;
+      }, CACHE_DURATION);
     }
-  };
+  }, []); // Empty dependency array vì không phụ thuộc vào state nào
 
   // Refresh favorites
   const handleRefresh = async () => {
@@ -107,11 +126,17 @@ const FavoritesScreen: React.FC = () => {
     loadFavorites();
   }, []);
 
-  // Auto reload when screen comes into focus (when user returns from other screens)
+  // Auto reload when screen comes into focus (chỉ reload khi cần thiết)
   useFocusEffect(
     React.useCallback(() => {
+      // Chỉ reload favorites và products để đồng bộ state (ẩn nút nếu đã thêm)
+      // loadFavorites đã có cache 2 giây, không reload quá nhanh
       loadFavorites();
-    }, [])
+      // loadUserProducts đã có cache trong hook, không cần force reload mỗi lần
+      loadUserProducts(false); // Không force reload, dùng cache nếu có
+      // Không cần reload meal plans ở đây vì isMealInPlan sẽ check từ todayMealPlans state
+      // Meal plans sẽ được reload tự động khi MenuScreen focus
+    }, [loadFavorites, loadUserProducts])
   );
 
   // Convert FoodItem to meal format for MealDetailScreen
@@ -154,13 +179,95 @@ const FavoritesScreen: React.FC = () => {
     );
   };
 
-  const handleMealPlannerSave = (selectedDays: string[], mealType: string) => {
-    // Xử lý lưu vào meal planner
+  const handleMealPlannerSave = async (selectedDays: string[], mealType: string) => {
+    if (!actionItem || selectedDays.length === 0) {
+      Alert.alert('Thông báo', 'Vui lòng chọn ít nhất một ngày');
+      return;
+    }
 
-    // TODO: Implement save to meal planner logic
-    Alert.alert('Thành công', 'Đã thêm vào thực đơn');
-    setShowMealPlanner(false);
-    setActionItem(null);
+    try {
+      const mealId = parseInt(actionItem.id);
+      if (isNaN(mealId)) {
+        Alert.alert('Lỗi', 'ID món ăn không hợp lệ');
+        return;
+      }
+
+      // Map mealType từ tiếng Việt sang tiếng Anh cho backend
+      const mealTypeMap: { [key: string]: string } = {
+        'Bữa sáng': 'breakfast',
+        'Bữa trưa': 'lunch',
+        'Bữa tối': 'dinner',
+        'Bữa phụ': 'snack'
+      };
+      const backendMealTime = mealTypeMap[mealType] || 'breakfast';
+
+      // Parse selectedDays (dayKey là date string từ toDateString(), ví dụ: "Mon Jan 01 2024")
+      const datesToAdd: Date[] = [];
+      selectedDays.forEach(dayKey => {
+        try {
+          // dayKey là output của toDateString(), parse lại thành Date
+          const date = new Date(dayKey);
+          if (!isNaN(date.getTime())) {
+            // Đảm bảo time là 00:00:00 để tránh timezone issues
+            date.setHours(0, 0, 0, 0);
+            datesToAdd.push(date);
+          } else {
+            console.error('Invalid date string:', dayKey);
+          }
+        } catch (error) {
+          console.error('Error parsing date:', dayKey, error);
+        }
+      });
+
+      if (datesToAdd.length === 0) {
+        Alert.alert('Lỗi', 'Không thể parse ngày đã chọn');
+        return;
+      }
+
+      // Thêm món vào thực đơn cho từng ngày
+      const addPromises = datesToAdd.map(date => 
+        addMealToMenu(mealId, date, backendMealTime)
+      );
+
+      const results = await Promise.all(addPromises);
+      const successCount = results.filter(r => r).length;
+      const failedCount = results.length - successCount;
+
+      if (successCount > 0) {
+        // Đảm bảo timestamp được lưu trước khi navigate
+        try {
+          await AsyncStorage.setItem('lastMealAddedTimestamp', Date.now().toString());
+        } catch (error) {
+          console.error('Error saving meal added timestamp:', error);
+        }
+        
+        Alert.alert(
+          'Thành công', 
+          failedCount > 0 
+            ? `Đã thêm món vào ${successCount}/${datesToAdd.length} ngày trong thực đơn`
+            : `Đã thêm món vào ${successCount} ngày trong thực đơn`,
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                // Navigate to MenuScreen để xem món mới được thêm
+                // Đợi một chút để đảm bảo timestamp được lưu
+                setTimeout(() => {
+                  navigation.navigate('MainTabs' as any, { screen: 'Menu' });
+                }, 100);
+              }
+            }
+          ]
+        );
+        setShowMealPlanner(false);
+        setActionItem(null);
+      } else {
+        Alert.alert('Lỗi', 'Không thể thêm món vào thực đơn. Vui lòng thử lại.');
+      }
+    } catch (error: any) {
+      console.error('Error adding meal to menu:', error);
+      Alert.alert('Lỗi', error?.message || 'Không thể thêm món vào thực đơn. Vui lòng thử lại.');
+    }
   };
 
   const handleGenerateWeeklyPlan = async () => {
@@ -266,7 +373,18 @@ const FavoritesScreen: React.FC = () => {
         <Text style={styles.title}>Yêu thích</Text>
       </View>
 
-      {/* Grid danh sách với nút action */}
+      {/* Button chọn nhiều món - chỉ hiển thị khi có 2 món trở lên */}
+      {!isLoading && favoriteItems.length >= 2 && (
+        <View style={styles.actionButtonContainer}>
+          <TouchableOpacity onPress={() => setMultiSelect(!multiSelect)}>
+            <Text style={styles.actionText}>
+              {multiSelect ? "Bỏ chọn tất cả" : "Chọn nhiều món"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Grid danh sách */}
       <FlatList
         data={favoriteItems}
         renderItem={renderFoodCard}
@@ -279,6 +397,7 @@ const FavoritesScreen: React.FC = () => {
         columnWrapperStyle={styles.row}
         refreshing={refreshing}
         onRefresh={handleRefresh}
+        extraData={favoriteItems.length} // Force re-render when favoriteItems changes
         ListEmptyComponent={
           isLoading ? (
             <View style={styles.loadingContainer}>
@@ -295,15 +414,6 @@ const FavoritesScreen: React.FC = () => {
             </View>
           )
         }
-        ListHeaderComponent={
-          !isLoading && favoriteItems.length > 0 ? (
-            <TouchableOpacity onPress={() => setMultiSelect(!multiSelect)}>
-              <Text style={styles.actionText}>
-                {multiSelect ? "Bỏ chọn tất cả" : "Chọn nhiều món"}
-              </Text>
-            </TouchableOpacity>
-          ) : null
-        }
       />
 
       {/* Components */}
@@ -311,30 +421,65 @@ const FavoritesScreen: React.FC = () => {
         visible={multiSelect}
         selectedCount={selectedItems.length}
         onAddToProductList={async () => {
-          // Add all selected items to product list
-          const promises = selectedItems.map(itemId => {
-            const item = favoriteItems.find(fav => fav.id === itemId);
-            if (item) {
-              const mealId = parseInt(item.id);
-              return addMealToProducts(mealId, item.name);
-            }
-            return Promise.resolve(false);
-          });
-          
-          const results = await Promise.all(promises);
-          const successCount = results.filter(Boolean).length;
-          
-          if (successCount > 0) {
-            Alert.alert('Thành công', `Đã thêm ${successCount} món vào danh sách sản phẩm`);
-            // Navigate to ProductScreen
-            navigation.navigate('ProductScreen' as any);
-          } else {
-            Alert.alert('Lỗi', 'Không thể thêm vào danh sách sản phẩm');
+          if (selectedItems.length === 0) {
+            Alert.alert('Thông báo', 'Vui lòng chọn ít nhất một món ăn');
+            return;
           }
-          
-          // Clear selection
-          setSelectedItems([]);
-          setMultiSelect(false);
+
+          try {
+            // Lấy tất cả mealIds hợp lệ
+            const mealIds: number[] = [];
+            const mealIdToName: { [key: number]: string } = {};
+            
+            selectedItems.forEach((itemId) => {
+              const item = favoriteItems.find(fav => fav.id === itemId);
+              if (item) {
+                const mealId = parseInt(item.id);
+                if (!isNaN(mealId)) {
+                  mealIds.push(mealId);
+                  mealIdToName[mealId] = item.name;
+                } else {
+                  console.error('❌ Invalid meal ID:', item.id);
+                }
+              }
+            });
+            
+            if (mealIds.length === 0) {
+              Alert.alert('Lỗi', 'Không có món ăn hợp lệ để thêm');
+              return;
+            }
+            
+            console.log(`🔄 Đang thêm ${mealIds.length} món vào danh sách sản phẩm...`);
+            
+            // Sử dụng hàm thêm nhiều món cùng lúc để tránh race condition
+            const result = await addMultipleMealsToProducts(mealIds, true);
+            
+            // Reload một lần duy nhất sau khi tất cả món đã được thêm
+            if (result.success && result.addedCount > 0) {
+              // Reload user products để cập nhật state (ẩn nút nếu đã thêm)
+              await loadUserProducts(true); // Force reload
+              
+              const message = result.addedCount === mealIds.length 
+                ? `Đã thêm ${result.addedCount} món vào danh sách sản phẩm`
+                : `Đã thêm ${result.addedCount}/${mealIds.length} món vào danh sách sản phẩm`;
+              
+              Alert.alert('Thành công', message);
+              // Clear selection sau khi thêm thành công
+              setSelectedItems([]);
+              setMultiSelect(false);
+              // Navigate to ProductScreen (Profile tab in MainTabs)
+              navigation.navigate('MainTabs' as any, { screen: 'Profile' });
+            } else {
+              Alert.alert('Lỗi', 'Không thể thêm vào danh sách sản phẩm. Vui lòng kiểm tra kết nối và thử lại.');
+            }
+          } catch (error: any) {
+            console.error('Error adding meals to product list:', error);
+            Alert.alert('Lỗi', error?.message || 'Không thể thêm vào danh sách sản phẩm. Vui lòng thử lại.');
+          } finally {
+            // Clear selection
+            setSelectedItems([]);
+            setMultiSelect(false);
+          }
         }}
         onDelete={handleDeleteMultiple}
       />
@@ -346,29 +491,116 @@ const FavoritesScreen: React.FC = () => {
           setActionItem(null);
           setShowActionModal(false);
         }}
-        onAddToMealPlan={() => {
-          setActionItem(null);
-          setShowActionModal(false);
-          setShowMealPlanner(true);
+        onAddToMealPlan={async () => {
+          if (!actionItem) return;
+          
+          const mealId = parseInt(actionItem.id);
+          if (isNaN(mealId)) {
+            Alert.alert('Lỗi', 'ID món ăn không hợp lệ');
+            setActionItem(null);
+            setShowActionModal(false);
+            return;
+          }
+
+          // Nếu là user free, tự động thêm vào hôm nay với bữa sáng (giống MealDetailScreen)
+          if (!isPro) {
+            try {
+              // Giống MealDetailScreen - không setHours để tránh timezone issues
+              const today = new Date();
+              
+              // Gọi addMealToMenu giống như MealDetailScreen
+              const success = await addMealToMenu(mealId, today, 'breakfast');
+              
+              if (success) {
+                // Timestamp đã được lưu trong useMealPlans, không cần lưu lại
+                
+                Alert.alert(
+                  'Thành công', 
+                  `Đã thêm "${actionItem.name}" vào Bữa sáng`,
+                  [
+                    {
+                      text: 'Xem thực đơn',
+                      onPress: () => {
+                        navigation.navigate('MainTabs' as any, { screen: 'Menu' });
+                      }
+                    },
+                    {
+                      text: 'OK',
+                      style: 'default'
+                    }
+                  ]
+                );
+              } else {
+                console.error('❌ [FavoritesScreen] Thêm món thất bại, success = false');
+                Alert.alert('Lỗi', 'Không thể thêm món vào thực đơn. Vui lòng thử lại.');
+              }
+            } catch (error: any) {
+              console.error('❌ [FavoritesScreen] Error adding meal to menu:', error);
+              console.error('❌ [FavoritesScreen] Error details:', error?.response?.data || error?.message);
+              Alert.alert('Lỗi', error?.message || 'Không thể thêm món vào thực đơn. Vui lòng thử lại.');
+            } finally {
+              setActionItem(null);
+              setShowActionModal(false);
+            }
+          } else {
+            // Nếu là user Pro, mở modal để chọn ngày và bữa ăn
+            setShowActionModal(false);
+            setShowMealPlanner(true);
+          }
         }}
         onAddToProductList={async () => {
-          if (actionItem) {
+          if (!actionItem) return;
+          
+          try {
             const mealId = parseInt(actionItem.id);
-            const success = await addMealToProducts(mealId, actionItem.name);
+            if (isNaN(mealId)) {
+              Alert.alert('Lỗi', 'ID món ăn không hợp lệ');
+              setActionItem(null);
+              setShowActionModal(false);
+              return;
+            }
+            
+            const success = await addMealToProducts(mealId, actionItem.name, actionItem.image?.uri);
             
             if (success) {
-              Alert.alert('Thành công', 'Đã thêm vào danh sách sản phẩm');
-              // Navigate to ProductScreen
-              navigation.navigate('ProductScreen' as any);
+              // Reload user products để cập nhật state (ẩn nút nếu đã thêm)
+              await loadUserProducts(true); // Force reload
+              
+              Alert.alert(
+                'Thành công', 
+                `Đã thêm "${actionItem.name}" vào danh sách sản phẩm`,
+                [
+                  {
+                    text: 'Xem danh sách',
+                    onPress: () => {
+                      navigation.navigate('MainTabs' as any, { screen: 'Profile' });
+                    }
+                  },
+                  {
+                    text: 'OK',
+                    onPress: () => {
+                      // Đóng modal sau khi thêm thành công
+                      setActionItem(null);
+                      setShowActionModal(false);
+                    }
+                  }
+                ]
+              );
             } else {
-              Alert.alert('Lỗi', 'Không thể thêm vào danh sách sản phẩm');
+              Alert.alert('Lỗi', 'Không thể thêm vào danh sách sản phẩm. Vui lòng kiểm tra kết nối và thử lại.');
+              setActionItem(null);
+              setShowActionModal(false);
             }
+          } catch (error: any) {
+            console.error('Error adding meal to product list:', error);
+            Alert.alert('Lỗi', error?.message || 'Không thể thêm vào danh sách sản phẩm. Vui lòng thử lại.');
+            setActionItem(null);
+            setShowActionModal(false);
           }
-          setActionItem(null);
-          setShowActionModal(false);
         }}
         onDelete={handleDeleteSingle}
-        isInMealPlan={actionItem ? isMealInPlan(parseInt(actionItem.id)) : false}
+        isInMealPlan={actionItem ? isMealInPlan(parseInt(actionItem.id), new Date()) : false}
+        isInProductList={actionItem ? isMealInProductList(parseInt(actionItem.id)) : false}
       />
 
       <MealPlannerModal
@@ -399,12 +631,15 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     textAlign: 'center',
   },
+  actionButtonContainer: {
+    paddingHorizontal: SPACING.md,
+    paddingBottom: SPACING.sm,
+    alignItems: 'flex-end',
+  },
   actionText: {
     color: COLORS.primary,
     fontSize: 14,
     textAlign: "right",
-    marginBottom: SPACING.md,
-    marginRight: SPACING.sm,
     textDecorationLine: "underline",
   },
   list: {

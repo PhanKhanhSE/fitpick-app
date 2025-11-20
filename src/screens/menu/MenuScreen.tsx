@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   View, 
   Text, 
@@ -48,7 +48,7 @@ const MenuScreen: React.FC = () => {
     }
     return permissions?.isProUser || false;
   }, [checkIsProUser, permissions]);
-  const { isFavorite } = useFavorites();
+  const { isFavorite, loadFavorites } = useFavorites();
   const { 
     todayMealPlans, 
     loading, 
@@ -68,6 +68,10 @@ const MenuScreen: React.FC = () => {
   
   const [selectedMeals, setSelectedMeals] = useState<string[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const isReloadingRef = useRef(false);
+  const lastLoadedDateRef = useRef<string>('');
+  const lastMealAddedTimestampRef = useRef<number>(0); // Track khi nào có món mới được thêm
+  const forceReloadRef = useRef(false); // Flag để force reload khi navigate từ màn hình khác
   
   // Modal states
   const [selectedMeal, setSelectedMeal] = useState<any>(null);
@@ -490,21 +494,93 @@ const MenuScreen: React.FC = () => {
 
   // Load data khi component mount và khi currentDate thay đổi
   useEffect(() => {
-    loadTodayMealPlan(currentDate);
-  }, [currentDate]);
+    // Format date bằng local time để tránh timezone issue (giống WeeklyMenuScreen)
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const day = currentDate.getDate();
+    const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    // Chỉ load nếu ngày thay đổi hoặc chưa load lần nào, và không đang loading
+    if (dateString !== lastLoadedDateRef.current && !isReloadingRef.current && !loading) {
+      isReloadingRef.current = true;
+      loadTodayMealPlan(currentDate, false).finally(() => {
+        lastLoadedDateRef.current = dateString;
+        isReloadingRef.current = false;
+      });
+    }
+  }, [currentDate, loadTodayMealPlan, loading]);
 
-  // Reload data khi quay lại screen (chỉ khi không phải lần đầu mount)
+  // Reload data khi quay lại screen (chỉ reload nếu ngày thay đổi, chưa load, hoặc có món mới được thêm)
   useFocusEffect(
     React.useCallback(() => {
-
-      loadTodayMealPlan(currentDate);
-    }, [currentDate])
+      // Format date bằng local time để tránh timezone issue (giống WeeklyMenuScreen)
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const day = currentDate.getDate();
+      const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      
+      // Check xem có món mới được thêm không (từ AsyncStorage)
+      const checkForNewMeals = async () => {
+        try {
+          const lastMealAddedTimestamp = await AsyncStorage.getItem('lastMealAddedTimestamp');
+          const timestamp = lastMealAddedTimestamp ? parseInt(lastMealAddedTimestamp) : 0;
+          
+          // Chỉ reload nếu:
+          // 1. Ngày thay đổi (chưa load cho ngày này)
+          // 2. Hoặc có món mới được thêm sau lần load cuối (timestamp > lastMealAddedTimestampRef)
+          // 3. Hoặc chưa load lần nào (lastLoadedDateRef rỗng)
+          // 4. Hoặc force reload flag được set (khi navigate từ màn hình khác sau khi thêm món)
+          const shouldReload = !isReloadingRef.current && !loading && (
+            dateString !== lastLoadedDateRef.current || 
+            (timestamp > 0 && timestamp > lastMealAddedTimestampRef.current) ||
+            lastLoadedDateRef.current === '' ||
+            forceReloadRef.current
+          );
+          
+          if (shouldReload) {
+            isReloadingRef.current = true;
+            forceReloadRef.current = false; // Reset force reload flag
+            // Force reload nếu có timestamp mới (có món mới được thêm)
+            const forceReload = timestamp > 0 && timestamp > lastMealAddedTimestampRef.current;
+            loadTodayMealPlan(currentDate, forceReload).finally(() => {
+              lastLoadedDateRef.current = dateString;
+              // Update timestamp sau khi reload (chỉ nếu timestamp > 0)
+              if (timestamp > 0) {
+                lastMealAddedTimestampRef.current = timestamp;
+              }
+              // Reset flag sau một chút để có thể reload lần sau
+              setTimeout(() => {
+                isReloadingRef.current = false;
+              }, 1000);
+            });
+          }
+        } catch (error) {
+          console.error('Error checking for new meals:', error);
+          // Fallback: reload nếu ngày thay đổi, chưa load, hoặc force reload
+          if (!isReloadingRef.current && !loading && (dateString !== lastLoadedDateRef.current || lastLoadedDateRef.current === '' || forceReloadRef.current)) {
+            isReloadingRef.current = true;
+            forceReloadRef.current = false; // Reset force reload flag
+            loadTodayMealPlan(currentDate, forceReloadRef.current).finally(() => {
+              lastLoadedDateRef.current = dateString;
+              setTimeout(() => {
+                isReloadingRef.current = false;
+              }, 1000);
+            });
+          }
+        }
+      };
+      
+      checkForNewMeals();
+      // Reload favorites to sync with changes from other screens (không block)
+      loadFavorites();
+    }, [currentDate, loadTodayMealPlan, loadFavorites, loading])
   );
 
   // Test AsyncStorage chỉ khi mount lần đầu
   useEffect(() => {
     testAsyncStorage();
   }, []);
+
+  // Không cần navigation listener nữa vì useFocusEffect đã handle việc check timestamp
 
   return (
     <SafeAreaView style={styles.container}>

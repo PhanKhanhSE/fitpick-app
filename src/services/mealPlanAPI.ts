@@ -122,9 +122,15 @@ export const mealPlanAPI = {
   // Thay đổi món theo gợi ý
   replaceMealBySuggestion: async (planId: number): Promise<{ success: boolean; data?: Mealplan; message?: string }> => {
     try {
-      const response = await apiClient.put(`/api/MealPlans/replace-by-suggestion/${planId}`);
+      // Thêm timeout để tránh treo quá lâu
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Request timeout after 30 seconds')), 30000);
+      });
       
-      if (response.data.success) {
+      const apiPromise = apiClient.put(`/api/MealPlans/replace-by-suggestion/${planId}`);
+      const response = await Promise.race([apiPromise, timeoutPromise]) as any;
+      
+      if (response?.data?.success) {
         return { 
           success: true, 
           data: response.data.data,
@@ -134,13 +140,34 @@ export const mealPlanAPI = {
       
       return { 
         success: false, 
-        message: response.data.message || 'Không thể thay đổi món theo gợi ý' 
+        message: response?.data?.message || 'Không thể thay đổi món theo gợi ý' 
       };
     } catch (error: any) {
+      // Kiểm tra các loại lỗi
+      if (error?.message?.includes('timeout')) {
+        return {
+          success: false,
+          message: 'Request timeout. Vui lòng kiểm tra kết nối mạng và thử lại.'
+        };
+      }
+      
+      if (error?.code === 'ECONNABORTED') {
+        return {
+          success: false,
+          message: 'Kết nối bị gián đoạn. Vui lòng thử lại.'
+        };
+      }
+      
+      if (error?.code === 'NETWORK_ERROR' || !error?.response) {
+        return {
+          success: false,
+          message: 'Lỗi kết nối mạng. Vui lòng kiểm tra kết nối và thử lại.'
+        };
+      }
 
       return { 
         success: false, 
-        message: error.response?.data?.message || 'Lỗi khi thay đổi món theo gợi ý' 
+        message: error?.response?.data?.message || error?.message || 'Lỗi khi thay đổi món theo gợi ý' 
       };
     }
   },
@@ -320,29 +347,60 @@ export const mealPlanAPI = {
   // Thêm món ăn vào thực đơn (lưu vào database)
   addMealToMenu: async (mealId: number, date: Date, mealTime?: string): Promise<{ success: boolean; data?: Mealplan; message?: string }> => {
     try {
-      const response = await apiClient.post('/api/MealPlans/add-meal', {
+      const requestData = {
         mealId: mealId,
         date: date.toISOString(),
         mealTime: mealTime || 'breakfast'
+      };
+      
+      // Thêm timeout riêng để tránh treo quá lâu
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Request timeout after 30 seconds')), 30000);
       });
+      
+      const apiPromise = apiClient.post('/api/MealPlans/add-meal', requestData);
+      
+      const response = await Promise.race([apiPromise, timeoutPromise]) as any;
 
-      if (response.data.success) {
+      if (response?.data?.success) {
         return {
           success: true,
           data: response.data.data,
           message: response.data.message
         };
       }
-
       return {
         success: false,
-        message: response.data.message || 'Không thể thêm món ăn vào thực đơn'
+        message: response?.data?.message || 'Không thể thêm món ăn vào thực đơn'
       };
     } catch (error: any) {
+      console.error('❌ [mealPlanAPI] Error adding meal to menu:', error?.message || error);
+
+      // Kiểm tra các loại lỗi phổ biến
+      if (error?.message?.includes('timeout')) {
+        return {
+          success: false,
+          message: 'Request timeout. Vui lòng kiểm tra kết nối mạng và thử lại.'
+        };
+      }
+      
+      if (error?.code === 'ECONNABORTED') {
+        return {
+          success: false,
+          message: 'Kết nối bị gián đoạn. Vui lòng thử lại.'
+        };
+      }
+      
+      if (error?.code === 'NETWORK_ERROR' || !error?.response) {
+        return {
+          success: false,
+          message: 'Lỗi kết nối mạng. Vui lòng kiểm tra kết nối và thử lại.'
+        };
+      }
 
       return {
         success: false,
-        message: error.response?.data?.message || 'Lỗi khi thêm món ăn vào thực đơn'
+        message: error?.response?.data?.message || error?.message || 'Lỗi khi thêm món ăn vào thực đơn'
       };
     }
   },

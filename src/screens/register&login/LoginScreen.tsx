@@ -22,6 +22,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { authAPI } from "../../services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { userProfileAPI } from "../../services/userProfileAPI";
 
 type Nav = NativeStackNavigationProp<RootStackParamList, "Login">;
 
@@ -115,6 +116,37 @@ const LoginScreen = () => {
           await saveCredentials(email, password);
         } else {
           await clearSavedCredentials();
+        }
+
+        // Check if user has completed onboarding
+        try {
+          const profileResponse = await userProfileAPI.getCurrentUserProfile();
+          
+          if (profileResponse.success && profileResponse.data) {
+            const isOnboardingCompleted = profileResponse.data.isOnboardingCompleted;
+            
+            // If onboarding is not completed, redirect to onboarding flow
+            if (!isOnboardingCompleted) {
+              Alert.alert(
+                "Hoàn tất thiết lập", 
+                "Bạn cần hoàn tất thiết lập hồ sơ để sử dụng ứng dụng.",
+                [
+                  {
+                    text: "OK",
+                    onPress: () => navigation.replace("UserInfo"),
+                  },
+                ]
+              );
+              return;
+            }
+          }
+        } catch (profileError: any) {
+          // If we can't check onboarding status (e.g., API error), still allow login
+          // Don't log error if it's just a token issue that was already handled
+          const errorMessage = profileError?.message || '';
+          if (!errorMessage.includes('Invalid token') && !errorMessage.includes('401') && !errorMessage.includes('403')) {
+            console.error('Error checking onboarding status:', profileError);
+          }
         }
 
         Alert.alert("Thành công", "Đăng nhập thành công!", [

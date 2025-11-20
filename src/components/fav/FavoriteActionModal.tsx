@@ -18,6 +18,7 @@ interface FavoriteActionModalProps {
   onAddToProductList: () => void;
   onDelete: () => void;
   isInMealPlan?: boolean; // Thêm prop để kiểm tra đã có trong meal plan chưa
+  isInProductList?: boolean; // Thêm prop để kiểm tra đã có trong product list chưa
 }
 
 const FavoriteActionModal: React.FC<FavoriteActionModalProps> = ({
@@ -28,6 +29,7 @@ const FavoriteActionModal: React.FC<FavoriteActionModalProps> = ({
   onAddToProductList,
   onDelete,
   isInMealPlan = false,
+  isInProductList = false,
 }) => {
   const insets = useSafeAreaInsets();
   
@@ -56,12 +58,15 @@ const FavoriteActionModal: React.FC<FavoriteActionModalProps> = ({
           </TouchableOpacity>
         )}
         
-        <TouchableOpacity 
-          style={styles.modalItem}
-          onPress={onAddToProductList}
-        >
-          <Text style={styles.modalItemText}>Thêm vào danh sách sản phẩm</Text>
-        </TouchableOpacity>
+        {/* Chỉ hiện button "Thêm vào danh sách sản phẩm" khi chưa có trong product list */}
+        {!isInProductList && (
+          <TouchableOpacity 
+            style={styles.modalItem}
+            onPress={onAddToProductList}
+          >
+            <Text style={styles.modalItemText}>Thêm vào danh sách sản phẩm</Text>
+          </TouchableOpacity>
+        )}
         
         <TouchableOpacity
           style={[styles.lastModalItem, styles.deleteItem]}

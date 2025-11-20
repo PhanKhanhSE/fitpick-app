@@ -16,7 +16,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../../types/navigation";
 import { COLORS, SPACING, RADII } from "../../utils/theme";
@@ -60,7 +60,7 @@ const SearchScreen: React.FC = () => {
   const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   // Favorites hook
-  const { favorites, toggleFavorite, isFavorite } = useFavorites();
+  const { favorites, toggleFavorite, isFavorite, loadFavorites } = useFavorites();
 
   // Search states
   const [isSearchActive, setIsSearchActive] = useState(false);
@@ -134,6 +134,13 @@ const SearchScreen: React.FC = () => {
       }
     };
   }, []);
+
+  // Reload favorites when screen comes into focus (to sync with changes from other screens)
+  useFocusEffect(
+    useCallback(() => {
+      loadFavorites();
+    }, [loadFavorites])
+  );
 
   // Get filter parameters for API calls
   const getFilterParams = () => {
@@ -306,6 +313,19 @@ const SearchScreen: React.FC = () => {
         name: text.trim(),
       });
 
+      // Check if search was successful
+      if (!searchResponse.success) {
+        // Search failed, show error message if not network error
+        const isNetworkError = searchResponse.message?.includes('Network') || 
+                              searchResponse.message?.includes('network');
+        if (!isNetworkError) {
+          Alert.alert('Lỗi', searchResponse.message || 'Không thể tìm kiếm món ăn');
+        }
+        setSearchResults([]);
+        setSuggestedMeals([]);
+        return;
+      }
+
       // Handle different response structures
       let searchData: MealData[] = [];
       if (Array.isArray(searchResponse)) {
@@ -387,9 +407,24 @@ const SearchScreen: React.FC = () => {
     } catch (error: any) {
       console.error('❌ Search error:', error);
       console.error('❌ Error details:', error.response?.data || error.message);
-      Alert.alert("Lỗi", `Không thể tìm kiếm: ${error.response?.data?.message || error.message || 'Vui lòng thử lại.'}`);
-      setSearchResults([]);
-      setSuggestedMeals([]);
+      
+      // Check if it's a network error
+      const isNetworkError = error.message?.includes('Network Error') || 
+                             error.message?.includes('network') ||
+                             error.code === 'NETWORK_ERROR' ||
+                             !error.response;
+      
+      if (isNetworkError) {
+        // Don't show alert for network errors, just log and clear results
+        console.error('Network error during search');
+        setSearchResults([]);
+        setSuggestedMeals([]);
+      } else {
+        // Show alert for other errors
+        Alert.alert("Lỗi", `Không thể tìm kiếm: ${error.response?.data?.message || error.message || 'Vui lòng thử lại.'}`);
+        setSearchResults([]);
+        setSuggestedMeals([]);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -793,6 +828,37 @@ const SearchScreen: React.FC = () => {
             onFavoritePress={handleFavoritePress}
             isFavorite={isFavorite}
             initialLimit={6}
+            onViewMore={async () => {
+              // Load more popular meals when "Xem thêm" is pressed
+              try {
+                const popularResponse = await searchAPI.getPopularMeals(50);
+                let dataArray: any[] = [];
+                
+                // Handle response structure from getPopularMeals
+                if (popularResponse && popularResponse.success !== false) {
+                  if (Array.isArray(popularResponse)) {
+                    dataArray = popularResponse;
+                  } else if (popularResponse.data) {
+                    dataArray = Array.isArray(popularResponse.data) ? popularResponse.data : [];
+                  } else if (Array.isArray(popularResponse)) {
+                    dataArray = popularResponse;
+                  }
+                }
+                
+                if (dataArray.length > 0) {
+                  const popularData = dataArray.map(
+                    (meal: any, index: number) => convertMealData(meal, index)
+                  );
+                  setPopularMeals(popularData);
+                  setDefaultPopularMeals(popularData);
+                } else if (popularResponse && popularResponse.success === false) {
+                  Alert.alert('Lỗi', popularResponse.message || 'Không thể tải thêm món ăn phổ biến');
+                }
+              } catch (error) {
+                console.error('Error loading more popular meals:', error);
+                Alert.alert('Lỗi', 'Không thể tải thêm món ăn phổ biến');
+              }
+            }}
           />
         )}
 
@@ -805,6 +871,38 @@ const SearchScreen: React.FC = () => {
             onFavoritePress={handleFavoritePress}
             isFavorite={isFavorite}
             initialLimit={6}
+            onViewMore={async () => {
+              // Load more suggested meals when "Xem thêm" is pressed
+              try {
+                const suggestedResponse = await searchAPI.getSuggestedMeals(100);
+                let dataArray: any[] = [];
+                
+                // Handle response structure from getSuggestedMeals
+                if (suggestedResponse && suggestedResponse.success !== false) {
+                  if (Array.isArray(suggestedResponse)) {
+                    dataArray = suggestedResponse;
+                  } else if (suggestedResponse.data) {
+                    dataArray = Array.isArray(suggestedResponse.data) ? suggestedResponse.data : [];
+                  } else if (Array.isArray(suggestedResponse)) {
+                    dataArray = suggestedResponse;
+                  }
+                }
+                
+                if (dataArray.length > 0) {
+                  const suggestedData = dataArray.map(
+                    (meal: MealData, index: number) => convertMealData(meal, index)
+                  );
+                  setSuggestedMeals(suggestedData);
+                  setDefaultSuggestedMeals(suggestedData);
+                  defaultSuggestedMealsRef.current = suggestedData;
+                } else if (suggestedResponse && suggestedResponse.success === false) {
+                  Alert.alert('Lỗi', suggestedResponse.message || 'Không thể tải thêm món ăn gợi ý');
+                }
+              } catch (error) {
+                console.error('Error loading more suggested meals:', error);
+                Alert.alert('Lỗi', 'Không thể tải thêm món ăn gợi ý');
+              }
+            }}
           />
         )}
       </ScrollView>

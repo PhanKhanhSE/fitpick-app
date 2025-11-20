@@ -78,16 +78,17 @@ const HomeScreen: React.FC = () => {
     }
   }, [selectedTab, isPro]); // Use isPro value instead of function call
 
-  // Reload data when screen comes into focus (after eating meals)
+  // Reload data when screen comes into focus (chỉ reload khi cần thiết)
+  // loadTodayMealPlan đã có cache 5 giây, không cần reload mỗi lần focus
   useFocusEffect(
     React.useCallback(() => {
       if (selectedTab === 'personal') {
-        loadPersonalData();
-        loadTodayMealPlan();
-        // Reload favorites to sync state across screens
+        // Chỉ reload favorites để đồng bộ state (không block)
         loadFavorites();
+        // loadPersonalData và loadTodayMealPlan đã được gọi trong useEffect khi selectedTab thay đổi
+        // Không cần reload lại mỗi lần focus vì đã có cache
       }
-    }, [selectedTab, isPro]) // Use isPro value instead of function call
+    }, [selectedTab, loadFavorites]) // Bỏ isPro vì không cần reload khi isPro thay đổi
   );
 
   const loadSuggestedMeals = async () => {

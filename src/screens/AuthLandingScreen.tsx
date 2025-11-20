@@ -1,11 +1,14 @@
-import React from 'react';
-import { StyleSheet, ScrollView, View, Text, ImageBackground, Dimensions } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, ScrollView, View, Text, ImageBackground, Dimensions, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppButton from '../components/AppButton';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
 import { COLORS, SPACING} from '../utils/theme';
+import { checkAuthStatus } from '../services/api';
+import { userProfileAPI } from '../services/userProfileAPI';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window');
 
@@ -13,6 +16,62 @@ type Nav = NativeStackNavigationProp<RootStackParamList, 'AuthLanding'>;
 
 const AuthLandingScreen = () => {
   const navigation = useNavigation<Nav>();
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  // Check authentication and onboarding status on mount
+  useEffect(() => {
+    const checkAuthAndOnboarding = async () => {
+      try {
+        const authStatus = await checkAuthStatus();
+        
+        if (authStatus.isAuthenticated) {
+          // User is logged in, check onboarding status
+          try {
+            const profileResponse = await userProfileAPI.getCurrentUserProfile();
+            
+            if (profileResponse.success && profileResponse.data) {
+              const isOnboardingCompleted = profileResponse.data.isOnboardingCompleted;
+              
+              // If onboarding is not completed, redirect to onboarding flow
+              if (!isOnboardingCompleted) {
+                navigation.replace('UserInfo');
+                return;
+              }
+              
+              // If onboarding is completed, redirect to main app
+              navigation.replace('MainTabs');
+              return;
+            }
+          } catch (profileError: any) {
+            // If we can't check profile (e.g., invalid token), clear auth and show landing page
+            const errorMessage = profileError?.message || '';
+            if (errorMessage.includes('Invalid token') || errorMessage.includes('401') || errorMessage.includes('403')) {
+              // Token is invalid, clear auth data silently
+              await AsyncStorage.multiRemove(['accessToken', 'refreshToken', 'user', 'userInfo']).catch(() => {});
+            }
+            // Don't log or show error, just allow user to see landing page
+          }
+        }
+      } catch (error) {
+        console.error('Error checking auth status:', error);
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    };
+
+    checkAuthAndOnboarding();
+  }, [navigation]);
+
+  // Show loading indicator while checking auth
+  if (isCheckingAuth) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -121,5 +180,10 @@ const styles = StyleSheet.create({
     borderColor: COLORS.primary,
     backgroundColor: 'transparent',
     alignSelf: 'center', // Đảm bảo button căn giữa
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

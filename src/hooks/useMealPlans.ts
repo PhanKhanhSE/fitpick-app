@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { mealPlanAPI, TodayMealPlanDto, Mealplan, MealDto } from '../services/mealPlanAPI';
 import { useIngredients } from './useIngredients';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -10,20 +10,40 @@ export const useMealPlans = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentSelectedDate, setCurrentSelectedDate] = useState<Date>(new Date()); // Lưu trữ ngày hiện tại
   const { addMealToProducts } = useIngredients();
+  
+  // Cache để tránh reload không cần thiết
+  const mealPlanCache = useRef<Map<string, { data: TodayMealPlanDto[]; timestamp: number }>>(new Map());
+  const CACHE_DURATION = 5000; // Cache 5 giây
 
-  // Load thực đơn theo ngày cụ thể
-  const loadTodayMealPlan = async (selectedDate?: Date) => {
+  // Load thực đơn theo ngày cụ thể - wrap trong useCallback để tránh infinite loop
+  const loadTodayMealPlan = useCallback(async (selectedDate?: Date, forceReload: boolean = false) => {
     try {
-      setLoading(true);
-      setError(null);
-      
       // Sử dụng ngày được chọn hoặc ngày hiện tại đã lưu
       const targetDate = selectedDate || currentSelectedDate;
       setCurrentSelectedDate(targetDate); // Cập nhật ngày hiện tại
-      const targetDateString = targetDate.toISOString().split('T')[0];
       
-      // Sử dụng API mới để lấy thực đơn theo ngày cụ thể
-      const response = await mealPlanAPI.getMealPlanByDate(targetDate);
+      // Format date bằng local time để tránh timezone issue (giống WeeklyMenuScreen)
+      const year = targetDate.getFullYear();
+      const month = targetDate.getMonth();
+      const day = targetDate.getDate();
+      const targetDateForAPI = new Date(year, month, day);
+      targetDateForAPI.setHours(0, 0, 0, 0);
+      const targetDateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      
+      // Kiểm tra cache trước
+      if (!forceReload) {
+        const cached = mealPlanCache.current.get(targetDateString);
+        if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+          setTodayMealPlans(cached.data);
+          return; // Sử dụng cache, không cần gọi API
+        }
+      }
+      
+      setLoading(true);
+      setError(null);
+      
+      // Sử dụng API mới để lấy thực đơn theo ngày cụ thể (với date đã được format đúng)
+      const response = await mealPlanAPI.getMealPlanByDate(targetDateForAPI);
       
       if (response.success && response.data) {
         // console.log('🔄 Debug - API response data:', response.data);
@@ -38,48 +58,61 @@ export const useMealPlans = () => {
         // Merge với API data
         const mergedPlans = [...response.data];
         
-        // Thêm meals từ local storage cho ngày được chọn
-        for (const localMeal of localMeals) {
-          // console.log('🔍 Debug - Checking local meal:', localMeal, 'vs target:', targetDateString);
-          
-          // Chỉ load meals của ngày được chọn
-          if (localMeal.date === targetDateString) {
-            // console.log('✅ Debug - Found matching meal for target date, fetching details...');
-            // Fetch meal detail từ API
+        // Lọc local meals cho ngày được chọn
+        const localMealsForDate = localMeals.filter(meal => meal.date === targetDateString);
+        
+        // Fetch tất cả meal details song song (parallel) thay vì tuần tự để tăng tốc
+        if (localMealsForDate.length > 0) {
+          const mealDetailPromises = localMealsForDate.map(async (localMeal) => {
             try {
               const mealDetailResponse = await mealPlanAPI.getMealDetail(localMeal.mealId);
               if (mealDetailResponse.success && mealDetailResponse.data) {
                 const mealDetail = mealDetailResponse.data;
-                const todayMealPlan: TodayMealPlanDto = {
-                  planId: -1, // Local meals don't have a planId from backend, use -1 to identify them
-                  date: localMeal.date,
+                return {
+                  mealDetail,
                   mealTime: localMeal.mealTime,
-                  meal: {
-                    mealid: mealDetail.mealid,
-                    name: mealDetail.name,
-                    description: mealDetail.description,
-                    calories: mealDetail.calories,
-                    protein: mealDetail.protein,
-                    carbs: mealDetail.carbs,
-                    fat: mealDetail.fat,
-                    cookingtime: mealDetail.cookingtime,
-                    diettype: mealDetail.diettype,
-                    price: mealDetail.price,
-                    imageUrl: mealDetail.imageUrl,
-                    isPremium: mealDetail.isPremium,
-                    categoryName: mealDetail.categoryName,
-                    statusName: mealDetail.statusName,
-                    instructions: mealDetail.instructions,
-                    ingredients: mealDetail.ingredients
-                  }
+                  date: localMeal.date
                 };
-                mergedPlans.push(todayMealPlan);
-                // console.log('✅ Debug - Added local meal to merged plans:', todayMealPlan);
               }
+              return null;
             } catch (error) {
-
+              console.error(`Error fetching meal detail for mealId ${localMeal.mealId}:`, error);
+              return null;
             }
-          }
+          });
+          
+          // Chờ tất cả meal details load xong cùng lúc
+          const mealDetails = await Promise.all(mealDetailPromises);
+          
+          // Thêm các meals vào mergedPlans
+          mealDetails.forEach((result) => {
+            if (result && result.mealDetail) {
+              const todayMealPlan: TodayMealPlanDto = {
+                planId: -1, // Local meals don't have a planId from backend, use -1 to identify them
+                date: result.date,
+                mealTime: result.mealTime,
+                meal: {
+                  mealid: result.mealDetail.mealid,
+                  name: result.mealDetail.name,
+                  description: result.mealDetail.description,
+                  calories: result.mealDetail.calories,
+                  protein: result.mealDetail.protein,
+                  carbs: result.mealDetail.carbs,
+                  fat: result.mealDetail.fat,
+                  cookingtime: result.mealDetail.cookingtime,
+                  diettype: result.mealDetail.diettype,
+                  price: result.mealDetail.price,
+                  imageUrl: result.mealDetail.imageUrl,
+                  isPremium: result.mealDetail.isPremium,
+                  categoryName: result.mealDetail.categoryName,
+                  statusName: result.mealDetail.statusName,
+                  instructions: result.mealDetail.instructions,
+                  ingredients: result.mealDetail.ingredients
+                }
+              };
+              mergedPlans.push(todayMealPlan);
+            }
+          });
         }
         
         // Remove duplicates based on mealid and mealTime
@@ -94,24 +127,31 @@ export const useMealPlans = () => {
             p.mealTime === plan.mealTime
           ) !== index;
           
-          if (isDuplicate) {
-
-          }
-          
           return !isDuplicate;
         });
 
+        // Lưu vào cache
+        mealPlanCache.current.set(targetDateString, {
+          data: uniquePlans,
+          timestamp: Date.now()
+        });
+        
         setTodayMealPlans(uniquePlans);
       } else {
         setError(response.message || `Không thể tải thực đơn ngày ${targetDateString}`);
       }
     } catch (err) {
-      setError(`Lỗi khi tải thực đơn ngày ${currentSelectedDate.toISOString().split('T')[0]}`);
+      // Format date bằng local time để tránh timezone issue
+      const year = currentSelectedDate.getFullYear();
+      const month = currentSelectedDate.getMonth();
+      const day = currentSelectedDate.getDate();
+      const errorDateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      setError(`Lỗi khi tải thực đơn ngày ${errorDateString}`);
 
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentSelectedDate]); // Wrap trong useCallback với dependency là currentSelectedDate
 
   // Load tất cả meal plans của user
   const loadUserMealPlans = async () => {
@@ -193,17 +233,23 @@ export const useMealPlans = () => {
       const response = await mealPlanAPI.replaceMealBySuggestion(planId);
       
       if (response.success) {
-        // Reload data sau khi thay đổi thành công với ngày hiện tại
-        // console.log('🔄 Debug - Reloading data after replace by suggestion for date:', currentSelectedDate.toISOString().split('T')[0]);
-        await loadTodayMealPlan(currentSelectedDate);
+        // Invalidate cache cho ngày hiện tại để force reload (format bằng local time)
+        const year = currentSelectedDate.getFullYear();
+        const month = currentSelectedDate.getMonth();
+        const day = currentSelectedDate.getDate();
+        const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        mealPlanCache.current.delete(dateString);
+        
+        // Reload data sau khi thay đổi thành công với ngày hiện tại (force reload)
+        await loadTodayMealPlan(currentSelectedDate, true); // Force reload để cập nhật ngay
         return true;
       } else {
         setError(response.message || 'Không thể thay đổi món theo gợi ý');
         return false;
       }
-    } catch (err) {
-      setError('Lỗi khi thay đổi món theo gợi ý');
-
+    } catch (err: any) {
+      const errorMessage = err?.message || 'Lỗi khi thay đổi món theo gợi ý';
+      setError(errorMessage);
       return false;
     } finally {
       setLoading(false);
@@ -269,14 +315,22 @@ export const useMealPlans = () => {
       const response = await mealPlanAPI.addMealToMenu(mealId, date, mealTime);
       
       if (response.success) {
-        // Reload data sau khi thêm thành công với ngày hiện tại
-        await loadTodayMealPlan(currentSelectedDate);
+        // Lưu timestamp khi thêm món thành công để MenuScreen biết cần reload
+        try {
+          await AsyncStorage.setItem('lastMealAddedTimestamp', Date.now().toString());
+        } catch (storageError) {
+          console.error('Error saving meal added timestamp:', storageError);
+        }
+        
+        // Không reload ngay ở đây, để MenuScreen tự reload khi focus
+        // Điều này tránh reload không cần thiết và duplicate reload
         return true;
       } else {
         setError(response.message || 'Không thể thêm món ăn vào thực đơn');
         return false;
       }
-    } catch (err) {
+    } catch (err: any) {
+      console.error('Error adding meal to menu:', err?.message || err);
       setError('Lỗi khi thêm món ăn vào thực đơn');
 
       return false;
@@ -335,7 +389,11 @@ export const useMealPlans = () => {
   // Kiểm tra xem món ăn đã có trong meal plan chưa
   const isMealInPlan = (mealId: number, targetDate?: Date): boolean => {
     const checkDate = targetDate || new Date();
-    const dateString = checkDate.toISOString().split('T')[0];
+    // Format date bằng local time để tránh timezone issue
+    const year = checkDate.getFullYear();
+    const month = checkDate.getMonth();
+    const day = checkDate.getDate();
+    const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     
     return todayMealPlans.some(plan => 
       plan.meal.mealid === mealId && plan.date === dateString

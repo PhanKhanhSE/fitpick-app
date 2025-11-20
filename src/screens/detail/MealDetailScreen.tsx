@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
@@ -56,8 +56,8 @@ interface MealDetailScreenProps {
 const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }) => {
   const { meal } = route.params;
   const { isFavorite: isMealFavorite, toggleFavorite, loadFavorites } = useFavorites();
-  const { addMealToProducts, getMealQuantity, saveMealQuantity } = useIngredients();
-  const { addMealToMenu, isMealInPlan } = useMealPlans();
+  const { addMealToProducts, getMealQuantity, saveMealQuantity, isMealInProductList, loadUserProducts } = useIngredients();
+  const { addMealToMenu, isMealInPlan, loadTodayMealPlan } = useMealPlans();
   const { isMealEatenToday, markMealAsEaten, unmarkMealAsEaten, loading: _mealHistoryLoading } = useMealHistory();
   
   const [activeTab, setActiveTab] = useState<'Ingredients' | 'Instructions' | 'Nutrition' | 'Reviews'>('Ingredients');
@@ -65,7 +65,7 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
   const [quantity, setQuantity] = useState(1);
   const [mealDetail, setMealDetail] = useState<MealDetailData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isInProductList, setIsInProductList] = useState(false);
+  // Không cần state isInProductList, dùng isMealInProductList từ hook
   const [reviews, setReviews] = useState<any[]>([]);
   const [_reviewsLoading, setReviewsLoading] = useState(false);
   const [userReview, setUserReview] = useState<any>(null);
@@ -74,18 +74,7 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
     totalReviews: 0
   });
 
-  // Kiểm tra xem meal có trong product list không
-  const checkIfInProductList = async (mealId: number) => {
-    try {
-      const savedMealIds = await AsyncStorage.getItem('userProductMealIds');
-      if (savedMealIds) {
-        const mealIds: number[] = JSON.parse(savedMealIds);
-        setIsInProductList(mealIds.includes(mealId));
-      }
-    } catch (error) {
-      // Error checking product list
-    }
-  };
+  // Không cần checkIfInProductList nữa, dùng isMealInProductList từ hook
 
   // Load meal detail từ API
   const loadMealDetail = async (mealId: number) => {
@@ -219,11 +208,14 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
     }
   }, [route.params?.meal?.id]);
 
-  // Reload favorites when screen comes into focus to sync state
+  // Reload state when screen comes into focus to sync (chỉ reload khi cần)
   useFocusEffect(
     React.useCallback(() => {
+      // Chỉ reload favorites và products để đồng bộ state (ẩn nút nếu đã thêm)
+      // Không reload meal plans vì chỉ cần check từ state hiện tại
       loadFavorites();
-    }, [loadFavorites])
+      loadUserProducts(false); // Không force reload, dùng cache nếu có
+    }, [loadFavorites, loadUserProducts])
   );
 
   // Theo dõi thay đổi số lượng từ ProductScreen (đồng bộ 2 chiều)
@@ -316,6 +308,9 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
               const success = await addMealToMenu(mealId, today, mealTime);
               
               if (success) {
+                // Reload meal plans để cập nhật state (ẩn nút nếu đã thêm)
+                // Không cần reload ngay, sẽ reload khi MenuScreen focus
+                
                 Alert.alert(
                   'Thành công', 
                   `Đã thêm "${meal.title}" vào ${mealTimeDisplay}`,
@@ -349,10 +344,25 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
     const success = await addMealToProducts(mealId, meal.title);
     
     if (success) {
-      setIsInProductList(true); // Cập nhật state
-      Alert.alert('Thành công', 'Đã thêm vào danh sách sản phẩm');
-      // Navigate to ProductScreen tab thay vì stack screen
-      navigation.navigate('MainTabs', { screen: 'Profile' });
+      // Reload user products để cập nhật state (ẩn nút nếu đã thêm)
+      await loadUserProducts(true); // Force reload
+      
+      Alert.alert(
+        'Thành công', 
+        `Đã thêm "${meal.title}" vào danh sách sản phẩm`,
+        [
+          {
+            text: 'Xem danh sách',
+            onPress: () => {
+              navigation.navigate('MainTabs', { screen: 'Profile' });
+            }
+          },
+          {
+            text: 'OK',
+            style: 'default'
+          }
+        ]
+      );
     } else {
       Alert.alert('Lỗi', 'Không thể thêm vào danh sách sản phẩm');
     }
@@ -492,8 +502,8 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
         onAddToProductList={handleAddToProductList}
         onMarkAsEaten={handleMarkAsEaten}
         onUnmarkAsEaten={handleUnmarkAsEaten}
-        isInProductList={isInProductList}
-        isInMealPlan={isMealInPlan(parseInt(meal.id))}
+        isInProductList={route.params?.meal?.id ? isMealInProductList(parseInt(meal.id)) : false}
+        isInMealPlan={route.params?.meal?.id ? isMealInPlan(parseInt(meal.id), new Date()) : false}
         isEaten={isMealEatenToday(parseInt(meal.id))}
       />
     </SafeAreaView>

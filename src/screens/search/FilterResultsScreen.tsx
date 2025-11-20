@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADII } from '../../utils/theme';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MealData } from '../../services/searchAPI';
 import { filterAPI } from '../../services/filterAPI';
@@ -74,11 +74,18 @@ const FilterResultsScreen: React.FC<FilterResultsScreenProps> = ({ route }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [resultCount, setResultCount] = useState(0);
   
-  const { favorites, toggleFavorite, isFavorite } = useFavorites();
+  const { favorites, toggleFavorite, isFavorite, loadFavorites } = useFavorites();
 
   useEffect(() => {
     loadFilterResults();
   }, [isPro]); // Add isPro to dependencies
+
+  // Reload favorites when screen comes into focus (to sync with changes from other screens)
+  useFocusEffect(
+    React.useCallback(() => {
+      loadFavorites();
+    }, [loadFavorites])
+  );
 
   const loadFilterResults = async () => {
     try {

@@ -9,6 +9,7 @@ import { COLORS, SPACING, RADII } from '../../utils/theme';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/navigation';
 import { profileAPI } from '../../services/profileAPI';
+import { userProfileAPI } from '../../services/userProfileAPI';
 import { useAvatarPicker } from '../../hooks/useAvatarPicker';
 
 const { width } = Dimensions.get('window');
@@ -39,7 +40,7 @@ const UserInfoScreen = () => {
         );
         
         if (isSettingsFlow) {
-            // Nếu đang trong settings, lưu thông tin và quay lại
+            // Nếu đang trong settings, lưu thông tin và kiểm tra onboarding
             setIsLoading(true);
             try {
                 await profileAPI.saveUserProfile({
@@ -51,7 +52,35 @@ const UserInfoScreen = () => {
                     targetWeight: parseInt(targetWeight),
                 });
                 
-                Alert.alert('Thành công', 'Thông tin cá nhân đã được cập nhật');
+                // Kiểm tra xem user đã có đủ thông tin để hoàn tất onboarding chưa
+                try {
+                    const profileResponse = await userProfileAPI.getCurrentUserProfile();
+                    if (profileResponse.success && profileResponse.data) {
+                        const profile = profileResponse.data;
+                        const hasAllInfo = profile.goal && 
+                                          profile.dietPlan && 
+                                          profile.cookingLevel && 
+                                          profile.activityLevel &&
+                                          profile.fullname &&
+                                          profile.age &&
+                                          profile.height &&
+                                          profile.weight;
+                        
+                        // Nếu có đủ thông tin nhưng chưa hoàn tất onboarding, hoàn tất nó
+                        if (hasAllInfo && !profile.isOnboardingCompleted) {
+                            await profileAPI.completeOnboarding();
+                            Alert.alert('Thành công', 'Thông tin cá nhân đã được cập nhật và hồ sơ đã hoàn tất!');
+                        } else {
+                            Alert.alert('Thành công', 'Thông tin cá nhân đã được cập nhật');
+                        }
+                    } else {
+                        Alert.alert('Thành công', 'Thông tin cá nhân đã được cập nhật');
+                    }
+                } catch (checkError) {
+                    // Nếu check thất bại, chỉ hiển thị thông báo thành công
+                    Alert.alert('Thành công', 'Thông tin cá nhân đã được cập nhật');
+                }
+                
                 navigation.goBack();
             } catch (error: any) {
 
