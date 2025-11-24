@@ -59,11 +59,11 @@ export const useMealPlans = () => {
         const mergedPlans = [...response.data];
         
         // Lọc local meals cho ngày được chọn
-        const localMealsForDate = localMeals.filter(meal => meal.date === targetDateString);
+        const localMealsForDate = localMeals.filter((meal: any) => meal.date === targetDateString);
         
         // Fetch tất cả meal details song song (parallel) thay vì tuần tự để tăng tốc
         if (localMealsForDate.length > 0) {
-          const mealDetailPromises = localMealsForDate.map(async (localMeal) => {
+          const mealDetailPromises = localMealsForDate.map(async (localMeal: any) => {
             try {
               const mealDetailResponse = await mealPlanAPI.getMealDetail(localMeal.mealId);
               if (mealDetailResponse.success && mealDetailResponse.data) {

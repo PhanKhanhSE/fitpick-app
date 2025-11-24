@@ -73,7 +73,7 @@ const SuggestedSection: React.FC<SuggestedSectionProps> = ({
   );
 
   const handleViewMore = () => {
-    // Always set showAll to true first to show all loaded meals
+    // Set showAll to true to show all loaded meals
     setShowAll(true);
     
     // If there's an onViewMore callback, call it (for loading more data if needed)

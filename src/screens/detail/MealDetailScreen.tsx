@@ -196,7 +196,6 @@ const MealDetailScreen: React.FC<MealDetailScreenProps> = ({ route, navigation }
     if (route.params?.meal?.id) {
       const mealId = parseInt(route.params.meal.id);
       loadMealDetail(mealId);
-      checkIfInProductList(mealId);
       loadReviews(mealId);
       
       // Load số lượng đã lưu

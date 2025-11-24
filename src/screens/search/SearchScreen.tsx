@@ -828,36 +828,9 @@ const SearchScreen: React.FC = () => {
             onFavoritePress={handleFavoritePress}
             isFavorite={isFavorite}
             initialLimit={6}
-            onViewMore={async () => {
-              // Load more popular meals when "Xem thêm" is pressed
-              try {
-                const popularResponse = await searchAPI.getPopularMeals(50);
-                let dataArray: any[] = [];
-                
-                // Handle response structure from getPopularMeals
-                if (popularResponse && popularResponse.success !== false) {
-                  if (Array.isArray(popularResponse)) {
-                    dataArray = popularResponse;
-                  } else if (popularResponse.data) {
-                    dataArray = Array.isArray(popularResponse.data) ? popularResponse.data : [];
-                  } else if (Array.isArray(popularResponse)) {
-                    dataArray = popularResponse;
-                  }
-                }
-                
-                if (dataArray.length > 0) {
-                  const popularData = dataArray.map(
-                    (meal: any, index: number) => convertMealData(meal, index)
-                  );
-                  setPopularMeals(popularData);
-                  setDefaultPopularMeals(popularData);
-                } else if (popularResponse && popularResponse.success === false) {
-                  Alert.alert('Lỗi', popularResponse.message || 'Không thể tải thêm món ăn phổ biến');
-                }
-              } catch (error) {
-                console.error('Error loading more popular meals:', error);
-                Alert.alert('Lỗi', 'Không thể tải thêm món ăn phổ biến');
-              }
+            onViewMore={() => {
+              // Simply show all loaded meals - no need to reload
+              // The component will handle showing all meals internally
             }}
           />
         )}
@@ -871,37 +844,9 @@ const SearchScreen: React.FC = () => {
             onFavoritePress={handleFavoritePress}
             isFavorite={isFavorite}
             initialLimit={6}
-            onViewMore={async () => {
-              // Load more suggested meals when "Xem thêm" is pressed
-              try {
-                const suggestedResponse = await searchAPI.getSuggestedMeals(100);
-                let dataArray: any[] = [];
-                
-                // Handle response structure from getSuggestedMeals
-                if (suggestedResponse && suggestedResponse.success !== false) {
-                  if (Array.isArray(suggestedResponse)) {
-                    dataArray = suggestedResponse;
-                  } else if (suggestedResponse.data) {
-                    dataArray = Array.isArray(suggestedResponse.data) ? suggestedResponse.data : [];
-                  } else if (Array.isArray(suggestedResponse)) {
-                    dataArray = suggestedResponse;
-                  }
-                }
-                
-                if (dataArray.length > 0) {
-                  const suggestedData = dataArray.map(
-                    (meal: MealData, index: number) => convertMealData(meal, index)
-                  );
-                  setSuggestedMeals(suggestedData);
-                  setDefaultSuggestedMeals(suggestedData);
-                  defaultSuggestedMealsRef.current = suggestedData;
-                } else if (suggestedResponse && suggestedResponse.success === false) {
-                  Alert.alert('Lỗi', suggestedResponse.message || 'Không thể tải thêm món ăn gợi ý');
-                }
-              } catch (error) {
-                console.error('Error loading more suggested meals:', error);
-                Alert.alert('Lỗi', 'Không thể tải thêm món ăn gợi ý');
-              }
+            onViewMore={() => {
+              // Simply show all loaded meals - no need to reload
+              // The component will handle showing all meals internally
             }}
           />
         )}

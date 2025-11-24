@@ -59,7 +59,7 @@ const PopularSection: React.FC<PopularSectionProps> = ({
   };
 
   const handleViewMore = () => {
-    // Always show all loaded meals first
+    // Show all loaded meals
     setShowAll(true);
     
     // If there's an onViewMore callback, call it (for loading more data if needed)
