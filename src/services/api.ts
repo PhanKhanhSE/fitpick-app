@@ -4,7 +4,7 @@ import { MealTypeService } from './mealTypeService';
 import apiClient from './apiClient';
 
 // Base URL for API
-const API_BASE_URL = 'https://fitpick-be.onrender.com';
+export const API_BASE_URL = 'https://fitpick-be.onrender.com';
 
 // Auth API functions
 export const authAPI = {

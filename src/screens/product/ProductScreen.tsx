@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING } from '../../utils/theme';
 import {
   ProductHeader,
@@ -27,6 +28,7 @@ const ProductScreen: React.FC<{ navigation?: any }> = ({ navigation }) => {
   const [products, setProducts] = useState<ProductData[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<ProductData | null>(null);
   const [isLoadingIngredients, setIsLoadingIngredients] = useState(false);
+  const isReloadingRef = useRef(false);
 
   // Convert ProductMealData từ API sang ProductData cho UI
   const convertToProductData = (mealData: ProductMealData, quantity: number = 1): ProductData => {
@@ -42,51 +44,58 @@ const ProductScreen: React.FC<{ navigation?: any }> = ({ navigation }) => {
     };
   };
 
-  // Load products từ API khi component mount
+  // Load products từ userProducts khi userProducts thay đổi
   useEffect(() => {
-    const loadProducts = async () => {
+    // Chỉ load nếu không đang loading từ hook
+    if (loading) {
+      return;
+    }
+
+    const loadProductsFromState = async () => {
+      if (userProducts.length === 0) {
+        setProducts([]);
+        setIsLoadingIngredients(false);
+        return;
+      }
+      
       setIsLoadingIngredients(true);
       
-      // Load từng product với số lượng đã lưu
-      const convertedProducts = await Promise.all(
-        userProducts.map(async (mealData) => {
-          const savedQuantity = await getMealQuantity(mealData.mealId);
-          return convertToProductData(mealData, savedQuantity);
-        })
-      );
-      
-      setProducts(convertedProducts);
-      setIsLoadingIngredients(false);
-    };
-
-    loadProducts();
-  }, [userProducts]);
-
-  // Theo dõi thay đổi số lượng từ MealDetailScreen (đồng bộ 2 chiều)
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      const updatedProducts = await Promise.all(
-        userProducts.map(async (mealData) => {
-          const savedQuantity = await getMealQuantity(mealData.mealId);
-          return convertToProductData(mealData, savedQuantity);
-        })
-      );
-      
-      setProducts(prev => {
-        // Chỉ update nếu có thay đổi
-        const hasChanges = prev.some((product, index) => 
-          product.quantity !== updatedProducts[index]?.quantity
+      try {
+        // Load từng product với số lượng đã lưu
+        const convertedProducts = await Promise.all(
+          userProducts.map(async (mealData) => {
+            const savedQuantity = await getMealQuantity(mealData.mealId);
+            return convertToProductData(mealData, savedQuantity);
+          })
         );
         
-        if (hasChanges) {
-          return updatedProducts;
-        }
-        return prev;
-      });
-    }, 1000); // Check mỗi giây
+        setProducts(convertedProducts);
+      } catch (error) {
+        console.error('Error loading products:', error);
+      } finally {
+        setIsLoadingIngredients(false);
+      }
+    };
 
-    return () => clearInterval(interval);
-  }, [userProducts]);
+    loadProductsFromState();
+  }, [userProducts, loading]); // Thêm loading vào deps để tránh load khi đang loading
+
+  // Reload products khi screen được focus (quay lại từ màn hình khác)
+  useFocusEffect(
+    useCallback(() => {
+      // Chỉ reload một lần khi screen focus, dùng ref để tránh reload liên tục
+      // Và không reload nếu đang loading
+      if (!isReloadingRef.current && !loading) {
+        isReloadingRef.current = true;
+        loadUserProducts().finally(() => {
+          // Reset flag sau khi load xong để có thể reload lần sau
+          setTimeout(() => {
+            isReloadingRef.current = false;
+          }, 1000);
+        });
+      }
+    }, [loadUserProducts, loading])
+  );
 
   const handleQuantityChange = async (id: string, increment: boolean) => {
     const mealId = parseInt(id);

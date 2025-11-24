@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   View,
+  Text,
   StyleSheet,
   ScrollView,
   TextInput,
@@ -8,29 +9,31 @@ import {
   Alert,
   ActivityIndicator,
   Linking,
+  RefreshControl,
 } from "react-native";
 import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../../types/navigation";
 import { COLORS, SPACING, RADII } from "../../utils/theme";
-import SearchBar from "../../components/SearchBar";
+import SearchBarNew from "../../components/SearchBarNew";
 import {
   PopularSection,
   SuggestedSection,
   SearchHistory,
   FilterModal,
 } from "../../components/search";
+import SearchResultsGrid from "../../components/search/SearchResultsGrid";
 import PremiumModal from "../../components/home/PremiumModal";
 import { searchAPI, SearchFilters, MealData } from "../../services/searchAPI";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { convertCategoryToVietnamese } from "../../utils/categoryMapping";
 import { useFavorites } from "../../hooks/useFavorites";
-import { useProUser } from "../../hooks/useProUser";
+import { useUser } from "../../hooks/useUser";
 import { filterAPI } from "../../services/filterAPI";
 import { userProfileAPI } from "../../services/userProfileAPI";
 import { checkAuthStatus } from "../../services/api";
@@ -48,29 +51,49 @@ interface AppliedFilters {
 const SearchScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const insets = useSafeAreaInsets();
-  const { isProUser } = useProUser();
+  const { userInfo } = useUser();
   
-  // Get Pro status as a value for dependencies
-  const isPro = isProUser();
+  // Simple check for Pro user from userInfo
+  const isPro = userInfo?.accountType === 'PRO';
   
   const [searchText, setSearchText] = useState("");
   const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   // Favorites hook
-  const { favorites, toggleFavorite, isFavorite } = useFavorites();
+  const { favorites, toggleFavorite, isFavorite, loadFavorites } = useFavorites();
 
   // Search states
   const [isSearchActive, setIsSearchActive] = useState(false);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [searchResults, setSearchResults] = useState<MealData[]>([]);
-  const [popularMeals, setPopularMeals] = useState<MealData[]>([]);
-  const [defaultPopularMeals, setDefaultPopularMeals] = useState<MealData[]>(
+  const [refreshing, setRefreshing] = useState(false);
+  // UI meal data format (different from API MealData format)
+  interface UIMealData {
+    id: string;
+    title: string;
+    calories: string;
+    time: string;
+    image: { uri: string };
+    tag: string;
+    isLocked?: boolean;
+    isFavorite?: boolean;
+    description?: string;
+    price?: number;
+    dietType?: string;
+    protein?: number;
+    carbs?: number;
+    fat?: number;
+    instructions?: any[];
+  }
+
+  const [searchResults, setSearchResults] = useState<UIMealData[]>([]);
+  const [popularMeals, setPopularMeals] = useState<UIMealData[]>([]);
+  const [defaultPopularMeals, setDefaultPopularMeals] = useState<UIMealData[]>(
     []
   );
-  const [suggestedMeals, setSuggestedMeals] = useState<MealData[]>([]);
+  const [suggestedMeals, setSuggestedMeals] = useState<UIMealData[]>([]);
   const [defaultSuggestedMeals, setDefaultSuggestedMeals] = useState<
-    MealData[]
+    UIMealData[]
   >([]);
 
   // Filter states
@@ -81,6 +104,12 @@ const SearchScreen: React.FC = () => {
     ingredients: [],
     cookingTime: [],
   });
+
+  // Debounce timer ref for auto-search
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Ref to store default suggested meals to avoid closure issues
+  const defaultSuggestedMealsRef = useRef<UIMealData[]>([]);
 
   // Load initial data and search history
   useEffect(() => {
@@ -95,7 +124,23 @@ const SearchScreen: React.FC = () => {
     checkAuth();
     loadInitialData();
     loadSearchHistory();
-  }, [isPro]); // Use isPro value instead of function call
+  }, []); // Remove isPro from dependencies to avoid render errors
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Reload favorites when screen comes into focus (to sync with changes from other screens)
+  useFocusEffect(
+    useCallback(() => {
+      loadFavorites();
+    }, [loadFavorites])
+  );
 
   // Get filter parameters for API calls
   const getFilterParams = () => {
@@ -128,37 +173,61 @@ const SearchScreen: React.FC = () => {
     try {
       setIsLoading(true);
 
-      // Load popular meals with current filters
-      const popularResponse = await searchAPI.searchMeals({
-        page: 1,
-        limit: 10,
-        ...getFilterParams(),
-      });
+      // Load popular meals using the correct API - load more but display only 6 initially
+      try {
+        const popularResponse = await searchAPI.getPopularMeals(20);
 
-      if (popularResponse.success) {
-        const popularData = popularResponse.data.map(
-          (meal: MealData, index: number) => convertMealData(meal, index)
-        );
-        setPopularMeals(popularData);
-        setDefaultPopularMeals(popularData);
+        // Handle different response structures
+        let dataArray: any[] = [];
+        
+        if (Array.isArray(popularResponse)) {
+          // Response is directly an array
+          dataArray = popularResponse;
+        } else if (popularResponse && popularResponse.data) {
+          // Response has data property
+          dataArray = Array.isArray(popularResponse.data) ? popularResponse.data : [];
+        } else if (popularResponse && popularResponse.success && popularResponse.data) {
+          // Response has success and data
+          dataArray = Array.isArray(popularResponse.data) ? popularResponse.data : [];
+        }
+        
+        if (dataArray.length > 0) {
+          const popularData = dataArray.map(
+            (meal: any, index: number) => convertMealData(meal, index)
+          );
+          setPopularMeals(popularData);
+          setDefaultPopularMeals(popularData);
+        }
+      } catch (popularError: any) {
+        console.error('❌ Error loading popular meals:', popularError);
+        console.error('❌ Error details:', popularError.response?.data || popularError.message);
+        // Continue to load suggested meals even if popular fails
       }
 
-      // Load suggested meals with current filters
-      const suggestedResponse = await searchAPI.searchMeals({
-        page: 1,
-        limit: 10,
-        ...getFilterParams(),
-      });
+      // Load suggested meals using the correct API - load more (50) but display only 6 initially
+      try {
+        const suggestedResponse = await searchAPI.getSuggestedMeals(50);
 
-      if (suggestedResponse.success) {
-        const suggestedData = suggestedResponse.data.map(
-          (meal: MealData, index: number) => convertMealData(meal, index)
-        );
-        setSuggestedMeals(suggestedData);
-        setDefaultSuggestedMeals(suggestedData);
+        if (suggestedResponse && (suggestedResponse.success || suggestedResponse.data)) {
+          const responseData = suggestedResponse.data || suggestedResponse;
+          const dataArray = Array.isArray(responseData) ? responseData : [];
+          
+          if (dataArray.length > 0) {
+            const suggestedData = dataArray.map(
+              (meal: MealData, index: number) => convertMealData(meal, index)
+            );
+            setSuggestedMeals(suggestedData);
+            setDefaultSuggestedMeals(suggestedData);
+            defaultSuggestedMealsRef.current = suggestedData; // Update ref
+          }
+        }
+      } catch (suggestedError: any) {
+        console.error('❌ Error loading suggested meals:', suggestedError);
+        // Continue even if suggested fails
       }
-    } catch (error) {
-      Alert.alert("Lỗi", "Không thể tải dữ liệu. Vui lòng thử lại.");
+    } catch (error: any) {
+      console.error('❌ Error in loadInitialData:', error);
+      Alert.alert("Lỗi", `Không thể tải dữ liệu: ${error.message || 'Vui lòng thử lại.'}`);
     } finally {
       setIsLoading(false);
     }
@@ -177,57 +246,100 @@ const SearchScreen: React.FC = () => {
   };
 
   // Save search history to AsyncStorage
-  const saveSearchHistory = async (history: string[]) => {
+  const saveSearchHistory = useCallback(async (history: string[]) => {
     try {
       await AsyncStorage.setItem("searchHistory", JSON.stringify(history));
     } catch (error) {
       // Error saving search history
     }
-  };
+  }, []);
 
   // Convert backend meal data to frontend format
-  const convertMealData = (meal: MealData, index: number) => {
+  const convertMealData = useCallback((meal: any, index: number) => {
+    // Handle different response structures
+    const mealId = meal.mealid || meal.id || meal.Mealid;
+    const mealName = meal.name || meal.Name || meal.title || "Unknown Meal";
+    const mealCalories = meal.calories || meal.Calories || 0;
+    const cookingTime = meal.cookingTime || meal.cookingtime || meal.Cookingtime || 15;
+    const imageUrl = meal.imageUrl || meal.image_url || meal.ImageUrl;
+    const categoryName = meal.categoryName || meal.category_name || meal.CategoryName;
+    const isPremium = meal.isPremium || meal.is_premium || meal.IsPremium || false;
+    const description = meal.description || meal.Description || "";
+    const price = meal.price || meal.Price || 0;
+    const dietType = meal.diettype || meal.diet_type || meal.Diettype || "";
+    const protein = meal.protein || meal.Protein || 0;
+    const carbs = meal.carbs || meal.Carbs || 0;
+    const fat = meal.fat || meal.Fat || 0;
+    const instructions = meal.instructions || meal.Instructions || [];
+
     // Create unique ID by combining mealid and index to avoid duplicates
-    const uniqueId = meal.mealid
-      ? `${meal.mealid}-${index}`
+    const uniqueId = mealId
+      ? `${mealId}-${index}`
       : `temp-${index}-${Date.now()}`;
 
     return {
       id: uniqueId,
-      title: meal.name || "Unknown Meal",
-      calories: meal.calories ? `${meal.calories} kcal` : "0 kcal",
-      time: meal.cookingtime ? `${meal.cookingtime} phút` : "15 phút",
-      image: { uri: meal.imageUrl || "https://via.placeholder.com/150" },
-      tag: convertCategoryToVietnamese(meal.categoryName || "Món ăn"),
+      title: mealName,
+      calories: mealCalories ? `${mealCalories} kcal` : "0 kcal",
+      time: cookingTime ? `${cookingTime} phút` : "15 phút",
+      image: { uri: imageUrl || "https://via.placeholder.com/150" },
+      tag: convertCategoryToVietnamese(categoryName || "Món ăn"),
       // Premium/Pro users can view all meals, only Free users are restricted
-      isLocked: (meal.isPremium || false) && !isPro,
-      isFavorite: meal.mealid ? isFavorite(meal.mealid) : false,
-      description: meal.description || "",
-      price: meal.price || 0,
-      dietType: meal.diettype || "",
-      protein: meal.protein || 0,
-      carbs: meal.carbs || 0,
-      fat: meal.fat || 0,
-      instructions: meal.instructions || [],
+      isLocked: isPremium && !isPro,
+      isFavorite: mealId ? isFavorite(mealId) : false,
+      description: description,
+      price: price,
+      dietType: dietType,
+      protein: protein,
+      carbs: carbs,
+      fat: fat,
+      instructions: instructions,
     };
-  };
+  }, [isFavorite, isPro]);
 
   // Handle search with text
-  const handleSearch = async (text: string) => {
-    if (!text.trim()) return;
+  const handleSearch = useCallback(async (text: string) => {
+    if (!text.trim()) {
+      setSearchResults([]);
+      return;
+    }
 
     try {
       setIsLoading(true);
+      setIsSearchActive(true);
 
       // Search for meals by name
       const searchResponse = await searchAPI.searchMeals({
         name: text.trim(),
       });
 
-      if (searchResponse.success && searchResponse.data) {
-        const searchData = Array.isArray(searchResponse.data)
-          ? searchResponse.data
-          : [];
+      // Check if search was successful
+      if (!searchResponse.success) {
+        // Search failed, show error message if not network error
+        const isNetworkError = searchResponse.message?.includes('Network') || 
+                              searchResponse.message?.includes('network');
+        if (!isNetworkError) {
+          Alert.alert('Lỗi', searchResponse.message || 'Không thể tìm kiếm món ăn');
+        }
+        setSearchResults([]);
+        setSuggestedMeals([]);
+        return;
+      }
+
+      // Handle different response structures
+      let searchData: MealData[] = [];
+      if (Array.isArray(searchResponse)) {
+        // Response is directly an array
+        searchData = searchResponse;
+      } else if (searchResponse && searchResponse.data) {
+        // Response has data property
+        searchData = Array.isArray(searchResponse.data) ? searchResponse.data : [];
+      } else if (searchResponse && searchResponse.success && searchResponse.data) {
+        // Response has success and data
+        searchData = Array.isArray(searchResponse.data) ? searchResponse.data : [];
+      }
+
+      if (searchData.length > 0) {
 
         // Filter and sort results for more accurate matches
         const searchTerm = text.trim().toLowerCase();
@@ -278,8 +390,8 @@ const SearchScreen: React.FC = () => {
           (meal: MealData, index: number) => convertMealData(meal, index)
         );
 
-        // Set search results (converted UI shape) — cast to MealData[] to satisfy existing state typing
-        setSearchResults(convertedData as unknown as MealData[]);
+        // Set search results (converted UI shape)
+        setSearchResults(convertedData);
         setSuggestedMeals([]); // Clear suggested meals when searching
       } else {
         setSearchResults([]);
@@ -292,14 +404,31 @@ const SearchScreen: React.FC = () => {
         setSearchHistory(newHistory);
         await saveSearchHistory(newHistory);
       }
-    } catch (error) {
-      Alert.alert("Lỗi", "Không thể tìm kiếm. Vui lòng thử lại.");
-      setSearchResults([]);
-      setSuggestedMeals([]);
+    } catch (error: any) {
+      console.error('❌ Search error:', error);
+      console.error('❌ Error details:', error.response?.data || error.message);
+      
+      // Check if it's a network error
+      const isNetworkError = error.message?.includes('Network Error') || 
+                             error.message?.includes('network') ||
+                             error.code === 'NETWORK_ERROR' ||
+                             !error.response;
+      
+      if (isNetworkError) {
+        // Don't show alert for network errors, just log and clear results
+        console.error('Network error during search');
+        setSearchResults([]);
+        setSuggestedMeals([]);
+      } else {
+        // Show alert for other errors
+        Alert.alert("Lỗi", `Không thể tìm kiếm: ${error.response?.data?.message || error.message || 'Vui lòng thử lại.'}`);
+        setSearchResults([]);
+        setSuggestedMeals([]);
+      }
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isFavorite, convertMealData, searchHistory, saveSearchHistory]);
 
   // Handle search with filters
   const handleSearchWithFilters = async () => {
@@ -330,12 +459,16 @@ const SearchScreen: React.FC = () => {
         const searchData = Array.isArray(response.data)
           ? (response.data as unknown as MealData[])
           : [];
-        setSearchResults(searchData);
+        // Convert MealData[] to UIMealData[] format
+        const convertedData = searchData.map(
+          (meal: MealData, index: number) => convertMealData(meal, index)
+        );
+        setSearchResults(convertedData);
 
         // Show success message
         Alert.alert(
           "Thành công",
-          `Đã tìm thấy ${searchData.length} món ăn phù hợp với bộ lọc của bạn!`,
+          `Đã tìm thấy ${convertedData.length} món ăn phù hợp với bộ lọc của bạn!`,
           [{ text: "OK" }]
         );
       } else {
@@ -387,7 +520,11 @@ const SearchScreen: React.FC = () => {
         const searchData = Array.isArray(response.data)
           ? (response.data as unknown as MealData[])
           : [];
-        setSearchResults(searchData);
+        // Convert MealData[] to UIMealData[] format
+        const convertedData = searchData.map(
+          (meal: MealData, index: number) => convertMealData(meal, index)
+        );
+        setSearchResults(convertedData);
 
         // Show success message
         Alert.alert(
@@ -433,9 +570,9 @@ const SearchScreen: React.FC = () => {
     }
   };
 
-  const handleFilterPress = () => {
+  const handleFilterPress = useCallback(() => {
     setShowFilterModal(true);
-  };
+  }, []);
 
   const handleClosePremiumModal = () => {
     setShowPremiumModal(false);
@@ -466,38 +603,71 @@ const SearchScreen: React.FC = () => {
     }
   };
 
-  const handleSearchFocus = () => {
+  const handleSearchFocus = useCallback(() => {
     setIsSearchActive(true);
-  };
+  }, []);
 
-  const handleSearchTextChange = (text: string) => {
+  const handleSearchTextChange = useCallback((text: string) => {
     setSearchText(text);
+
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
 
     // Auto reset when search text is empty
     if (text.trim() === "") {
       setSearchResults([]);
-      setSuggestedMeals(defaultSuggestedMeals); // Restore default suggested meals
+      // Use functional update with ref to avoid depending on defaultSuggestedMeals
+      setSuggestedMeals(() => {
+        // Restore from ref which always has the latest value
+        return defaultSuggestedMealsRef.current.length > 0 
+          ? [...defaultSuggestedMealsRef.current] 
+          : [];
+      });
       setIsSearchActive(false);
+      return;
     }
-  };
 
-  const handleSearchCancel = () => {
+    // Set search active when user starts typing
+    setIsSearchActive(true);
+
+    // Auto-search with debounce (500ms delay)
+    searchTimeoutRef.current = setTimeout(() => {
+      if (text.trim().length >= 2) {
+        // Only search if text is at least 2 characters
+        handleSearch(text.trim()).catch((err) => {
+          console.error('❌ Auto-search error:', err);
+        });
+      }
+    }, 500);
+  }, [handleSearch]); // Remove defaultSuggestedMeals from dependencies
+
+  const handleSearchCancel = useCallback(() => {
     setIsSearchActive(false);
     setSearchText("");
     setSearchResults([]);
-    setSuggestedMeals(defaultSuggestedMeals); // Restore default suggested meals
-  };
+    // Use ref to avoid depending on defaultSuggestedMeals
+    setSuggestedMeals(() => [...defaultSuggestedMealsRef.current]); // Restore default suggested meals
+  }, []); // No dependencies needed since we use ref
 
-  const handleSearchHistoryPress = (text: string) => {
+  const handleSearchHistoryPress = useCallback((text: string) => {
     handleSearchTextChange(text);
     handleSearch(text);
-  };
+  }, [handleSearchTextChange, handleSearch]);
 
-  const handleSearchSubmit = () => {
-    if (searchText.trim()) {
-      handleSearch(searchText.trim());
+  const handleSearchSubmit = useCallback(() => {
+    // Clear any pending auto-search
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
     }
-  };
+    
+    if (searchText.trim()) {
+      handleSearch(searchText.trim()).catch((err) => {
+        console.error('❌ Submit search error:', err);
+      });
+    }
+  }, [searchText, handleSearch]);
 
   const handleApplyFilters = async () => {
     setShowFilterModal(false);
@@ -548,17 +718,56 @@ const SearchScreen: React.FC = () => {
     }));
   };
 
+  // Refresh suggested meals only (pull to refresh)
+  const onRefresh = async () => {
+    try {
+      setRefreshing(true);
+      
+      // Only refresh suggested meals to get new recommendations
+      const suggestedResponse = await searchAPI.getSuggestedMeals(50);
+
+      if (suggestedResponse && (suggestedResponse.success || suggestedResponse.data)) {
+        const responseData = suggestedResponse.data || suggestedResponse;
+        const dataArray = Array.isArray(responseData) ? responseData : [];
+        
+        if (dataArray.length > 0) {
+          const suggestedData = dataArray.map(
+            (meal: MealData, index: number) => convertMealData(meal, index)
+          );
+          setSuggestedMeals(suggestedData);
+          setDefaultSuggestedMeals(suggestedData);
+          defaultSuggestedMealsRef.current = suggestedData; // Update ref
+        }
+      }
+    } catch (error: any) {
+      console.error('❌ Error refreshing suggested meals:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Sticky Search Bar */}
       <View style={styles.stickyHeader}>
-        <SearchBar
+        <SearchBarNew
           value={searchText}
           onChangeText={handleSearchTextChange}
-          placeholder="Tìm kiếm"
+          placeholder="Tìm kiếm món ăn..."
           onFilterPress={handleFilterPress}
           onFocus={handleSearchFocus}
           onSubmitEditing={handleSearchSubmit}
+          onClear={() => {
+            setSearchText("");
+            setSearchResults([]);
+            setIsSearchActive(false);
+          }}
+          showCancel={true}
+          onCancel={() => {
+            setSearchText("");
+            setSearchResults([]);
+            setIsSearchActive(false);
+          }}
         />
       </View>
 
@@ -569,6 +778,14 @@ const SearchScreen: React.FC = () => {
           styles.scrollContent,
           { paddingBottom: insets.bottom + 85 }, // 85 là chiều cao bottom tab
         ]}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[COLORS.primary]}
+            tintColor={COLORS.primary}
+          />
+        }
       >
         {/* Loading Indicator */}
         {isLoading && (
@@ -577,49 +794,60 @@ const SearchScreen: React.FC = () => {
           </View>
         )}
 
-        {/* Search Results - Popular Section */}
-        {searchResults.length > 0 && (
-          <PopularSection
-            data={searchResults as any}
-            favorites={favorites}
-            onMealPress={handleMealPress}
-            onFavoritePress={handleFavoritePress}
-            isFavorite={isFavorite}
-          />
-        )}
-
-        {/* Search Results - Suggested Section (only during active search when no direct name results) */}
-        {isSearchActive &&
-          searchResults.length === 0 &&
-          suggestedMeals.length > 0 && (
-            <SuggestedSection
-              data={suggestedMeals as any}
+        {/* Search Results - Grid 2 columns - Only show when actively searching */}
+        {isSearchActive && searchResults.length > 0 && (
+          <View style={styles.searchResultsContainer}>
+            <Text style={styles.searchResultsTitle}>
+              Tìm thấy {searchResults.length} món ăn
+            </Text>
+            <SearchResultsGrid
+              data={searchResults as any}
               favorites={favorites}
               onMealPress={handleMealPress}
               onFavoritePress={handleFavoritePress}
               isFavorite={isFavorite}
             />
-          )}
+          </View>
+        )}
+
+        {/* No search results message - Only when actively searching */}
+        {isSearchActive && searchResults.length === 0 && !isLoading && (
+          <View style={styles.noResultsContainer}>
+            <Text style={styles.noResultsText}>
+              Không tìm thấy món ăn nào phù hợp với "{searchText}"
+            </Text>
+          </View>
+        )}
 
         {/* Default Popular Section - only when not searching */}
-        {!isSearchActive && !isLoading && (
+        {!isSearchActive && !isLoading && popularMeals.length > 0 && (
           <PopularSection
             data={popularMeals as any}
             favorites={favorites}
             onMealPress={handleMealPress}
             onFavoritePress={handleFavoritePress}
             isFavorite={isFavorite}
+            initialLimit={6}
+            onViewMore={() => {
+              // Simply show all loaded meals - no need to reload
+              // The component will handle showing all meals internally
+            }}
           />
         )}
 
         {/* Default Suggested Section - only when not searching */}
-        {!isSearchActive && !isLoading && (
+        {!isSearchActive && !isLoading && defaultSuggestedMeals.length > 0 && (
           <SuggestedSection
             data={defaultSuggestedMeals as any}
             favorites={favorites}
             onMealPress={handleMealPress}
             onFavoritePress={handleFavoritePress}
             isFavorite={isFavorite}
+            initialLimit={6}
+            onViewMore={() => {
+              // Simply show all loaded meals - no need to reload
+              // The component will handle showing all meals internally
+            }}
           />
         )}
       </ScrollView>
@@ -638,7 +866,7 @@ const SearchScreen: React.FC = () => {
       />
 
       {/* Premium Modal - Chỉ hiển thị cho tài khoản Free */}
-      {!isProUser() && (
+      {!isPro && (
         <PremiumModal
           visible={showPremiumModal}
           onClose={handleClosePremiumModal}
@@ -674,6 +902,27 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingVertical: SPACING.xl,
+  },
+  noResultsContainer: {
+    paddingVertical: SPACING.xl,
+    paddingHorizontal: SPACING.md,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  noResultsText: {
+    fontSize: 16,
+    color: COLORS.textDim,
+    textAlign: "center",
+  },
+  searchResultsContainer: {
+    paddingVertical: SPACING.md,
+  },
+  searchResultsTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.text,
+    marginBottom: SPACING.md,
+    paddingHorizontal: SPACING.md,
   },
 });
 

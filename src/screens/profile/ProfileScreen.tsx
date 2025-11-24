@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -39,7 +39,15 @@ const ProfileScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"nutrition" | "posts">("nutrition"); // Luôn là nutrition, tab posts đã bị ẩn
   const { height } = useWindowDimensions();
   const { handleChangeAvatar, isUploading } = useBase64Upload();
-  const { isProUser, canViewFutureDates, canPlanFutureMeals } = useProUser();
+  const { isProUser: checkIsProUser, permissions, canViewFutureDates, canPlanFutureMeals } = useProUser();
+  
+  // Get Pro status as a value using useMemo to avoid calling class as function
+  const isPro = useMemo(() => {
+    if (checkIsProUser && typeof checkIsProUser === 'function') {
+      return checkIsProUser();
+    }
+    return permissions?.isProUser || false;
+  }, [checkIsProUser, permissions]);
 
   // State cho post & modal menu
   const [selectedPost, setSelectedPost] = useState<any | null>(null);

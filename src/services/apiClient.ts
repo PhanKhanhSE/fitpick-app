@@ -66,35 +66,46 @@ apiClient.interceptors.response.use(
             }
           });
 
-          const authResult = response.data.data;
+          const authResult = response.data?.data || response.data;
           
-          // Check if token is valid before saving
-          if (authResult?.AccessToken && typeof authResult.AccessToken === 'string' && authResult.AccessToken.trim() !== '') {
-            await AsyncStorage.setItem('accessToken', authResult.AccessToken);
-          } else {
-            throw new Error('Invalid token received from server');
-          }
-
-          originalRequest.headers.Authorization = `Bearer ${authResult.AccessToken}`;
-          return apiClient(originalRequest);
-        }
-      } catch (refreshError) {
-        // Refresh failed, clear all auth data
-        await AsyncStorage.multiRemove(['accessToken', 'refreshToken', 'user', 'userInfo']);
-        
-        // Show alert to user about authentication failure
-        Alert.alert(
-          'Phiên đăng nhập hết hạn',
-          'Vui lòng đăng nhập lại để tiếp tục sử dụng ứng dụng.',
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                // TODO: Navigate to login screen
-              }
+          // Check if token is valid before saving - handle different response structures
+          const newToken = authResult?.AccessToken || authResult?.accessToken || authResult?.token;
+          
+          if (newToken && typeof newToken === 'string' && newToken.trim() !== '') {
+            await AsyncStorage.setItem('accessToken', newToken);
+            
+            // Also save refresh token if provided
+            if (authResult?.RefreshToken || authResult?.refreshToken) {
+              await AsyncStorage.setItem('refreshToken', authResult.RefreshToken || authResult.refreshToken);
             }
-          ]
-        );
+
+            originalRequest.headers.Authorization = `Bearer ${newToken}`;
+            return apiClient(originalRequest);
+          } else {
+            // Invalid token format, clear auth and reject
+            await AsyncStorage.multiRemove(['accessToken', 'refreshToken', 'user', 'userInfo']);
+            throw new Error('Invalid token format received from server');
+          }
+        } else {
+          // No refresh token, clear auth
+          await AsyncStorage.multiRemove(['accessToken', 'refreshToken', 'user', 'userInfo']);
+          throw new Error('No refresh token available');
+        }
+      } catch (refreshError: any) {
+        // Refresh failed, clear all auth data
+        await AsyncStorage.multiRemove(['accessToken', 'refreshToken', 'user', 'userInfo']).catch(() => {});
+        
+        // Only show alert if it's not already being handled
+        // Don't show alert for "Invalid token" errors as they're expected when token is expired
+        const errorMessage = refreshError?.message || '';
+        if (!errorMessage.includes('Invalid token')) {
+          // Show alert to user about authentication failure
+          Alert.alert(
+            'Phiên đăng nhập hết hạn',
+            'Vui lòng đăng nhập lại để tiếp tục sử dụng ứng dụng.',
+            [{ text: 'OK' }]
+          );
+        }
         
         return Promise.reject(refreshError);
       }

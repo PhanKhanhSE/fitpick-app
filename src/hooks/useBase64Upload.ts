@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Alert } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const useBase64Upload = () => {
@@ -50,7 +50,7 @@ export const useBase64Upload = () => {
       }
       
       // Send base64 data as JSON
-      const response = await fetch('https://fondlingly-unheaped-amos.ngrok-free.dev/api/users/me/avatar-base64', {
+      const response = await fetch('https://fitpick-be.onrender.com/api/users/me/avatar-base64', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -15,6 +15,7 @@ import AppButton from '../../components/AppButton';
 import { COLORS, SPACING, RADII } from '../../utils/theme';
 import { RootStackParamList } from '../../types/navigation';
 import { profileAPI } from '../../services/profileAPI';
+import { userProfileAPI } from '../../services/userProfileAPI';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type CookingLevelNavigationProp = NativeStackNavigationProp<RootStackParamList, 'CookingLevel'>;
@@ -124,7 +125,7 @@ const CookingLevelScreen: React.FC = () => {
     );
     
     if (isSettingsFlow) {
-      // Nếu đang trong settings, lưu kỹ năng nấu ăn và quay lại
+      // Nếu đang trong settings, lưu kỹ năng nấu ăn
       setIsLoading(true);
       try {
         const cookingLevelName = COOKING_LEVEL_MAPPING[selectedLevel] || 'Beginner';
@@ -133,7 +134,37 @@ const CookingLevelScreen: React.FC = () => {
         // Also save to AsyncStorage for fallback
         await AsyncStorage.setItem('userCookingLevel', cookingLevelName);
         
-        Alert.alert('Thành công', 'Trình độ nấu ăn đã được cập nhật');
+        // Check if user has completed all onboarding steps
+        // If they have all required info, complete onboarding
+        try {
+          const profileResponse = await userProfileAPI.getCurrentUserProfile();
+          if (profileResponse.success && profileResponse.data) {
+            const profile = profileResponse.data;
+            // Check if user has all required onboarding data
+            const hasAllInfo = profile.goal && 
+                              profile.dietPlan && 
+                              profile.cookingLevel && 
+                              profile.activityLevel &&
+                              profile.fullname &&
+                              profile.age &&
+                              profile.height &&
+                              profile.weight;
+            
+            // If user has all info but onboarding not completed, complete it
+            if (hasAllInfo && !profile.isOnboardingCompleted) {
+              await profileAPI.completeOnboarding();
+              Alert.alert('Thành công', 'Trình độ nấu ăn đã được cập nhật và hồ sơ đã hoàn tất!');
+            } else {
+              Alert.alert('Thành công', 'Trình độ nấu ăn đã được cập nhật');
+            }
+          } else {
+            Alert.alert('Thành công', 'Trình độ nấu ăn đã được cập nhật');
+          }
+        } catch (checkError) {
+          // If check fails, just show success message
+          Alert.alert('Thành công', 'Trình độ nấu ăn đã được cập nhật');
+        }
+        
         navigation.goBack();
       } catch (error: any) {
 

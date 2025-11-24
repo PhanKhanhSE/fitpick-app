@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../utils/theme';
 import { useMealHistory} from '../../hooks/useMealHistory';
 import { MealHistoryDto } from '../../services/mealHistoryAPI';
+import { searchAPI } from '../../services/searchAPI';
 
 interface UsedMealsListProps {
   selectedDate: string;
@@ -30,6 +31,7 @@ const UsedMealsList: React.FC<UsedMealsListProps> = ({
   } = useMealHistory();
   
   const [dayMeals, setDayMeals] = useState<MealHistoryDto[]>([]);
+  const [mealImages, setMealImages] = useState<Record<number, string>>({});
 
   useEffect(() => {
     loadDayMeals();
@@ -39,8 +41,43 @@ const UsedMealsList: React.FC<UsedMealsListProps> = ({
     try {
       const meals = await loadMealHistoryByDate(selectedDate);
       setDayMeals(meals);
+      
+      // Load images for meals
+      const imagesMap: Record<number, string> = {};
+      
+      // First, use imageUrl from API response if available
+      meals.forEach((meal) => {
+        const mealImageUrl = (meal.meal as any)?.imageUrl || meal.meal?.imageUrl;
+        if (mealImageUrl && meal.mealid) {
+          imagesMap[meal.mealid] = mealImageUrl;
+        }
+      });
+      
+      // Then, fetch missing images from meal detail API
+      const mealsNeedingImages = meals.filter(meal => !imagesMap[meal.mealid] && meal.mealid);
+      
+      const missingImagePromises = mealsNeedingImages.map(async (meal) => {
+        try {
+          const mealDetail = await searchAPI.getMealDetail(meal.mealid!);
+          if (mealDetail.success && mealDetail.data?.imageUrl) {
+            return { mealId: meal.mealid!, imageUrl: mealDetail.data.imageUrl };
+          }
+        } catch (error) {
+          console.error(`Error fetching image for meal ${meal.mealid}:`, error);
+        }
+        return null;
+      });
+      
+      const fetchedImages = await Promise.all(missingImagePromises);
+      fetchedImages.forEach((result) => {
+        if (result) {
+          imagesMap[result.mealId] = result.imageUrl;
+        }
+      });
+      
+      setMealImages(imagesMap);
     } catch (error) {
-
+      console.error('Error loading day meals:', error);
     }
   };
 
@@ -70,30 +107,49 @@ const UsedMealsList: React.FC<UsedMealsListProps> = ({
 
   const handleMealPress = (meal: MealHistoryDto) => {
     if (onMealPress) {
+      // Get imageUrl from cache first, then from meal object, then placeholder
+      const imageUrl = mealImages[meal.mealid] || 
+                       (meal.meal as any)?.imageUrl || 
+                       meal.meal?.imageUrl || 
+                       'https://via.placeholder.com/150';
       onMealPress({
         id: meal.mealid.toString(),
         title: meal.meal?.name || 'Unknown Meal',
         calories: meal.calories.toString(),
         time: meal.mealtime?.name || 'Unknown Time',
-        image: { uri: 'https://via.placeholder.com/150' },
+        image: { uri: imageUrl },
         tag: meal.mealtime?.name || 'meal',
         isLocked: false,
       });
     }
   };
 
-  const renderMealItem = ({ item }: { item: MealHistoryDto }) => (
-    <TouchableOpacity
-      style={styles.mealItem}
-      onPress={() => handleMealPress(item)}
-      activeOpacity={0.7}
-    >
-      <View style={styles.mealContent}>
-        <Image
-          source={{ uri: 'https://via.placeholder.com/80' }}
-          style={styles.mealImage}
-          resizeMode="cover"
-        />
+  const renderMealItem = ({ item }: { item: MealHistoryDto }) => {
+    // Get imageUrl from cache first, then from meal object, then placeholder
+    const imageUrl = mealImages[item.mealid] || 
+                     (item.meal as any)?.imageUrl || 
+                     item.meal?.imageUrl || 
+                     'https://via.placeholder.com/80';
+    
+    return (
+      <TouchableOpacity
+        style={styles.mealItem}
+        onPress={() => handleMealPress(item)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.mealContent}>
+          <Image
+            source={{ uri: imageUrl }}
+            style={styles.mealImage}
+            resizeMode="cover"
+            onError={() => {
+              // Fallback to placeholder if image fails to load
+              setMealImages(prev => ({
+                ...prev,
+                [item.mealid]: 'https://via.placeholder.com/80'
+              }));
+            }}
+          />
         
         <View style={styles.mealInfo}>
           <Text style={styles.mealName} numberOfLines={2}>
@@ -125,7 +181,8 @@ const UsedMealsList: React.FC<UsedMealsListProps> = ({
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
-  );
+    );
+  };
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>

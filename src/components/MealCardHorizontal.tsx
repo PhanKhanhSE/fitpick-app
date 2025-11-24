@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADII } from '../utils/theme';
+import { useProUser } from '../hooks/useProUser';
 
 interface MealCardVerticalProps {
   id?: string;
@@ -40,6 +41,17 @@ const MealCardVertical: React.FC<MealCardVerticalProps> = ({
   width = 158,
   height = 175,
 }) => {
+  // Get Pro user status - Pro users should never see locked meals
+  const { isProUser: checkIsProUser, permissions } = useProUser();
+  const isPro = useMemo(() => {
+    if (checkIsProUser && typeof checkIsProUser === 'function') {
+      return checkIsProUser();
+    }
+    return permissions?.isProUser || false;
+  }, [checkIsProUser, permissions]);
+  
+  // Ensure Pro users never see locked meals
+  const shouldShowLock = isLocked && !isPro;
   return (
     <TouchableOpacity 
       style={[styles.container, { width, height }]} 
@@ -67,8 +79,8 @@ const MealCardVertical: React.FC<MealCardVerticalProps> = ({
           />
         </TouchableOpacity>
         
-        {/* Lock Icon */}
-        {isLocked && (
+        {/* Lock Icon - Only show for non-Pro users */}
+        {shouldShowLock && (
           <View style={styles.lockContainer}>
             <Ionicons name="lock-closed" size={35} color={COLORS.primary} />
           </View>

@@ -14,6 +14,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADII } from '../../../utils/theme';
 import { userProfileAPI, settingsAPI } from '../../../services/userProfileAPI';
+import { profileAPI } from '../../../services/profileAPI';
 import AppButton from '../../../components/AppButton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useDocumentPicker } from '../../../hooks/useDocumentPicker';
@@ -31,6 +32,12 @@ interface UserProfile {
   height?: number;
   weight?: number;
   country?: string;
+  targetWeight?: number;
+  goal?: string;
+  otherGoal?: string;
+  activityLevel?: string;
+  dietPlan?: string;
+  cookingLevel?: string;
 }
 
 const EditProfileScreen: React.FC = () => {
@@ -48,7 +55,19 @@ const EditProfileScreen: React.FC = () => {
     height: 0,
     weight: 0,
     country: '',
+    targetWeight: 0,
+    goal: '',
+    otherGoal: '',
+    activityLevel: '',
+    dietPlan: '',
+    cookingLevel: '',
   });
+
+  // Picker states
+  const [showGenderPicker, setShowGenderPicker] = useState(false);
+
+  // Options
+  const GENDER_OPTIONS = ['Nam', 'Nữ'];
 
   useEffect(() => {
     loadUserProfile();
@@ -71,6 +90,12 @@ const EditProfileScreen: React.FC = () => {
         height: profile.height || 0,
         weight: profile.weight || 0,
         country: profile.country || '',
+        targetWeight: profile.targetWeight || 0,
+        goal: profile.goal || '',
+        otherGoal: profile.otherGoal || '',
+        activityLevel: profile.activityLevel || '',
+        dietPlan: profile.dietPlan || '',
+        cookingLevel: profile.cookingLevel || '',
       });
     } catch (error) {
 
@@ -79,18 +104,24 @@ const EditProfileScreen: React.FC = () => {
         const storedProfile = await AsyncStorage.getItem('userProfile');
         if (storedProfile) {
           const parsedProfile = JSON.parse(storedProfile);
-          setUserProfile({
-            fullName: parsedProfile.fullName || '',
-            email: parsedProfile.email || '',
-            phone: parsedProfile.phone || '',
-            avatarUrl: parsedProfile.avatarUrl || '',
-            accountType: parsedProfile.accountType || 'FREE',
-            gender: parsedProfile.gender || '',
-            age: parsedProfile.age || 0,
-            height: parsedProfile.height || 0,
-            weight: parsedProfile.weight || 0,
-            country: parsedProfile.country || '',
-          });
+            setUserProfile({
+              fullName: parsedProfile.fullName || '',
+              email: parsedProfile.email || '',
+              phone: parsedProfile.phone || '',
+              avatarUrl: parsedProfile.avatarUrl || '',
+              accountType: parsedProfile.accountType || 'FREE',
+              gender: parsedProfile.gender || '',
+              age: parsedProfile.age || 0,
+              height: parsedProfile.height || 0,
+              weight: parsedProfile.weight || 0,
+              country: parsedProfile.country || '',
+              targetWeight: parsedProfile.targetWeight || 0,
+              goal: parsedProfile.goal || '',
+              otherGoal: parsedProfile.otherGoal || '',
+              activityLevel: parsedProfile.activityLevel || '',
+              dietPlan: parsedProfile.dietPlan || '',
+              cookingLevel: parsedProfile.cookingLevel || '',
+            });
         }
       } catch (storageError) {
 
@@ -121,16 +152,28 @@ const EditProfileScreen: React.FC = () => {
 
     try {
       setLoading(true);
+      
+      // Convert gender string to GenderId (1 = Nam/Male, 2 = Nữ/Female)
+      let genderId: number | undefined;
+      if (userProfile.gender) {
+        genderId = userProfile.gender.toLowerCase() === 'nam' || userProfile.gender.toLowerCase() === 'male' ? 1 : 
+                   userProfile.gender.toLowerCase() === 'nữ' || userProfile.gender.toLowerCase() === 'female' ? 2 : 
+                   undefined;
+      }
+      
+      // Update basic profile (including gender and targetWeight)
       const updateData = {
         fullname: userProfile.fullName,
-        // email: userProfile.email, // Removed as email field is hidden
         age: userProfile.age,
         height: userProfile.height,
         weight: userProfile.weight,
         country: userProfile.country,
+        targetWeight: userProfile.targetWeight,
+        genderId: genderId,
       };
       
       await settingsAPI.updateProfile(updateData);
+      
       Alert.alert('Thành công', 'Thông tin đã được cập nhật thành công!');
       navigation.goBack();
     } catch (error) {
@@ -211,6 +254,37 @@ const EditProfileScreen: React.FC = () => {
 
 
           <View style={styles.inputGroup}>
+            <Text style={styles.label}>Giới tính</Text>
+            <TouchableOpacity
+              style={styles.dropdownInput}
+              onPress={() => {
+                setShowGenderPicker(!showGenderPicker);
+              }}
+            >
+              <Text style={[styles.dropdownPlaceholder, userProfile.gender && styles.dropdownSelected]}>
+                {userProfile.gender || 'Chọn giới tính'}
+              </Text>
+              <Ionicons name="chevron-down" size={20} color={COLORS.muted} />
+            </TouchableOpacity>
+            {showGenderPicker && (
+              <View style={styles.pickerContainer}>
+                {GENDER_OPTIONS.map((option) => (
+                  <TouchableOpacity
+                    key={option}
+                    style={styles.pickerItem}
+                    onPress={() => {
+                      setUserProfile({ ...userProfile, gender: option });
+                      setShowGenderPicker(false);
+                    }}
+                  >
+                    <Text style={styles.pickerItemText}>{option}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
+
+          <View style={styles.inputGroup}>
             <Text style={styles.label}>Tuổi</Text>
             <TextInput
               style={styles.input}
@@ -241,6 +315,18 @@ const EditProfileScreen: React.FC = () => {
               value={userProfile.weight ? userProfile.weight.toString() : ''}
               onChangeText={(text) => setUserProfile({ ...userProfile, weight: parseInt(text) || 0 })}
               placeholder="Nhập cân nặng"
+              placeholderTextColor={COLORS.muted}
+              keyboardType="numeric"
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Cân nặng mục tiêu (kg)</Text>
+            <TextInput
+              style={styles.input}
+              value={userProfile.targetWeight ? userProfile.targetWeight.toString() : ''}
+              onChangeText={(text) => setUserProfile({ ...userProfile, targetWeight: parseInt(text) || 0 })}
+              placeholder="Nhập cân nặng mục tiêu"
               placeholderTextColor={COLORS.muted}
               keyboardType="numeric"
             />
@@ -361,6 +447,49 @@ const styles = StyleSheet.create({
   saveButton: {
     borderRadius: RADII.md,
     marginBottom: SPACING.xl,
+  },
+  dropdownInput: {
+    height: 50,
+    borderWidth: 1,
+    borderColor: COLORS.muted,
+    borderRadius: RADII.md,
+    paddingHorizontal: SPACING.md,
+    backgroundColor: COLORS.background,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dropdownPlaceholder: {
+    fontSize: 14,
+    color: COLORS.muted,
+  },
+  dropdownSelected: {
+    color: COLORS.text,
+  },
+  pickerContainer: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: COLORS.muted,
+    borderRadius: RADII.md,
+    borderTopWidth: 0,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    zIndex: 1000,
+    elevation: 3,
+    marginTop: -1,
+  },
+  pickerItem: {
+    padding: SPACING.md,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  pickerItemText: {
+    fontSize: 14,
+    color: COLORS.text,
   },
 });
 

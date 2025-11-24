@@ -13,7 +13,7 @@ import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS, SPACING } from "../../../utils/theme";
 import { userProfileAPI } from "../../../services/userProfileAPI";
-import API_BASE_URL from "../../../services/api";
+import { API_BASE_URL } from "../../../services/api";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback } from 'react';
 
@@ -124,31 +124,55 @@ const PersonalNutritionScreen: React.FC = () => {
         healthGoalId: 1, // Default to "healthy" goal
         lifestyleId: 2,  // Default to "light" activity
         targetCalories: 2000,
-        targetWeight: userProfile.targetWeight || 70,
+        targetWeight: userProfile?.targetWeight || 70,
         dailyMeals: 3
       };
+
+      const token = await AsyncStorage.getItem('accessToken');
+      if (!token) {
+        Alert.alert('Lỗi', 'Bạn cần đăng nhập để tạo hồ sơ dinh dưỡng');
+        return;
+      }
 
       const response = await fetch(`${API_BASE_URL}/api/users/me/create-health-profile`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await AsyncStorage.getItem('accessToken')}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(healthProfileData)
       });
+
+      // Check response status first
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorMessage = 'Không thể tạo hồ sơ dinh dưỡng';
+        
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.message || errorJson.error || errorMessage;
+        } catch {
+          // If not JSON, use status text
+          errorMessage = response.statusText || errorMessage;
+        }
+        
+        Alert.alert('Lỗi', errorMessage);
+        return;
+      }
 
       const result = await response.json();
       
       if (result.success) {
         Alert.alert('Thành công', 'Đã tạo hồ sơ dinh dưỡng thành công!');
         // Reload data
-        loadNutritionData();
+        await loadNutritionData();
       } else {
         Alert.alert('Lỗi', result.message || 'Không thể tạo hồ sơ dinh dưỡng');
       }
-    } catch (error) {
-
-      Alert.alert('Lỗi', 'Có lỗi xảy ra khi tạo hồ sơ dinh dưỡng');
+    } catch (error: any) {
+      console.error('Error creating health profile:', error);
+      const errorMessage = error.message || 'Có lỗi xảy ra khi tạo hồ sơ dinh dưỡng';
+      Alert.alert('Lỗi', errorMessage);
     }
   };
 

@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Alert, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system';
-import { userProfileAPI } from '../services/userProfileAPI';
+import * as FileSystem from 'expo-file-system/legacy';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const useAvatarPicker = () => {
   const [isUploading, setIsUploading] = useState(false);
@@ -26,8 +26,9 @@ export const useAvatarPicker = () => {
     const hasPermission = await requestPermissions();
     if (!hasPermission) return null;
 
+    // Sửa deprecated warning: dùng array của MediaType thay vì MediaTypeOptions
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
@@ -39,51 +40,60 @@ export const useAvatarPicker = () => {
     return null;
   };
 
-  const uploadAvatar = async (imageUri: string) => {
+  const uploadAvatarAsBase64 = async (imageUri: string) => {
     try {
       setIsUploading(true);
-      
-      // Get file info
-      const fileInfo = await FileSystem.getInfoAsync(imageUri);
-      if (!fileInfo.exists) {
-        Alert.alert('Lỗi', 'File ảnh không tồn tại.');
-        return null;
+
+      // Get token
+      const token = await AsyncStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error('No token found');
       }
 
-      // Create file object for upload với proper format cho React Native
+      // Đọc file và convert sang base64
+      const base64 = await FileSystem.readAsStringAsync(imageUri, {
+        encoding: 'base64' as any,
+      });
+
+      // Xác định mime type từ file extension
       const fileExtension = imageUri.split('.').pop()?.toLowerCase() || 'jpg';
       const mimeType = fileExtension === 'png' ? 'image/png' : 
                      fileExtension === 'gif' ? 'image/gif' : 
                      'image/jpeg';
+
+      // Send base64 data as JSON (giống như useBase64Upload)
+      const response = await fetch('https://fitpick-be.onrender.com/api/users/me/avatar-base64', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          base64Data: `data:${mimeType};base64,${base64}`,
+          fileName: `avatar.${fileExtension}`,
+          mimeType: mimeType,
+        }),
+      });
       
-      const avatarFile = {
-        uri: imageUri,
-        type: mimeType,
-        name: `avatar.${fileExtension}`,
-      } as any;
-
-      // Test with test endpoint first
-
-      try {
-        await userProfileAPI.testAvatarUpload(avatarFile);
-
-      } catch (testError) {
-
-        throw testError;
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('Avatar upload error:', response.status, errorData);
+        throw new Error(`HTTP ${response.status}: ${errorData}`);
       }
       
-      const response = await userProfileAPI.changeUserAvatar(avatarFile);
-      
-      if (response.success) {
+      const data = await response.json();
+
+      if (data.success) {
         Alert.alert('Thành công', 'Ảnh đại diện đã được cập nhật thành công!');
-        return response.data?.avatarUrl || imageUri;
+        return data.data?.avatarUrl;
       } else {
         Alert.alert('Lỗi', 'Không thể cập nhật ảnh đại diện. Vui lòng thử lại.');
         return null;
       }
-    } catch (error) {
-
-      Alert.alert('Lỗi', 'Có lỗi xảy ra khi cập nhật ảnh đại diện.');
+    } catch (error: any) {
+      console.error('Upload avatar error:', error);
+      const errorMessage = error?.message || 'Có lỗi xảy ra khi cập nhật ảnh đại diện.';
+      Alert.alert('Lỗi', errorMessage);
       return null;
     } finally {
       setIsUploading(false);
@@ -94,13 +104,13 @@ export const useAvatarPicker = () => {
     try {
       const image = await pickImage();
       if (image) {
-        const newAvatarUrl = await uploadAvatar(image.uri);
+        const newAvatarUrl = await uploadAvatarAsBase64(image.uri);
         if (newAvatarUrl && onSuccess) {
           onSuccess(newAvatarUrl);
         }
       }
     } catch (error) {
-
+      console.error('Error in handleChangeAvatar:', error);
       Alert.alert('Lỗi', 'Có lỗi xảy ra khi chọn ảnh.');
     }
   };

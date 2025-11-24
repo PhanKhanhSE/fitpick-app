@@ -11,13 +11,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADII } from '../../utils/theme';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MealData } from '../../services/searchAPI';
 import { filterAPI } from '../../services/filterAPI';
 import { useFavorites } from '../../hooks/useFavorites';
 import { useProUser } from '../../hooks/useProUser';
-import MealCardHorizontal from '../../components/MealCardHorizontal';
+import SearchResultsGrid from '../../components/search/SearchResultsGrid';
 
 interface AppliedFilters {
   nutritionGoal: boolean;
@@ -41,24 +41,51 @@ type RootStackParamList = {
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
+// UI meal data format (different from API MealData format)
+interface UIMealData {
+  id: string;
+  title: string;
+  calories: string;
+  time: string;
+  image: { uri: string };
+  tag: string;
+  isLocked?: boolean;
+  isFavorite?: boolean;
+  description?: string;
+  price?: number;
+  dietType?: string;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
+  instructions?: any[];
+  mealid?: number; // Keep mealid for navigation
+}
+
 const FilterResultsScreen: React.FC<FilterResultsScreenProps> = ({ route }) => {
   const navigation = useNavigation<NavigationProp>();
-  const { isProUser } = useProUser();
+  const { permissions } = useProUser();
   
-  // Get Pro status as a value for dependencies
-  const isPro = isProUser();
+  // Get Pro status directly from permissions to avoid render errors
+  const isPro = permissions?.isProUser || false;
   
   const { appliedFilters } = route.params;
   
-  const [searchResults, setSearchResults] = useState<MealData[]>([]);
+  const [searchResults, setSearchResults] = useState<UIMealData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [resultCount, setResultCount] = useState(0);
   
-  const { favorites, toggleFavorite, isFavorite } = useFavorites();
+  const { favorites, toggleFavorite, isFavorite, loadFavorites } = useFavorites();
 
   useEffect(() => {
     loadFilterResults();
   }, [isPro]); // Add isPro to dependencies
+
+  // Reload favorites when screen comes into focus (to sync with changes from other screens)
+  useFocusEffect(
+    React.useCallback(() => {
+      loadFavorites();
+    }, [loadFavorites])
+  );
 
   const loadFilterResults = async () => {
     try {
@@ -101,8 +128,9 @@ const FilterResultsScreen: React.FC<FilterResultsScreenProps> = ({ route }) => {
       
       if (response.success && response.data) {
         const searchData = Array.isArray(response.data) ? response.data as unknown as MealData[] : [];
-        setSearchResults(searchData);
-        setResultCount(searchData.length);
+        const convertedData = searchData.map((meal: MealData, index: number) => convertMealData(meal, index));
+        setSearchResults(convertedData);
+        setResultCount(convertedData.length);
       } else {
         setSearchResults([]);
         setResultCount(0);
@@ -139,8 +167,9 @@ const FilterResultsScreen: React.FC<FilterResultsScreenProps> = ({ route }) => {
       
       if (response.success && response.data) {
         const searchData = Array.isArray(response.data) ? response.data as unknown as MealData[] : [];
-        setSearchResults(searchData);
-        setResultCount(searchData.length);
+        const convertedData = searchData.map((meal: MealData, index: number) => convertMealData(meal, index));
+        setSearchResults(convertedData);
+        setResultCount(convertedData.length);
       } else {
         setSearchResults([]);
         setResultCount(0);
@@ -152,15 +181,26 @@ const FilterResultsScreen: React.FC<FilterResultsScreenProps> = ({ route }) => {
     }
   };
 
-  const handleMealPress = (meal: MealData) => {
-    navigation.navigate('MealDetail', { mealId: meal.mealid });
+  const handleMealPress = (meal: UIMealData) => {
+    if (meal.mealid) {
+      navigation.navigate('MealDetail', { mealId: meal.mealid });
+    } else if (meal.id) {
+      // Fallback to parsing id if mealid is not available
+      const mealId = parseInt(meal.id);
+      if (!isNaN(mealId)) {
+        navigation.navigate('MealDetail', { mealId });
+      }
+    }
   };
 
-  const handleFavoritePress = (mealId: number) => {
-    toggleFavorite(mealId);
+  const handleFavoritePress = (id: string) => {
+    const mealId = parseInt(id);
+    if (!isNaN(mealId)) {
+      toggleFavorite(mealId);
+    }
   };
 
-  const convertMealData = (meal: MealData, index?: number) => {
+  const convertMealData = (meal: MealData, index?: number): UIMealData => {
     return {
       id: meal.mealid ? meal.mealid.toString() : `temp-${index || Math.random()}`,
       title: meal.name || 'Unknown Meal',
@@ -178,6 +218,7 @@ const FilterResultsScreen: React.FC<FilterResultsScreenProps> = ({ route }) => {
       carbs: meal.carbs || 0,
       fat: meal.fat || 0,
       instructions: meal.instructions || [],
+      mealid: meal.mealid, // Keep mealid for navigation
     };
   };
 
@@ -209,26 +250,6 @@ const FilterResultsScreen: React.FC<FilterResultsScreenProps> = ({ route }) => {
     return filters.join(' • ');
   };
 
-  const renderMealItem = ({ item, index }: { item: MealData; index: number }) => {
-    const convertedMeal = convertMealData(item, index);
-    
-    return (
-      <View style={styles.mealItem}>
-        <MealCardHorizontal
-          id={convertedMeal.id}
-          title={convertedMeal.title}
-          calories={convertedMeal.calories}
-          time={convertedMeal.time}
-          image={convertedMeal.image}
-          tag={convertedMeal.tag}
-          isLocked={convertedMeal.isLocked}
-          isFavorite={convertedMeal.isFavorite}
-          onPress={() => handleMealPress(item)}
-          onFavoritePress={() => handleFavoritePress(item.mealid)}
-        />
-      </View>
-    );
-  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -269,13 +290,13 @@ const FilterResultsScreen: React.FC<FilterResultsScreenProps> = ({ route }) => {
       {!isLoading && (
         <ScrollView style={styles.resultsContainer}>
           {searchResults.length > 0 ? (
-            <View style={styles.mealsList}>
-              {searchResults.map((meal, index) => (
-                <View key={`meal-${meal.mealid || index}`}>
-                  {renderMealItem({ item: meal, index })}
-                </View>
-              ))}
-            </View>
+            <SearchResultsGrid
+              data={searchResults}
+              favorites={favorites.map(id => id.toString())}
+              onMealPress={handleMealPress}
+              onFavoritePress={handleFavoritePress}
+              isFavorite={isFavorite}
+            />
           ) : (
             <View style={styles.emptyState}>
               <Ionicons name="search-outline" size={64} color={COLORS.textLight} />
@@ -362,13 +383,6 @@ const styles = StyleSheet.create({
   },
   resultsContainer: {
     flex: 1,
-  },
-  mealsList: {
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.md,
-  },
-  mealItem: {
-    marginBottom: SPACING.md,
   },
   emptyState: {
     flex: 1,

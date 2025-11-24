@@ -9,6 +9,8 @@ import { COLORS, SPACING, RADII } from '../../utils/theme';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/navigation';
 import { profileAPI } from '../../services/profileAPI';
+import { userProfileAPI } from '../../services/userProfileAPI';
+import { useAvatarPicker } from '../../hooks/useAvatarPicker';
 
 const { width } = Dimensions.get('window');
 
@@ -16,6 +18,7 @@ type Nav = NativeStackNavigationProp<RootStackParamList, 'UserInfo'>;
 
 const UserInfoScreen = () => {
     const navigation = useNavigation<Nav>();
+    const { handleChangeAvatar, isUploading } = useAvatarPicker();
     const [fullName, setFullName] = useState('');
     const [gender, setGender] = useState('');
     const [showGenderPicker, setShowGenderPicker] = useState(false);
@@ -25,6 +28,7 @@ const UserInfoScreen = () => {
     const [targetWeight, setTargetWeight] = useState('');
     const [select, setSelected] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
     // Kiểm tra form hợp lệ
     const isFormValid = fullName.trim() && gender && age.trim() && height.trim() && weight.trim() && targetWeight.trim();
@@ -36,7 +40,7 @@ const UserInfoScreen = () => {
         );
         
         if (isSettingsFlow) {
-            // Nếu đang trong settings, lưu thông tin và quay lại
+            // Nếu đang trong settings, lưu thông tin và kiểm tra onboarding
             setIsLoading(true);
             try {
                 await profileAPI.saveUserProfile({
@@ -48,7 +52,35 @@ const UserInfoScreen = () => {
                     targetWeight: parseInt(targetWeight),
                 });
                 
-                Alert.alert('Thành công', 'Thông tin cá nhân đã được cập nhật');
+                // Kiểm tra xem user đã có đủ thông tin để hoàn tất onboarding chưa
+                try {
+                    const profileResponse = await userProfileAPI.getCurrentUserProfile();
+                    if (profileResponse.success && profileResponse.data) {
+                        const profile = profileResponse.data;
+                        const hasAllInfo = profile.goal && 
+                                          profile.dietPlan && 
+                                          profile.cookingLevel && 
+                                          profile.activityLevel &&
+                                          profile.fullname &&
+                                          profile.age &&
+                                          profile.height &&
+                                          profile.weight;
+                        
+                        // Nếu có đủ thông tin nhưng chưa hoàn tất onboarding, hoàn tất nó
+                        if (hasAllInfo && !profile.isOnboardingCompleted) {
+                            await profileAPI.completeOnboarding();
+                            Alert.alert('Thành công', 'Thông tin cá nhân đã được cập nhật và hồ sơ đã hoàn tất!');
+                        } else {
+                            Alert.alert('Thành công', 'Thông tin cá nhân đã được cập nhật');
+                        }
+                    } else {
+                        Alert.alert('Thành công', 'Thông tin cá nhân đã được cập nhật');
+                    }
+                } catch (checkError) {
+                    // Nếu check thất bại, chỉ hiển thị thông báo thành công
+                    Alert.alert('Thành công', 'Thông tin cá nhân đã được cập nhật');
+                }
+                
                 navigation.goBack();
             } catch (error: any) {
 
@@ -108,11 +140,27 @@ const UserInfoScreen = () => {
                 {/* Avatar Section */}
                 <View style={styles.avatarSection}>
                     <View style={styles.avatarContainer}>
-                        <View style={styles.avatar}>
-                            <Ionicons name="person" size={60} color="#6B7280" />
-                        </View>
-                        <TouchableOpacity style={styles.cameraButton}>
-                            <Ionicons name="camera" size={16} color="white" />
+                        {avatarUrl ? (
+                            <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
+                        ) : (
+                            <View style={styles.avatar}>
+                                <Ionicons name="person" size={60} color="#6B7280" />
+                            </View>
+                        )}
+                        <TouchableOpacity 
+                            style={[styles.cameraButton, isUploading && styles.cameraButtonDisabled]}
+                            onPress={() => {
+                                handleChangeAvatar((newAvatarUrl) => {
+                                    setAvatarUrl(newAvatarUrl);
+                                });
+                            }}
+                            disabled={isUploading}
+                        >
+                            {isUploading ? (
+                                <Ionicons name="hourglass" size={16} color="white" />
+                            ) : (
+                                <Ionicons name="camera" size={16} color="white" />
+                            )}
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -305,6 +353,11 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+    avatarImage: {
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+    },
     cameraButton: {
         position: 'absolute',
         bottom: 0,
@@ -317,6 +370,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderWidth: 3,
         borderColor: COLORS.background,
+    },
+    cameraButtonDisabled: {
+        opacity: 0.6,
     },
     form: {
         flex: 1,

@@ -8,6 +8,7 @@ import { COLORS, SPACING, RADII } from '../../utils/theme';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/navigation';
 import { profileAPI } from '../../services/profileAPI';
+import { userProfileAPI } from '../../services/userProfileAPI';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
@@ -56,9 +57,6 @@ const GoalsScreen = () => {
                             if (goalKey === 'target' && profileResponse.data.otherGoal) {
                                 setOtherText(profileResponse.data.otherGoal);
                             }
-                        } else {
-                            setSelected('target');
-                            setOtherText(profileResponse.data.goal);
                         }
                     }
                 } catch (error) {
@@ -70,9 +68,6 @@ const GoalsScreen = () => {
                         const goalKey = mapGoalToKey(storedGoal);
                         if (goalKey) {
                             setSelected(goalKey);
-                        } else {
-                            setSelected('target');
-                            setOtherText(storedGoal);
                         }
                     }
                 }
@@ -96,13 +91,12 @@ const GoalsScreen = () => {
     };
 
     const canContinue = useMemo(() => {
-        if (selected && selected !== 'target') return true;
-        return otherText.trim().length > 0;
-    }, [selected, otherText]);
+        return selected !== null;
+    }, [selected]);
 
     const handleContinue = async () => {
         if (!canContinue) {
-            Alert.alert('Thông báo', 'Vui lòng chọn mục tiêu hoặc điền mục tiêu khác để tiếp tục');
+            Alert.alert('Thông báo', 'Vui lòng chọn mục tiêu để tiếp tục');
             return;
         }
 
@@ -117,17 +111,45 @@ const GoalsScreen = () => {
             try {
                 const goalData = {
                     goal: selected || 'other',
-                    otherGoal: selected === 'target' ? otherText : undefined,
+                    otherGoal: otherText || undefined,
                 };
                 
                 
                 await profileAPI.saveUserGoals(goalData);
                 
                 // Also save to AsyncStorage for fallback
-                const goalText = selected === 'target' ? otherText : GOALS.find(g => g.key === selected)?.title || selected || 'other';
+                const goalText = GOALS.find(g => g.key === selected)?.title || selected || 'other';
                 await AsyncStorage.setItem('userGoal', goalText);
                 
-                Alert.alert('Thành công', 'Mục tiêu đã được cập nhật');
+                // Kiểm tra xem user đã có đủ thông tin để hoàn tất onboarding chưa
+                try {
+                    const profileResponse = await userProfileAPI.getCurrentUserProfile();
+                    if (profileResponse.success && profileResponse.data) {
+                        const profile = profileResponse.data;
+                        const hasAllInfo = profile.goal && 
+                                          profile.dietPlan && 
+                                          profile.cookingLevel && 
+                                          profile.activityLevel &&
+                                          profile.fullname &&
+                                          profile.age &&
+                                          profile.height &&
+                                          profile.weight;
+                        
+                        // Nếu có đủ thông tin nhưng chưa hoàn tất onboarding, hoàn tất nó
+                        if (hasAllInfo && !profile.isOnboardingCompleted) {
+                            await profileAPI.completeOnboarding();
+                            Alert.alert('Thành công', 'Mục tiêu đã được cập nhật và hồ sơ đã hoàn tất!');
+                        } else {
+                            Alert.alert('Thành công', 'Mục tiêu đã được cập nhật');
+                        }
+                    } else {
+                        Alert.alert('Thành công', 'Mục tiêu đã được cập nhật');
+                    }
+                } catch (checkError) {
+                    // Nếu check thất bại, chỉ hiển thị thông báo thành công
+                    Alert.alert('Thành công', 'Mục tiêu đã được cập nhật');
+                }
+                
                 navigation.goBack();
             } catch (error: any) {
 
@@ -142,14 +164,14 @@ const GoalsScreen = () => {
             try {
                 const goalData = {
                     goal: selected || 'other',
-                    otherGoal: selected === 'target' ? otherText : undefined,
+                    otherGoal: otherText || undefined,
                 };
                 
                 
                 await profileAPI.saveUserGoals(goalData);
                 
                 // Also save to AsyncStorage for fallback
-                const goalText = selected === 'target' ? otherText : GOALS.find(g => g.key === selected)?.title || selected || 'other';
+                const goalText = GOALS.find(g => g.key === selected)?.title || selected || 'other';
                 await AsyncStorage.setItem('userGoal', goalText);
                 
                 navigation.navigate('Lifestyle');
@@ -218,29 +240,6 @@ const GoalsScreen = () => {
                                 </View>
                             </TouchableOpacity>
                         ))}
-
-                        {/* target */}
-                        <View style={styles.otherSection}>
-                            <Text style={styles.otherTitle}>Cân nặng mục tiêu (kg)</Text>
-                            <TextInput
-                                style={[
-                                    styles.otherInput,
-                                    selected === 'target' && styles.otherInputFocused
-                                ]}
-                                placeholder="Nhập cân nặng mục tiêu"
-                                placeholderTextColor="#9CA3AF"
-                                value={otherText}
-                                onChangeText={(t) => {
-                                    // Only allow numbers
-                                    const numericValue = t.replace(/[^0-9]/g, '');
-                                    setOtherText(numericValue);
-                                    if (numericValue.trim().length > 0) setSelected('target');
-                                    else if (selected === 'target') setSelected(null);
-                                }}
-                                returnKeyType="done"
-                                keyboardType="number-pad"
-                            />
-                        </View>
                     </View>
                 </ScrollView>
 
@@ -355,15 +354,6 @@ const styles = StyleSheet.create({
         borderColor: COLORS.primary,
         backgroundColor: COLORS.primary,
     },
-    otherSection: {
-        marginTop: SPACING.lg,
-    },
-    otherTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: COLORS.textStrong,
-        marginBottom: SPACING.sm,
-    },
     currentGoalContainer: {
         backgroundColor: '#F0F9FF',
         borderWidth: 1,
@@ -382,23 +372,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '500',
         color: '#0C4A6E',
-    },
-    otherInput: {
-        minHeight: 50,
-        maxHeight: 100,
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
-        borderRadius: RADII.sm,
-        paddingHorizontal: SPACING.md,
-        paddingVertical: SPACING.sm,
-        fontSize: 16,
-        color: COLORS.text,
-        backgroundColor: '#F9FAFB',
-        textAlignVertical: 'top',
-    },
-    otherInputFocused: {
-        borderColor: COLORS.primary,
-        backgroundColor: '#FEF2F2',
     },
     buttonContainer: {
         paddingHorizontal: SPACING.xl,

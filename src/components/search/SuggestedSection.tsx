@@ -1,7 +1,8 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, Dimensions } from 'react-native';
+import React, { useState, useEffect, useMemo } from 'react';
+import { View, Text, StyleSheet, FlatList, Dimensions, TouchableOpacity } from 'react-native';
 import { COLORS, SPACING } from '../../utils/theme';
 import MealCardOverlay from '../MealCardOverlay';
+import { Ionicons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - SPACING.md * 3) / 2;
@@ -22,6 +23,8 @@ interface SuggestedSectionProps {
   onMealPress: (meal: MealData) => void;
   onFavoritePress: (id: string) => void;
   isFavorite?: (mealId: number) => boolean;
+  initialLimit?: number;
+  onViewMore?: () => void;
 }
 
 const SuggestedSection: React.FC<SuggestedSectionProps> = ({
@@ -30,7 +33,25 @@ const SuggestedSection: React.FC<SuggestedSectionProps> = ({
   onMealPress,
   onFavoritePress,
   isFavorite,
+  initialLimit = 6,
+  onViewMore,
 }) => {
+  const [showAll, setShowAll] = useState(false);
+  
+  // Calculate display data based on showAll state
+  const displayData = useMemo(() => {
+    return showAll ? data : data.slice(0, initialLimit);
+  }, [showAll, data, initialLimit]);
+  
+  const hasMore = data.length > initialLimit;
+
+  // Reset showAll when data changes (if data becomes less than limit)
+  useEffect(() => {
+    if (data.length <= initialLimit) {
+      setShowAll(false);
+    }
+  }, [data.length, initialLimit]);
+
   const renderSuggestedItem = ({ item }: { item: MealData }) => (
     <View style={styles.suggestedItem}>
       <MealCardOverlay
@@ -51,17 +72,37 @@ const SuggestedSection: React.FC<SuggestedSectionProps> = ({
     </View>
   );
 
+  const handleViewMore = () => {
+    // Set showAll to true to show all loaded meals
+    setShowAll(true);
+    
+    // If there's an onViewMore callback, call it (for loading more data if needed)
+    if (onViewMore) {
+      onViewMore();
+    }
+  };
+
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Gợi ý cho bạn</Text>
+      <View style={styles.header}>
+        <Text style={styles.sectionTitle}>Gợi ý cho bạn</Text>
+        {hasMore && !showAll && (
+          <TouchableOpacity onPress={handleViewMore} style={styles.viewMoreButton}>
+            <Text style={styles.viewMoreText}>Xem thêm</Text>
+            <Ionicons name="chevron-forward" size={16} color={COLORS.primary} />
+          </TouchableOpacity>
+        )}
+      </View>
       <FlatList
-        data={data}
+        data={displayData}
         renderItem={renderSuggestedItem}
         keyExtractor={(item) => item.id}
         numColumns={2}
         scrollEnabled={false}
         contentContainerStyle={styles.gridList}
         columnWrapperStyle={styles.row}
+        key={`suggested-${showAll}-${displayData.length}`}
+        extraData={displayData.length}
       />
     </View>
   );
@@ -71,12 +112,27 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: SPACING.xl,
   },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.umd,
+    paddingHorizontal: SPACING.md,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: COLORS.text,
-    marginBottom: SPACING.umd,
-    paddingHorizontal: SPACING.md,
+  },
+  viewMoreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  viewMoreText: {
+    fontSize: 14,
+    color: COLORS.primary,
+    fontWeight: '600',
   },
   gridList: {
     paddingHorizontal: SPACING.md,

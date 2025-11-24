@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { 
   View, 
   Text, 
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -19,6 +20,7 @@ import { useProUser } from '../../hooks/useProUser';
 import { useFavorites } from '../../hooks/useFavorites';
 import { useMealHistory } from '../../hooks/useMealHistory';
 import { TodayMealPlanDto, mealPlanAPI } from '../../services/mealPlanAPI';
+import { searchAPI } from '../../services/searchAPI';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -47,14 +49,38 @@ interface DayMealData {
   totalCalories: number;
 }
 
+interface SuggestedMeal {
+  mealid: number;
+  name: string;
+  calories: number;
+  imageUrl?: string;
+  cookingtime?: number;
+  categoryName?: string;
+  isPremium?: boolean;
+}
+
+interface DaySuggestions {
+  date: Date;
+  dateString: string;
+  dayName: string;
+  breakfast: SuggestedMeal[];
+  lunch: SuggestedMeal[];
+  dinner: SuggestedMeal[];
+}
+
 const WeeklyMenuScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
-  const { isProUser } = useProUser();
+  const { isProUser: checkIsProUser, permissions } = useProUser();
   
-  // Get Pro status as a value for dependencies
-  const isPro = isProUser();
+  // Get Pro status as a value using useMemo to avoid calling class as function
+  const isPro = useMemo(() => {
+    if (typeof checkIsProUser === 'function') {
+      return checkIsProUser();
+    }
+    return permissions?.isProUser || false;
+  }, [checkIsProUser, permissions]);
   
-  const { isFavorite } = useFavorites();
+  const { isFavorite, loadFavorites } = useFavorites();
   const { 
     isMealEatenOnDate,
     markMealAsEaten,
@@ -81,8 +107,17 @@ const WeeklyMenuScreen: React.FC = () => {
   
   const [weeklyData, setWeeklyData] = useState<DayMealData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Ref để tránh reload không cần thiết
+  const isReloadingRef = useRef(false);
+  const lastLoadTimeRef = useRef(0);
+  const weeklyDataCacheRef = useRef<Map<string, { data: DayMealData[]; timestamp: number }>>(new Map());
+  const CACHE_DURATION = 5000; // Cache 5 giây
   const [selectedMeal, setSelectedMeal] = useState<{ meal: WeeklyMealData; dateString: string } | null>(null);
   const [showMealActionModal, setShowMealActionModal] = useState(false);
+  const [weeklySuggestions, setWeeklySuggestions] = useState<DaySuggestions[]>([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   // Tạo danh sách 7 ngày trong tuần
   const getWeekDays = (startDate: Date): Date[] => {
@@ -93,6 +128,296 @@ const WeeklyMenuScreen: React.FC = () => {
       days.push(day);
     }
     return days;
+  };
+
+  // Tính toán ngày từ hôm nay đến Chủ nhật (bao gồm cả Chủ nhật)
+  const getTodayToSunday = (): Date[] => {
+    // Lấy ngày hôm nay (local time)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Get current day of week (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
+    const dayOfWeek = today.getDay();
+    
+    // Calculate days until Sunday (0) - bao gồm cả Chủ nhật
+    // Nếu hôm nay là Chủ nhật (0), thì daysUntilSunday = 0 (chỉ có hôm nay = Chủ nhật)
+    // Nếu hôm nay là Thứ 2 (1), thì daysUntilSunday = 6 (từ Thứ 2 đến Chủ nhật = 7 ngày)
+    // Nếu hôm nay là Thứ 7 (6), thì daysUntilSunday = 1 (từ Thứ 7 đến Chủ nhật = 2 ngày)
+    const daysUntilSunday = dayOfWeek === 0 ? 0 : 7 - dayOfWeek;
+    
+    const days: Date[] = [];
+    // Loop from 0 to daysUntilSunday (inclusive) để bao gồm cả Chủ nhật
+    // Nếu hôm nay là Chủ nhật: i = 0 (1 ngày: Chủ nhật)
+    // Nếu hôm nay là Thứ 2: i = 0 to 6 (7 ngày: Thứ 2 đến Chủ nhật)
+    // Nếu hôm nay là Thứ 7: i = 0 to 1 (2 ngày: Thứ 7 và Chủ nhật)
+    for (let i = 0; i <= daysUntilSunday; i++) {
+      const day = new Date(today);
+      day.setDate(today.getDate() + i);
+      day.setHours(0, 0, 0, 0); // Đảm bảo time là 00:00:00
+      days.push(day);
+    }
+    
+    return days;
+  };
+
+  // Tự động tạo meal plan cho tuần (từ hôm nay đến Chủ nhật)
+  const handleAutoGenerateWeeklyMealPlan = async () => {
+    // Kiểm tra Pro user
+    if (!isPro) {
+      Alert.alert(
+        'Yêu cầu tài khoản Pro',
+        'Tính năng tạo thực đơn tự động chỉ dành cho tài khoản Pro. Vui lòng nâng cấp để sử dụng tính năng này.',
+        [{ text: 'Đóng' }]
+      );
+      return;
+    }
+
+    const days = getTodayToSunday();
+    const dayCount = days.length;
+    const dayNames = days.map(day => day.toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'numeric' })).join(', ');
+    
+    Alert.alert(
+      'Xác nhận',
+      `Bạn có muốn hệ thống tự động tạo thực đơn cho ${dayCount} ngày từ hôm nay đến Chủ nhật không?\n(${dayNames})`,
+      [
+        { text: 'Hủy', style: 'cancel' },
+        {
+          text: 'Đồng ý',
+          onPress: async () => {
+            setIsLoadingSuggestions(true);
+            try {
+              let successCount = 0;
+              let failCount = 0;
+              const errors: string[] = [];
+              
+              // Log thông tin các ngày sẽ tạo
+              console.log('📅 [handleAutoGenerateWeeklyMealPlan] Số ngày cần tạo:', days.length);
+              days.forEach((day, index) => {
+                const dayName = day.toLocaleDateString('vi-VN', { weekday: 'long' });
+                const dateString = day.toISOString().split('T')[0];
+                console.log(`📅 [handleAutoGenerateWeeklyMealPlan] Ngày ${index + 1}: ${dayName} (${dateString})`);
+              });
+              
+              for (const day of days) {
+                try {
+                  // Format date to YYYY-MM-DD (date only, no time) - sử dụng local time để tránh timezone issue
+                  const year = day.getFullYear();
+                  const month = String(day.getMonth() + 1).padStart(2, '0');
+                  const date = String(day.getDate()).padStart(2, '0');
+                  const dateString = `${year}-${month}-${date}`;
+                  const dayName = day.toLocaleDateString('vi-VN', { weekday: 'long' });
+                  
+                  console.log(`🔄 [handleAutoGenerateWeeklyMealPlan] Đang tạo thực đơn cho ${dayName} (${dateString})...`);
+                  
+                  // Create a new Date object với local time để tránh timezone issue
+                  const dateOnly = new Date(year, day.getMonth(), day.getDate());
+                  dateOnly.setHours(0, 0, 0, 0);
+                  
+                  console.log(`📅 [handleAutoGenerateWeeklyMealPlan] Date object: ${dateOnly.toISOString()}, Local: ${dateOnly.toLocaleDateString('vi-VN')}`);
+                  
+                  // Generate meal plan for this day
+                  const generateResponse = await mealPlanAPI.generateMealPlan(dateOnly);
+                  
+                  if (generateResponse.success) {
+                    successCount++;
+                    console.log(`✅ [handleAutoGenerateWeeklyMealPlan] Thành công tạo thực đơn cho ${dayName} (${dateString})`);
+                  } else {
+                    failCount++;
+                    const errorMsg = generateResponse.message || 'Không thể tạo thực đơn';
+                    errors.push(`${dayName} (${dateString}): ${errorMsg}`);
+                    console.error(`❌ [handleAutoGenerateWeeklyMealPlan] Thất bại tạo thực đơn cho ${dayName} (${dateString}):`, errorMsg);
+                  }
+                } catch (error: any) {
+                  failCount++;
+                  const dayName = day.toLocaleDateString('vi-VN', { weekday: 'long' });
+                  const dateString = day.toISOString().split('T')[0];
+                  const errorMsg = error.response?.data?.message || 
+                                  error.response?.data?.errors?.join(', ') ||
+                                  error.message || 
+                                  'Lỗi không xác định';
+                  errors.push(`${dayName} (${dateString}): ${errorMsg}`);
+                  console.error(`❌ [handleAutoGenerateWeeklyMealPlan] Lỗi khi tạo thực đơn cho ${dayName} (${dateString}):`, {
+                    error: errorMsg,
+                    response: error.response?.data,
+                    status: error.response?.status,
+                    fullError: error
+                  });
+                }
+              }
+              
+              // Log kết quả tổng kết
+              console.log(`📊 [handleAutoGenerateWeeklyMealPlan] Kết quả: ${successCount} thành công, ${failCount} thất bại`);
+              if (errors.length > 0) {
+                console.log('❌ [handleAutoGenerateWeeklyMealPlan] Chi tiết lỗi:', errors);
+              }
+              
+              setIsLoadingSuggestions(false);
+              
+              if (successCount > 0) {
+                // Hiển thị thông báo chi tiết hơn, bao gồm cả các ngày thất bại
+                let message = `Đã tạo thực đơn cho ${successCount}/${days.length} ngày`;
+                if (failCount > 0) {
+                  message += `\n\n${failCount} ngày thất bại:`;
+                  errors.forEach((error, index) => {
+                    if (index < 5) { // Hiển thị tối đa 5 lỗi
+                      message += `\n• ${error}`;
+                    }
+                  });
+                  if (errors.length > 5) {
+                    message += `\n... và ${errors.length - 5} lỗi khác`;
+                  }
+                }
+                
+                Alert.alert('Thành công', message, [{ text: 'OK' }]);
+                // Invalidate cache và reload weekly data để hiển thị thực đơn mới
+                weeklyDataCacheRef.current.clear(); // Clear cache để force reload
+                
+                // Đảm bảo currentWeekStart trỏ đúng tuần có các ngày vừa tạo
+                // Tìm ngày đầu tiên (sớm nhất) trong danh sách days để set currentWeekStart
+                if (days.length > 0) {
+                  const firstDay = days[0];
+                  // Tính Thứ 2 của tuần chứa firstDay
+                  const firstDayOfWeek = new Date(firstDay);
+                  firstDayOfWeek.setHours(0, 0, 0, 0);
+                  const dayOfWeek = firstDayOfWeek.getDay();
+                  const monday = new Date(firstDayOfWeek);
+                  monday.setDate(firstDayOfWeek.getDate() - ((dayOfWeek + 6) % 7));
+                  
+                  console.log(`🔄 [handleAutoGenerateWeeklyMealPlan] Cập nhật currentWeekStart từ ${currentWeekStart.toISOString().split('T')[0]} sang ${monday.toISOString().split('T')[0]}`);
+                  setCurrentWeekStart(monday);
+                  
+                  // Đợi một chút để state update, rồi reload
+                  setTimeout(async () => {
+                    await loadWeeklyData(true);
+                    console.log('🔄 [handleAutoGenerateWeeklyMealPlan] Đã reload weekly data sau khi cập nhật currentWeekStart');
+                  }, 100);
+                } else {
+                  await loadWeeklyData(true);
+                }
+              } else {
+                // Hiển thị tất cả lỗi để user biết ngày nào bị lỗi
+                let errorMessage = `Không thể tạo thực đơn cho bất kỳ ngày nào.\n\nChi tiết lỗi:`;
+                errors.forEach((error, index) => {
+                  if (index < 10) { // Hiển thị tối đa 10 lỗi
+                    errorMessage += `\n• ${error}`;
+                  }
+                });
+                if (errors.length > 10) {
+                  errorMessage += `\n... và ${errors.length - 10} lỗi khác`;
+                }
+                
+                Alert.alert('Lỗi', errorMessage, [{ text: 'OK' }]);
+              }
+            } catch (error: any) {
+              console.error('Error auto-generating weekly meal plan:', error);
+              const errorMsg = error.response?.data?.message || error.message || 'Lỗi không xác định';
+              Alert.alert('Lỗi', `Không thể tạo thực đơn tự động: ${errorMsg}`);
+              setIsLoadingSuggestions(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // Load gợi ý món ăn cho tuần (từ hôm nay đến Chủ nhật) - để hiển thị
+  const loadWeeklySuggestions = async () => {
+    setIsLoadingSuggestions(true);
+    try {
+      const days = getTodayToSunday();
+      const suggestions: DaySuggestions[] = [];
+      
+      // Get suggested meals
+      const suggestedMealsResponse = await searchAPI.getSuggestedMeals();
+      const allMeals: SuggestedMeal[] = suggestedMealsResponse.data || [];
+      
+      // Shuffle meals for variety
+      const shuffledMeals = [...allMeals].sort(() => Math.random() - 0.5);
+      
+      for (const day of days) {
+        const dateString = day.toISOString().split('T')[0];
+        const dayName = day.toLocaleDateString('vi-VN', { weekday: 'long' });
+        
+        // Select 3 meals for each meal time (breakfast, lunch, dinner)
+        const breakfastMeals = shuffledMeals
+          .filter(meal => !meal.isPremium || isPro)
+          .slice(0, 3)
+          .map(meal => ({ ...meal }));
+        
+        const lunchMeals = shuffledMeals
+          .filter(meal => !meal.isPremium || isPro)
+          .slice(3, 6)
+          .map(meal => ({ ...meal }));
+        
+        const dinnerMeals = shuffledMeals
+          .filter(meal => !meal.isPremium || isPro)
+          .slice(6, 9)
+          .map(meal => ({ ...meal }));
+        
+        suggestions.push({
+          date: new Date(day),
+          dateString,
+          dayName,
+          breakfast: breakfastMeals,
+          lunch: lunchMeals,
+          dinner: dinnerMeals,
+        });
+      }
+      
+      setWeeklySuggestions(suggestions);
+    } catch (error) {
+      console.error('Error loading weekly suggestions:', error);
+      Alert.alert('Lỗi', 'Không thể tải gợi ý món ăn');
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+  };
+
+  // Apply suggested meal to meal plan
+  const handleApplySuggestion = async (meal: SuggestedMeal, dateString: string, mealTime: 'breakfast' | 'lunch' | 'dinner') => {
+    try {
+      const date = new Date(dateString);
+      const mealTimeId = mealTime === 'breakfast' ? 1 : mealTime === 'lunch' ? 2 : 3;
+      
+      // Generate meal plan for this date and meal time
+      const generateResponse = await mealPlanAPI.generateMealPlan(date);
+      
+      if (generateResponse.success) {
+        // Try to swap the meal
+        // First, get existing meal plans for this date
+        const existingPlans = await mealPlanAPI.getMealPlanByDate(date);
+        
+        if (existingPlans.success && existingPlans.data) {
+          // Find plan for this meal time
+          const planToSwap = existingPlans.data.find(
+            plan => plan.mealTime.toLowerCase().includes(mealTime)
+          );
+          
+          if (planToSwap && planToSwap.planId) {
+            // Swap meal
+            const swapResponse = await mealPlanAPI.swapMeal(planToSwap.planId, meal.mealid);
+            if (swapResponse.success) {
+              Alert.alert('Thành công', 'Đã thêm món ăn vào thực đơn');
+              await loadWeeklyData(true); // Force reload
+            } else {
+              Alert.alert('Lỗi', 'Không thể thêm món ăn vào thực đơn');
+            }
+          } else {
+            // Create new meal plan
+            const createResponse = await mealPlanAPI.generateMealPlan(date);
+            if (createResponse.success) {
+              Alert.alert('Thành công', 'Đã tạo thực đơn mới');
+              await loadWeeklyData(true); // Force reload
+            }
+          }
+        }
+      } else {
+        Alert.alert('Lỗi', 'Không thể tạo thực đơn');
+      }
+    } catch (error) {
+      console.error('Error applying suggestion:', error);
+      Alert.alert('Lỗi', 'Không thể thêm món ăn vào thực đơn');
+    }
   };
 
   // Convert TodayMealPlanDto to WeeklyMealData format
@@ -129,14 +454,29 @@ const WeeklyMenuScreen: React.FC = () => {
   // Load meal plans cho một ngày cụ thể
   const loadDayMealPlans = async (date: Date): Promise<DayMealData> => {
     try {
-      const dateString = date.toISOString().split('T')[0];
+      // Format date bằng local time để tránh timezone issue
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      const day = date.getDate();
+      const dateForAPI = new Date(year, month, day);
+      dateForAPI.setHours(0, 0, 0, 0);
       
-      // Load từ API
-      const response = await mealPlanAPI.getMealPlanByDate(date);
+      // Format dateString bằng local time
+      const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const dayNameForLog = date.toLocaleDateString('vi-VN', { weekday: 'long' });
+      
+      console.log(`🔄 [loadDayMealPlans] Đang load thực đơn cho ${dayNameForLog} (${dateString})...`);
+      console.log(`📅 [loadDayMealPlans] Date object: ${dateForAPI.toISOString()}, Local: ${dateForAPI.toLocaleDateString('vi-VN')}`);
+      
+      // Load từ API với date đã được format đúng
+      const response = await mealPlanAPI.getMealPlanByDate(dateForAPI);
       let apiMeals: TodayMealPlanDto[] = [];
       
       if (response.success && response.data) {
         apiMeals = response.data;
+        console.log(`✅ [loadDayMealPlans] Load thành công ${apiMeals.length} meal plans cho ${dayNameForLog} (${dateString})`);
+      } else {
+        console.log(`⚠️ [loadDayMealPlans] Không có meal plans từ API cho ${dayNameForLog} (${dateString}):`, response.message);
       }
       
       // Load từ local storage
@@ -207,20 +547,35 @@ const WeeklyMenuScreen: React.FC = () => {
                            lunch.reduce((total, plan) => total + (plan.meal.calories || 0), 0) +
                            dinner.reduce((total, plan) => total + (plan.meal.calories || 0), 0);
 
-      return {
+      const dayNameResult = date.toLocaleDateString('vi-VN', { weekday: 'long' });
+      const result = {
         date: new Date(date),
         dateString,
-        dayName: date.toLocaleDateString('vi-VN', { weekday: 'long' }),
+        dayName: dayNameResult,
         breakfast: breakfastMeals,
         lunch: lunchMeals,
         dinner: dinnerMeals,
         totalCalories,
       };
+      
+      console.log(`📊 [loadDayMealPlans] Kết quả cho ${dayNameResult} (${dateString}):`, {
+        breakfast: breakfastMeals.length,
+        lunch: lunchMeals.length,
+        dinner: dinnerMeals.length,
+        totalCalories
+      });
+      
+      return result;
     } catch (error) {
-
+      // Format date bằng local time để tránh timezone issue
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      const day = date.getDate();
+      const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      
       return {
-        date: new Date(date),
-        dateString: date.toISOString().split('T')[0],
+        date: new Date(year, month, day),
+        dateString,
         dayName: date.toLocaleDateString('vi-VN', { weekday: 'long' }),
         breakfast: [],
         lunch: [],
@@ -230,26 +585,67 @@ const WeeklyMenuScreen: React.FC = () => {
     }
   };
 
-  // Load dữ liệu cho cả tuần
-  const loadWeeklyData = async () => {
-    setIsLoading(true);
-    try {
-      const weekDays = getWeekDays(currentWeekStart);
-      const weeklyMealData: DayMealData[] = [];
-      
-      for (const day of weekDays) {
-        const dayData = await loadDayMealPlans(day);
-        weeklyMealData.push(dayData);
+  // Load dữ liệu cho cả tuần - wrap trong useCallback và tối ưu load song song
+  const loadWeeklyData = useCallback(async (forceReload: boolean = false) => {
+    // Tránh reload quá nhanh hoặc đang reload
+    const now = Date.now();
+    const weekKey = currentWeekStart.toISOString().split('T')[0];
+    
+    if (!forceReload) {
+      // Kiểm tra cache
+      const cached = weeklyDataCacheRef.current.get(weekKey);
+      if (cached && (now - cached.timestamp < CACHE_DURATION)) {
+        setWeeklyData(cached.data);
+        return; // Sử dụng cache
       }
       
+      // Tránh reload quá nhanh (ít nhất 2 giây giữa các lần reload)
+      if (isReloadingRef.current || (now - lastLoadTimeRef.current < 2000)) {
+        return;
+      }
+    }
+    
+    isReloadingRef.current = true;
+    lastLoadTimeRef.current = now;
+    setIsLoading(true);
+    
+    try {
+      const weekDays = getWeekDays(currentWeekStart);
+      
+      // Log thông tin tuần sẽ load
+      console.log('📊 [loadWeeklyData] Bắt đầu load weekly data:');
+      console.log(`📊 [loadWeeklyData] currentWeekStart: ${currentWeekStart.toISOString().split('T')[0]}`);
+      console.log(`📊 [loadWeeklyData] Tuần sẽ load: ${weekDays[0].toISOString().split('T')[0]} đến ${weekDays[6].toISOString().split('T')[0]}`);
+      
+      // Load tất cả các ngày song song (parallel) thay vì tuần tự để tăng tốc
+      const dayDataPromises = weekDays.map(day => loadDayMealPlans(day));
+      const weeklyMealData = await Promise.all(dayDataPromises);
+      
+      // Log kết quả để debug
+      console.log('📊 [loadWeeklyData] Kết quả load weekly data:');
+      weeklyMealData.forEach((dayData, index) => {
+        const totalMeals = dayData.breakfast.length + dayData.lunch.length + dayData.dinner.length;
+        console.log(`📅 Ngày ${index + 1}: ${dayData.dayName} (${dayData.dateString}) - ${totalMeals} món (B:${dayData.breakfast.length}, L:${dayData.lunch.length}, D:${dayData.dinner.length})`);
+      });
+      
       setWeeklyData(weeklyMealData);
+      
+      // Lưu vào cache
+      weeklyDataCacheRef.current.set(weekKey, {
+        data: weeklyMealData,
+        timestamp: Date.now()
+      });
     } catch (error) {
-
+      console.error('Error loading weekly data:', error);
       Alert.alert('Lỗi', 'Không thể tải dữ liệu thực đơn tuần');
     } finally {
       setIsLoading(false);
+      // Reset flag sau một chút
+      setTimeout(() => {
+        isReloadingRef.current = false;
+      }, 1000);
     }
-  };
+  }, [currentWeekStart]); // Chỉ phụ thuộc vào currentWeekStart
 
   // Navigation handlers
   const handleGoBack = () => navigation.goBack();
@@ -301,7 +697,7 @@ const WeeklyMenuScreen: React.FC = () => {
 
       if (success) {
         // Reload data để cập nhật UI
-        await loadWeeklyData();
+        await loadWeeklyData(true); // Force reload after changes
       }
     } catch (error) {
 
@@ -314,7 +710,7 @@ const WeeklyMenuScreen: React.FC = () => {
       
       if (success) {
         // Reload data để cập nhật UI
-        await loadWeeklyData();
+        await loadWeeklyData(true); // Force reload after changes
       }
     } catch (error) {
 
@@ -342,7 +738,7 @@ const WeeklyMenuScreen: React.FC = () => {
       const success = await removeMealFromLocalStorage(parseInt(meal.id), dateString);
       if (success) {
         Alert.alert('Thành công', 'Đã xóa món ăn khỏi thực đơn');
-        await loadWeeklyData();
+        await loadWeeklyData(true); // Force reload after changes
       }
       return;
     }
@@ -359,7 +755,7 @@ const WeeklyMenuScreen: React.FC = () => {
             const success = await deleteMealPlan(meal.planId!);
             if (success) {
               Alert.alert('Thành công', 'Đã xóa món ăn khỏi thực đơn');
-              await loadWeeklyData();
+              await loadWeeklyData(true); // Force reload after changes
             } else {
               Alert.alert('Lỗi', 'Không thể xóa món ăn');
             }
@@ -385,7 +781,7 @@ const WeeklyMenuScreen: React.FC = () => {
       const success = await replaceMealBySuggestion(meal.planId);
       if (success) {
         Alert.alert('Thành công', 'Đã thay đổi món ăn tự động');
-        await loadWeeklyData();
+        await loadWeeklyData(true); // Force reload after changes
       } else {
         Alert.alert('Lỗi', 'Không thể thay đổi món ăn');
       }
@@ -424,24 +820,37 @@ const WeeklyMenuScreen: React.FC = () => {
             setIsLoading(true);
             let successCount = 0;
             let failCount = 0;
-
+            
+            // Thu thập tất cả planIds cần thay đổi trước
+            const planIdsToReplace: number[] = [];
             for (const day of futureDays) {
               try {
-                // Load meal plans cho ngày này trực tiếp
                 const dayData = await loadDayMealPlans(day);
-                
-                // Thay đổi tất cả món ăn có planId > 0
                 const allMeals = [...dayData.breakfast, ...dayData.lunch, ...dayData.dinner];
-                for (const meal of allMeals) {
+                allMeals.forEach(meal => {
                   if (meal.planId && meal.planId > 0) {
-                    const success = await replaceMealBySuggestion(meal.planId);
-                    if (success) successCount++;
-                    else failCount++;
+                    planIdsToReplace.push(meal.planId);
                   }
-                }
+                });
               } catch (error) {
-                failCount++;
+                // Bỏ qua lỗi load, tiếp tục với các ngày khác
               }
+            }
+            
+            // Thực hiện replace song song (parallel) thay vì tuần tự để tăng tốc
+            if (planIdsToReplace.length > 0) {
+              const replacePromises = planIdsToReplace.map(async (planId) => {
+                try {
+                  const success = await replaceMealBySuggestion(planId);
+                  return success ? 1 : 0;
+                } catch (error) {
+                  return 0;
+                }
+              });
+              
+              const results = await Promise.all(replacePromises);
+              successCount = results.reduce((sum: number, val: number) => sum + val, 0);
+              failCount = planIdsToReplace.length - successCount;
             }
 
             setIsLoading(false);
@@ -449,7 +858,7 @@ const WeeklyMenuScreen: React.FC = () => {
               'Hoàn thành',
               `Đã thay đổi ${successCount} món ăn thành công${failCount > 0 ? `, ${failCount} món thất bại` : ''}`
             );
-            await loadWeeklyData();
+            await loadWeeklyData(true); // Force reload after changes
           },
         },
       ]
@@ -472,7 +881,7 @@ const WeeklyMenuScreen: React.FC = () => {
   // Load data khi component mount và khi currentWeekStart thay đổi
   useEffect(() => {
     loadWeeklyData();
-  }, [currentWeekStart, isPro]); // Add isPro to dependencies
+  }, [loadWeeklyData]); // Chỉ phụ thuộc vào loadWeeklyData (đã memoize với currentWeekStart)
 
   // Debug data khi weeklyData thay đổi - đã xóa để push git
   // useEffect(() => {
@@ -481,11 +890,15 @@ const WeeklyMenuScreen: React.FC = () => {
   //   }
   // }, [weeklyData]);
 
-  // Reload data khi quay lại screen
+  // Reload data khi quay lại screen (chỉ reload khi cần thiết)
+  // loadWeeklyData đã được gọi trong useEffect khi currentWeekStart thay đổi
   useFocusEffect(
     React.useCallback(() => {
-      loadWeeklyData();
-    }, [currentWeekStart])
+      // Chỉ reload favorites để đồng bộ state (không block)
+      loadFavorites();
+      // loadWeeklyData đã được gọi trong useEffect, không cần reload lại mỗi lần focus
+      // Chỉ reload nếu currentWeekStart thay đổi (đã handle trong useEffect)
+    }, [loadFavorites]) // Bỏ currentWeekStart vì đã handle trong useEffect
   );
 
   const formatWeekRange = () => {
@@ -714,8 +1127,23 @@ const WeeklyMenuScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Auto Replace Button */}
+      {/* Action Buttons */}
       <View style={styles.actionButtons}>
+        <TouchableOpacity 
+          style={[styles.autoReplaceButton, styles.suggestionsButton]}
+          onPress={handleAutoGenerateWeeklyMealPlan}
+          disabled={isLoadingSuggestions}
+        >
+          {isLoadingSuggestions ? (
+            <ActivityIndicator size="small" color="white" />
+          ) : (
+            <Ionicons name="bulb" size={18} color="white" />
+          )}
+          <Text style={styles.autoReplaceButtonText}>
+            {isLoadingSuggestions ? 'Đang tạo thực đơn...' : 'Gợi ý món ăn cho tuần'}
+          </Text>
+        </TouchableOpacity>
+        
         <TouchableOpacity 
           style={styles.autoReplaceButton}
           onPress={handleAutoReplaceWeekMeals}
@@ -725,17 +1153,6 @@ const WeeklyMenuScreen: React.FC = () => {
             Tự động đổi món từ hôm nay
           </Text>
         </TouchableOpacity>
-        
-        {/* Debug Button - Đã xóa để push git */}
-        {/* <TouchableOpacity 
-          style={[styles.autoReplaceButton, { backgroundColor: '#666', marginTop: 8 }]}
-          onPress={debugData}
-        >
-          <Ionicons name="bug" size={18} color="white" />
-          <Text style={styles.autoReplaceButtonText}>
-            Debug Data
-          </Text>
-        </TouchableOpacity> */}
       </View>
 
       {/* Error Message */}
@@ -759,6 +1176,130 @@ const WeeklyMenuScreen: React.FC = () => {
       {/* Content */}
       {!isLoading && (
         <ScrollView showsVerticalScrollIndicator={false} style={styles.content}>
+          {/* Weekly Suggestions Section */}
+          {showSuggestions && (
+            <View style={styles.suggestionsContainer}>
+              <View style={styles.suggestionsHeader}>
+                <Ionicons name="bulb" size={20} color={COLORS.primary} />
+                <Text style={styles.suggestionsTitle}>Gợi ý món ăn cho tuần</Text>
+                <Text style={styles.suggestionsSubtitle}>(Từ hôm nay đến Chủ nhật)</Text>
+              </View>
+              
+              {isLoadingSuggestions ? (
+                <View style={styles.suggestionsLoading}>
+                  <ActivityIndicator size="small" color={COLORS.primary} />
+                  <Text style={styles.suggestionsLoadingText}>Đang tải gợi ý...</Text>
+                </View>
+              ) : weeklySuggestions.length > 0 ? (
+                weeklySuggestions.map((daySuggestion) => (
+                  <View key={daySuggestion.dateString} style={styles.suggestionDayContainer}>
+                    <View style={styles.suggestionDayHeader}>
+                      <Text style={styles.suggestionDayName}>{daySuggestion.dayName}</Text>
+                      <Text style={styles.suggestionDayDate}>
+                        {daySuggestion.date.getDate()}/{daySuggestion.date.getMonth() + 1}
+                      </Text>
+                    </View>
+                    
+                    {/* Breakfast Suggestions */}
+                    <View style={styles.suggestionMealSection}>
+                      <Text style={styles.suggestionMealTitle}>Bữa sáng</Text>
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                        {daySuggestion.breakfast.map((meal, index) => (
+                          <TouchableOpacity
+                            key={`${meal.mealid}-${index}`}
+                            style={styles.suggestionMealCard}
+                            onPress={() => handleApplySuggestion(meal, daySuggestion.dateString, 'breakfast')}
+                          >
+                            {meal.imageUrl ? (
+                              <Image source={{ uri: meal.imageUrl }} style={styles.suggestionMealImage} />
+                            ) : (
+                              <View style={styles.suggestionMealImagePlaceholder}>
+                                <Ionicons name="restaurant" size={24} color={COLORS.textDim} />
+                              </View>
+                            )}
+                            <Text style={styles.suggestionMealName} numberOfLines={2}>
+                              {meal.name}
+                            </Text>
+                            <Text style={styles.suggestionMealCalories}>{meal.calories} kcal</Text>
+                            <View style={styles.suggestionApplyButton}>
+                              <Ionicons name="add-circle" size={16} color="white" />
+                              <Text style={styles.suggestionApplyText}>Thêm</Text>
+                            </View>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                    
+                    {/* Lunch Suggestions */}
+                    <View style={styles.suggestionMealSection}>
+                      <Text style={styles.suggestionMealTitle}>Bữa trưa</Text>
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                        {daySuggestion.lunch.map((meal, index) => (
+                          <TouchableOpacity
+                            key={`${meal.mealid}-${index}`}
+                            style={styles.suggestionMealCard}
+                            onPress={() => handleApplySuggestion(meal, daySuggestion.dateString, 'lunch')}
+                          >
+                            {meal.imageUrl ? (
+                              <Image source={{ uri: meal.imageUrl }} style={styles.suggestionMealImage} />
+                            ) : (
+                              <View style={styles.suggestionMealImagePlaceholder}>
+                                <Ionicons name="restaurant" size={24} color={COLORS.textDim} />
+                              </View>
+                            )}
+                            <Text style={styles.suggestionMealName} numberOfLines={2}>
+                              {meal.name}
+                            </Text>
+                            <Text style={styles.suggestionMealCalories}>{meal.calories} kcal</Text>
+                            <View style={styles.suggestionApplyButton}>
+                              <Ionicons name="add-circle" size={16} color="white" />
+                              <Text style={styles.suggestionApplyText}>Thêm</Text>
+                            </View>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                    
+                    {/* Dinner Suggestions */}
+                    <View style={styles.suggestionMealSection}>
+                      <Text style={styles.suggestionMealTitle}>Bữa tối</Text>
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                        {daySuggestion.dinner.map((meal, index) => (
+                          <TouchableOpacity
+                            key={`${meal.mealid}-${index}`}
+                            style={styles.suggestionMealCard}
+                            onPress={() => handleApplySuggestion(meal, daySuggestion.dateString, 'dinner')}
+                          >
+                            {meal.imageUrl ? (
+                              <Image source={{ uri: meal.imageUrl }} style={styles.suggestionMealImage} />
+                            ) : (
+                              <View style={styles.suggestionMealImagePlaceholder}>
+                                <Ionicons name="restaurant" size={24} color={COLORS.textDim} />
+                              </View>
+                            )}
+                            <Text style={styles.suggestionMealName} numberOfLines={2}>
+                              {meal.name}
+                            </Text>
+                            <Text style={styles.suggestionMealCalories}>{meal.calories} kcal</Text>
+                            <View style={styles.suggestionApplyButton}>
+                              <Ionicons name="add-circle" size={16} color="white" />
+                              <Text style={styles.suggestionApplyText}>Thêm</Text>
+                            </View>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  </View>
+                ))
+              ) : (
+                <View style={styles.suggestionsEmpty}>
+                  <Text style={styles.suggestionsEmptyText}>Không có gợi ý món ăn</Text>
+                </View>
+              )}
+            </View>
+          )}
+          
+          {/* Weekly Meal Plans */}
           {weeklyData.length > 0 ? (
             weeklyData.map(renderDayMeals)
           ) : (
@@ -945,6 +1486,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
     backgroundColor: COLORS.background,
+    gap: SPACING.sm,
   },
   autoReplaceButton: {
     flexDirection: 'row',
@@ -955,6 +1497,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
     borderRadius: RADII.md,
     gap: SPACING.xs,
+  },
+  suggestionsButton: {
+    backgroundColor: '#FF9800', // Orange color for suggestions button
+    marginBottom: SPACING.sm,
   },
   autoReplaceButtonText: {
     color: 'white',
@@ -1026,6 +1572,130 @@ const styles = StyleSheet.create({
     color: COLORS.textDim,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  suggestionsContainer: {
+    backgroundColor: COLORS.white,
+    marginHorizontal: SPACING.md,
+    marginBottom: SPACING.lg,
+    borderRadius: RADII.md,
+    padding: SPACING.md,
+  },
+  suggestionsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.md,
+    gap: SPACING.xs,
+  },
+  suggestionsTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.text,
+    flex: 1,
+  },
+  suggestionsSubtitle: {
+    fontSize: 12,
+    color: COLORS.textDim,
+    fontStyle: 'italic',
+  },
+  suggestionsLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: SPACING.lg,
+    gap: SPACING.sm,
+  },
+  suggestionsLoadingText: {
+    fontSize: 14,
+    color: COLORS.textDim,
+  },
+  suggestionsEmpty: {
+    paddingVertical: SPACING.lg,
+    alignItems: 'center',
+  },
+  suggestionsEmptyText: {
+    fontSize: 14,
+    color: COLORS.textDim,
+    fontStyle: 'italic',
+  },
+  suggestionDayContainer: {
+    marginBottom: SPACING.lg,
+    paddingBottom: SPACING.md,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.muted,
+  },
+  suggestionDayHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: SPACING.sm,
+    paddingHorizontal: SPACING.sm,
+  },
+  suggestionDayName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  suggestionDayDate: {
+    fontSize: 14,
+    color: COLORS.textDim,
+  },
+  suggestionMealSection: {
+    marginBottom: SPACING.md,
+  },
+  suggestionMealTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.text,
+    marginBottom: SPACING.sm,
+    paddingHorizontal: SPACING.sm,
+  },
+  suggestionMealCard: {
+    backgroundColor: COLORS.background,
+    borderRadius: RADII.sm,
+    width: 140,
+    marginRight: SPACING.sm,
+    overflow: 'hidden',
+  },
+  suggestionMealImage: {
+    width: '100%',
+    height: 100,
+    resizeMode: 'cover',
+  },
+  suggestionMealImagePlaceholder: {
+    width: '100%',
+    height: 100,
+    backgroundColor: COLORS.muted,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  suggestionMealName: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: COLORS.text,
+    paddingHorizontal: SPACING.xs,
+    paddingTop: SPACING.xs,
+    minHeight: 32,
+  },
+  suggestionMealCalories: {
+    fontSize: 10,
+    color: COLORS.textDim,
+    paddingHorizontal: SPACING.xs,
+    paddingTop: SPACING.xs / 2,
+  },
+  suggestionApplyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primary,
+    paddingVertical: SPACING.xs,
+    margin: SPACING.xs,
+    borderRadius: RADII.sm,
+    gap: SPACING.xs / 2,
+  },
+  suggestionApplyText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: 'white',
   },
 });
 

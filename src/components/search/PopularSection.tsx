@@ -1,7 +1,8 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { COLORS, SPACING } from '../../utils/theme';
 import MealCardVertical from '../MealCardHorizontal';
+import { Ionicons } from '@expo/vector-icons';
 
 interface MealData {
   id: string;
@@ -19,6 +20,8 @@ interface PopularSectionProps {
   onMealPress: (meal: MealData) => void;
   onFavoritePress: (id: string) => void;
   isFavorite?: (mealId: number) => boolean;
+  initialLimit?: number;
+  onViewMore?: () => void;
 }
 
 const PopularSection: React.FC<PopularSectionProps> = ({
@@ -27,7 +30,13 @@ const PopularSection: React.FC<PopularSectionProps> = ({
   onMealPress,
   onFavoritePress,
   isFavorite,
+  initialLimit = 6,
+  onViewMore,
 }) => {
+  const [showAll, setShowAll] = useState(false);
+  const displayData = showAll ? data : data.slice(0, initialLimit);
+  const hasMore = data.length > initialLimit;
+
   const renderPopularItem = ({ item }: { item: MealData }) => {
     return (
       <View style={styles.popularItem}>
@@ -49,11 +58,29 @@ const PopularSection: React.FC<PopularSectionProps> = ({
     );
   };
 
+  const handleViewMore = () => {
+    // Show all loaded meals
+    setShowAll(true);
+    
+    // If there's an onViewMore callback, call it (for loading more data if needed)
+    if (onViewMore) {
+      onViewMore();
+    }
+  };
+
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Phổ biến</Text>
+      <View style={styles.header}>
+        <Text style={styles.sectionTitle}>Phổ biến</Text>
+        {hasMore && !showAll && (
+          <TouchableOpacity onPress={handleViewMore} style={styles.viewMoreButton}>
+            <Text style={styles.viewMoreText}>Xem thêm</Text>
+            <Ionicons name="chevron-forward" size={16} color={COLORS.primary} />
+          </TouchableOpacity>
+        )}
+      </View>
       <FlatList
-        data={data}
+        data={displayData}
         renderItem={renderPopularItem}
         keyExtractor={(item) => item.id}
         horizontal
@@ -68,13 +95,28 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: SPACING.xl,
   },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.umd,
+    marginTop: SPACING.md,
+    paddingHorizontal: SPACING.md,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: COLORS.text,
-    marginBottom: SPACING.umd,
-    marginTop: SPACING.md,
-    paddingHorizontal: SPACING.md,
+  },
+  viewMoreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  viewMoreText: {
+    fontSize: 14,
+    color: COLORS.primary,
+    fontWeight: '600',
   },
   horizontalList: {
     paddingHorizontal: 18,
