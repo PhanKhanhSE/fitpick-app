@@ -27,6 +27,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface WeeklyMealData {
   id: string;
+  mealId: number;
   title: string;
   calories: string;
   time: string;
@@ -36,7 +37,7 @@ interface WeeklyMealData {
   isEaten?: boolean;
   caloriesNumber?: number;
   mealTimeId?: number;
-  planId?: number; // ID của meal plan để có thể xóa/sửa
+  planId?: number; 
 }
 
 interface DayMealData {
@@ -438,6 +439,7 @@ const WeeklyMenuScreen: React.FC = () => {
 
     return {
       id: `${mealPlan.planId}-${mealId}-${mealPlan.mealTime}-${index || 0}`,
+      mealId: mealId, // Lưu mealId thực để navigate
       title: mealPlan.meal.name,
       calories: `${caloriesNumber} kcal`,
       time: `${mealPlan.meal.cookingtime || 0} phút`,
@@ -663,21 +665,19 @@ const WeeklyMenuScreen: React.FC = () => {
   };
 
   const handleMealPress = (meal: WeeklyMealData) => {
-    const convertedMeal = {
-      id: meal.id,
-      title: meal.title,
-      calories: meal.calories,
-      price: "0 VND",
-      image: meal.image,
-      cookingTime: meal.time,
-      ingredients: [
-        { name: "Thành phần chính", amount: "200g" },
-      ],
-      instructions: [
-        "Hướng dẫn sẽ được cập nhật sau.",
-      ],
-    };
-    navigation.navigate('MealDetail', { meal: convertedMeal });
+    // Navigate với meal object có id là mealId để MealDetail có thể load đầy đủ thông tin
+    navigation.navigate('MealDetail', { 
+      meal: {
+        id: meal.mealId.toString(),
+        title: meal.title,
+        calories: meal.calories,
+        price: "0 VND",
+        image: meal.image,
+        cookingTime: meal.time,
+        ingredients: [],
+        instructions: [],
+      }
+    });
   };
 
   const handleEatMeal = async (meal: WeeklyMealData, dateString: string) => {
@@ -688,7 +688,7 @@ const WeeklyMenuScreen: React.FC = () => {
 
     try {
       const success = await markMealAsEaten(
-        parseInt(meal.id),
+        meal.mealId,
         meal.caloriesNumber,
         1, // quantity
         meal.mealTimeId,
@@ -706,7 +706,7 @@ const WeeklyMenuScreen: React.FC = () => {
 
   const handleUneatMeal = async (meal: WeeklyMealData, dateString: string) => {
     try {
-      const success = await unmarkMealAsEaten(parseInt(meal.id), dateString);
+      const success = await unmarkMealAsEaten(meal.mealId, dateString);
       
       if (success) {
         // Reload data để cập nhật UI
@@ -735,7 +735,7 @@ const WeeklyMenuScreen: React.FC = () => {
 
     if (!meal.planId || meal.planId <= 0) {
       // Xóa từ local storage
-      const success = await removeMealFromLocalStorage(parseInt(meal.id), dateString);
+      const success = await removeMealFromLocalStorage(meal.mealId, dateString);
       if (success) {
         Alert.alert('Thành công', 'Đã xóa món ăn khỏi thực đơn');
         await loadWeeklyData(true); // Force reload after changes
@@ -952,7 +952,10 @@ const WeeklyMenuScreen: React.FC = () => {
                     <View style={styles.mealActions}>
                       <TouchableOpacity
                         style={[styles.eatButton, meal.isEaten && styles.uneatButton]}
-                        onPress={() => meal.isEaten ? handleUneatMeal(meal, dayData.dateString) : handleEatMeal(meal, dayData.dateString)}
+                        onPress={(e) => {
+                          e?.stopPropagation?.();
+                          meal.isEaten ? handleUneatMeal(meal, dayData.dateString) : handleEatMeal(meal, dayData.dateString);
+                        }}
                       >
                         <Ionicons 
                           name={meal.isEaten ? "close" : "checkmark"} 
@@ -964,14 +967,20 @@ const WeeklyMenuScreen: React.FC = () => {
                         <>
                           <TouchableOpacity
                             style={[styles.actionButton, styles.replaceButton]}
-                            onPress={() => handleReplaceMeal(meal, dayData.dateString)}
+                            onPress={(e) => {
+                              e?.stopPropagation?.();
+                              handleReplaceMeal(meal, dayData.dateString);
+                            }}
                             disabled={!meal.planId || meal.planId <= 0}
                           >
                             <Ionicons name="refresh" size={12} color="white" />
                           </TouchableOpacity>
                           <TouchableOpacity
                             style={[styles.actionButton, styles.deleteButton]}
-                            onPress={() => handleDeleteMeal(meal, dayData.dateString)}
+                            onPress={(e) => {
+                              e?.stopPropagation?.();
+                              handleDeleteMeal(meal, dayData.dateString);
+                            }}
                           >
                             <Ionicons name="trash" size={12} color="white" />
                           </TouchableOpacity>
@@ -1010,7 +1019,10 @@ const WeeklyMenuScreen: React.FC = () => {
                     <View style={styles.mealActions}>
                       <TouchableOpacity
                         style={[styles.eatButton, meal.isEaten && styles.uneatButton]}
-                        onPress={() => meal.isEaten ? handleUneatMeal(meal, dayData.dateString) : handleEatMeal(meal, dayData.dateString)}
+                        onPress={(e) => {
+                          e?.stopPropagation?.();
+                          meal.isEaten ? handleUneatMeal(meal, dayData.dateString) : handleEatMeal(meal, dayData.dateString);
+                        }}
                       >
                         <Ionicons 
                           name={meal.isEaten ? "close" : "checkmark"} 
@@ -1022,14 +1034,20 @@ const WeeklyMenuScreen: React.FC = () => {
                         <>
                           <TouchableOpacity
                             style={[styles.actionButton, styles.replaceButton]}
-                            onPress={() => handleReplaceMeal(meal, dayData.dateString)}
+                            onPress={(e) => {
+                              e?.stopPropagation?.();
+                              handleReplaceMeal(meal, dayData.dateString);
+                            }}
                             disabled={!meal.planId || meal.planId <= 0}
                           >
                             <Ionicons name="refresh" size={12} color="white" />
                           </TouchableOpacity>
                           <TouchableOpacity
                             style={[styles.actionButton, styles.deleteButton]}
-                            onPress={() => handleDeleteMeal(meal, dayData.dateString)}
+                            onPress={(e) => {
+                              e?.stopPropagation?.();
+                              handleDeleteMeal(meal, dayData.dateString);
+                            }}
                           >
                             <Ionicons name="trash" size={12} color="white" />
                           </TouchableOpacity>
@@ -1068,7 +1086,10 @@ const WeeklyMenuScreen: React.FC = () => {
                     <View style={styles.mealActions}>
                       <TouchableOpacity
                         style={[styles.eatButton, meal.isEaten && styles.uneatButton]}
-                        onPress={() => meal.isEaten ? handleUneatMeal(meal, dayData.dateString) : handleEatMeal(meal, dayData.dateString)}
+                        onPress={(e) => {
+                          e?.stopPropagation?.();
+                          meal.isEaten ? handleUneatMeal(meal, dayData.dateString) : handleEatMeal(meal, dayData.dateString);
+                        }}
                       >
                         <Ionicons 
                           name={meal.isEaten ? "close" : "checkmark"} 
@@ -1080,14 +1101,20 @@ const WeeklyMenuScreen: React.FC = () => {
                         <>
                           <TouchableOpacity
                             style={[styles.actionButton, styles.replaceButton]}
-                            onPress={() => handleReplaceMeal(meal, dayData.dateString)}
+                            onPress={(e) => {
+                              e?.stopPropagation?.();
+                              handleReplaceMeal(meal, dayData.dateString);
+                            }}
                             disabled={!meal.planId || meal.planId <= 0}
                           >
                             <Ionicons name="refresh" size={12} color="white" />
                           </TouchableOpacity>
                           <TouchableOpacity
                             style={[styles.actionButton, styles.deleteButton]}
-                            onPress={() => handleDeleteMeal(meal, dayData.dateString)}
+                            onPress={(e) => {
+                              e?.stopPropagation?.();
+                              handleDeleteMeal(meal, dayData.dateString);
+                            }}
                           >
                             <Ionicons name="trash" size={12} color="white" />
                           </TouchableOpacity>
